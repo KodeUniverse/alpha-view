@@ -14,11 +14,15 @@ type Article struct {
 	Date     string
 }
 
+func ScrapeMarketData() error {
+	return nil
+}
+
 // ScrapeNews scrapes news articles from the specified source
 // and prints the headlines and links to the console.
 // source is a string representing the news source to scrape.
-// source can be "bloomberg" or "reuters".
-func ScrapeNews(source string) {
+// source can be "bloomberg" or "reuters". (BLOOMBERG FUNCTIONALITY IS WIP)
+func ScrapeNews(source string) error {
 
 	// Define the URLs to scrape
 	URLs := map[string]string{
@@ -29,25 +33,6 @@ func ScrapeNews(source string) {
 
 	// Create a new collector
 	c := colly.NewCollector(colly.AllowURLRevisit())
-
-	// Set up a proxy
-	//proxyURL := []string{"127.0.0.1:1337", "socks5://127.0.0.1:1338"}
-
-	//http_res := StartHTTPProxy(proxyURL[0]) //StartProxy("tcp", proxyURL[0])
-	// if err != nil {
-	// 	fmt.Println("Error starting proxy:", err)
-	// 	return
-	// }
-	//fmt.Println("HTTP Result:", http_res)
-	//fmt.Println("Proxy started at", proxyURL[0])
-	//c.SetProxy(proxyURL[0])
-	//fmt.Println("Proxy set!")
-	// proxyHandler, err := proxy.RoundRobinProxySwitcher(proxyURL[0], proxyURL[1])
-	// if err != nil {
-	// 	fmt.Println("Error setting up proxy:", err)
-	// 	return
-	// }
-	// c.SetProxyFunc(proxyHandler)
 
 	// Callbacks for request, response, and error handling
 	c.OnRequest(func(r *colly.Request) {
@@ -92,24 +77,14 @@ func ScrapeNews(source string) {
 		content, err := json.Marshal(articles)
 		if err != nil {
 			fmt.Println(err.Error())
+			return err
 		}
 		// Write scrape to JSON
 		if err := os.WriteFile("scraping/data/finviz.json", content, 0644); err != nil {
 			fmt.Println("Error writing file: ", err)
+			return err
 		}
 		fmt.Println("Articles saved!")
 	}
+	return nil
 }
-
-// Set up a callback for when a visited HTML element is found
-// c.OnHTML("article.story", func(e *colly.HTMLElement) {
-// 	headline := e.ChildText("h3.story-title")
-// 	link := e.ChildAttr("a", "href")
-
-// 	if headline != "" && link != "" {
-// 		fmt.Printf("Headline: %s\nLink: %s\n", headline, link)
-// 		//saveToXML(headline, link)
-// 	}
-// })
-
-// Start the scraping process
