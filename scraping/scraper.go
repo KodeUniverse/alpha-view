@@ -71,29 +71,33 @@ func ScrapeNews(source string) {
 			fmt.Printf("Found link: %s, Underlying span: %s\n", link, spanText)
 		})
 	case "finviz":
-		// article := &Article{
-		// 	Headline: `selector: "table.styled-table-new.is-rounded.table-fixed > tbody >
-		// 	tr.styled-row.is-hoverable.is-bordered.is-rounded.is-border-top.is-hover-borders.has-color-text.news_table-row > td.news_link-cell > a.nn-tab-link"`,
-		// 	URL:  `selector: "table.styled-table-new > tbody > tr.news_table-row > td.news_link-cell> a.nn-tab-link[href]" "attr: href"`,
-		// 	Date: `selector: "table.styled-table-new > tbody > tr.news_table-row > td.news_date-cell"`}
-		article := &Article{Headline: "", URL: "", Date: ""}
-		c.OnHTML("div.news", func(e *colly.HTMLElement) {
-			// e.Unmarshal(article)
-			e.DOM.Children().Add("table.news_time-table")
-			e.DOM.Children().Add("tbody")
-			article.Headline = e.DOM.Children().Add("tr").Text()
+		var articles []Article
+
+		c.OnHTML("table.styled-table-new > tbody > tr.news_table-row", func(e *colly.HTMLElement) {
+			headline := e.ChildText("td.news_link-cell > a.nn-tab-link")
+			url := e.ChildAttr("td.news_link-cell > a.nn-tab-link", "href")
+			date := e.ChildText("td.news_date-cell")
+
+			if headline != "" && url != "" && date != "" {
+				articles = append(articles, Article{
+					Headline: headline,
+					URL:      url,
+					Date:     date,
+				})
+			}
 		})
 
-		// Scrape & Save to JSON
+		// Scrape Finviz
 		c.Visit(URLs[source])
-		content, err := json.Marshal(article)
-
+		content, err := json.Marshal(articles)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-
-		os.WriteFile("data/finviz.json", content, 0644)
-		fmt.Println("Article saved!:", article)
+		// Write scrape to JSON
+		if err := os.WriteFile("scraping/data/finviz.json", content, 0644); err != nil {
+			fmt.Println("Error writing file: ", err)
+		}
+		fmt.Println("Articles saved!")
 	}
 }
 
