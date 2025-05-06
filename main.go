@@ -33,21 +33,12 @@ func NewsRefreshProcess(exit chan bool) error {
 func main() {
 
 	// Define server configuration
-	port_name := "8080"
+	port_name := "9001"
 	server := &http.Server{
 		Addr: ":" + port_name}
 
 	// Set up a simple HTTP handler
 	http.Handle("/", http.FileServer(http.Dir(".")))
-
-	// Set up logging
-	// logFile, err := os.OpenFile("debug/logs/server.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	// if err != nil {
-	// 	log.Fatalf("Failed to open log file: %v", err)
-	// }
-	// mw := io.MultiWriter(os.Stderr, logFile) // Create a multi-writer to log to both stdout and the file
-	// log.SetOutput(mw)
-	// defer logFile.Close()
 
 	// Start the News Refresh Process
 	news_exit := make(chan bool, 1)
