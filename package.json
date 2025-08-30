@@ -19,6 +19,8 @@
   "homepage": "https://github.com/KodeUniverse/alpha-view#readme",
   "dependencies": {
     "axios": "^1.11.0",
-    "cheerio": "^1.1.2"
+    "cheerio": "^1.1.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
   }
 }

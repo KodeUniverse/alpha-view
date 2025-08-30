@@ -1,6 +1,6 @@
 import { loadMarketsContent } from "./content_scripts/markets/content";
 
-const routes = {
+const routes = {    
     '#/': loadHomeContent,
     '#/markets': loadMarketsContent,
     '#/about': loadAboutContent,
