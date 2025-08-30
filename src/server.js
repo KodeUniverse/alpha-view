@@ -1,20 +1,43 @@
-const path = require('path');
-const express = require('express');
-const app = express();
-const cors = require('cors');
-const argv = require('process').argv;
+import path from 'path';
+import express from 'express';
+import cors from 'cors';
+import fs from 'fs';
+import { argv } from 'process';
+import { fileURLToPath } from 'url';
 
+const app = express();
 const HOSTNAME = 'localhost';
-const PORT = argv[1] || 1337;
+const PORT = argv[2] || 1337;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+console.log(__dirname);
 
 // CORS Headers
 app.use(cors());
 
 // serving static assets, caching for 1hr w/ etags
-app.use('/static', express.static(path.join(__dirname, 'public'), {
-    maxAge: '1h',
-    etag: true
-}));
+function serveStatic(cache = '1h'){
+
+    const cacheOptions = {
+        false: {etag: false, cacheControl: false},
+        "1h": {"etag": true, "maxAge": "1h"},
+    }
+
+    console.log(`Serving static files from ${path.join(__dirname,'static')}`);
+
+    app.use('/static', express.static(path.join(__dirname,'static'), {
+    ...cacheOptions[cache],
+    setHeaders: (res, filepath) => {
+        const fileExt = path.extname(filepath).toLowerCase();
+        if (fileExt === '.js') {
+            res.setHeader('Content-Type', 'application/javascript');
+        } else if (fileExt === '.css') {
+            res.setHeader('Content-Type', 'text/css');
+        }
+    }}));
+}
+
+serveStatic({cache: false});
 
 // serving dynamic assets, datafiles, etc. (no cache)
 app.use('/data', express.static(path.join(__dirname, 'data'), {
@@ -24,7 +47,7 @@ app.use('/data', express.static(path.join(__dirname, 'data'), {
     maxAge: 0,
     setHeaders: (res, filepath) => {
 
-        fileExt = path.extname(filepath).toLowerCase();
+        const fileExt = path.extname(filepath).toLowerCase();
         if (fileExt === '.json') {
             res.setHeader('Content-Type', 'application/json');
         } else if (fileExt === '.csv') {
@@ -33,11 +56,21 @@ app.use('/data', express.static(path.join(__dirname, 'data'), {
     }
 }));
 
+//serve the main HTML at root
+app.get('/', (req, res) => {
+    const htmlPath = path.join(__dirname, 'index.html');
+    if (!fs.existsSync(htmlPath)) {
+        res.status(500).send('Error: index.html not found on server.');
+    } else {
+        res.setHeader('Content-Type', 'text/html');
+        res.sendFile(htmlPath);
+    } 
+});
+
 // Start server
 const server = app.listen(PORT, HOSTNAME, () =>{
     console.log(`Server running at http://${HOSTNAME}:${PORT}/`);
 });
-
 
 // Server shutdown procedure
 function shutDown(){

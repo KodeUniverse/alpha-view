@@ -1,24 +1,14 @@
-import { loadMarketsContent } from "./content_scripts/markets/content";
+import { loadMarketsContent } from "./page_content/markets/content.js";
+import { loadNotebookContent } from "./page_content/notebook/content.js";
+import { loadHomeContent } from "./page_content/home/content.js";
+import { loadAboutContent } from "./page_content/about/content.js";
 
 const routes = {    
     '#/': loadHomeContent,
     '#/markets': loadMarketsContent,
     '#/about': loadAboutContent,
-    '#/notebook': loadNotebook
+    '#/notebook': loadNotebookContent
 };
-
-
-function loadHomeContent() {
-    return "<h1>Home</h1>"
-}
-
-function loadAboutContent() {
-    return "<h1>About AlphaView</h1>"
-}
-
-function loadNotebook() {
-    return "<h1>Notebook</h1>"
-}
 
 function handleRoute() {
     const page = window.location.hash || '#/';
@@ -38,4 +28,3 @@ document.getElementById('navbar').addEventListener("click",(e) => {
         window.location.hash = route;
     }
 });
-
