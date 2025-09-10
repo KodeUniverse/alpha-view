@@ -2,12 +2,10 @@ import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
-import { argv } from 'process';
 import { fileURLToPath } from 'url';
-
 const app = express();
-const HOSTNAME = '0.0.0.0';
-const PORT = process.env.PORT || argv[2] || 1337; // resolve portnumber as CLI arg
+const HOSTNAME = process.env.SERVER_HOST
+const PORT = process.env.SERVER_PORT
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 console.log(__dirname);

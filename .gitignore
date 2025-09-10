@@ -1,3 +1,8 @@
+
+# SECRET FILES
+.env
+
+# NodeJS stuff
 node_modules
 
 
