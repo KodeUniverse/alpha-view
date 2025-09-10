@@ -1,6 +1,8 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
-const FileSystem = require('fs');
+import axios from "axios";
+import cheerio from "cheerio";
+import FileSystem from "fs";
+import cron from "node-cron";
+import redis from "redis";
 
 async function scrapeNews(source) {
 
@@ -19,12 +21,12 @@ async function scrapeNews(source) {
 
     const url = sites[source];
 
-    const htmlContent = await axios.get(url, {headers});
+    const htmlContent = await axios.get(url, { headers });
     const cheerio_obj = cheerio.load(htmlContent.data);
 
     const articles = [];
 
-    switch(source) {
+    switch (source) {
         case "finviz":
             cheerio_obj("table.styled-table-new > tbody > tr.news_table-row").each((i, elem) => {
                 const headline = cheerio_obj(elem).find("td.news_link-cell > a.nn-tab-link").text();
@@ -35,22 +37,25 @@ async function scrapeNews(source) {
                     title: headline,
                     URL: link,
                     date: _date
-                
                 };
 
                 articles.push(article);
-        });
+            });
     }
+    
+}
 
-    // Save articles to JSON
-    FileSystem.writeFile('../../data/scraping/finviz.json', JSON.stringify(articles), (error) => {
-        if (error){
-            console.error('Error writing file!');
-            throw error;
-        } else {
-            console.log('Files saved successfully!');
+async function main() {
+
+    cron.schedule('*/1 * * * *', async () => {
+        try {
+            // start scrape
+            const data = await scrapeNews();
+
+        } catch (error) {
+            console.error('Finviz scrape failed.');
         }
     });
 }
 
-scrapeNews('finviz');
+main().catch(console.error)

@@ -6,8 +6,8 @@ import { argv } from 'process';
 import { fileURLToPath } from 'url';
 
 const app = express();
-const HOSTNAME = 'localhost';
-const PORT = argv[2] || 1337;
+const HOSTNAME = '0.0.0.0';
+const PORT = process.env.PORT || argv[2] || 1337; // resolve portnumber as CLI arg
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 console.log(__dirname);
