@@ -10,8 +10,10 @@ services:
     build:
       context: .
       dockerfile: server.Dockerfile
+      args:
+        - LOCAL_PORT=${LOCAL_PORT}
     ports:
-      - "${SERVER_HOST}:${SERVER_HOST}"
+      - "${LOCAL_PORT}:${SERVER_PORT}"
     depends_on:
       postgres:
         condition: service_healthy

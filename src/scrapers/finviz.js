@@ -1,5 +1,5 @@
 import axios from "axios";
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 import FileSystem from "fs";
 import cron from "node-cron";
 import redis from "redis";
