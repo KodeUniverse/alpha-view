@@ -53,7 +53,7 @@ async function main() {
             const data = await scrapeNews();
 
         } catch (error) {
-            console.error('Finviz scrape failed.');
+            console.error(`Finviz scrape failed: ${error}`);
         }
     });
 }

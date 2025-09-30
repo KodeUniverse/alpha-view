@@ -4,7 +4,7 @@ build:
 	docker compose up --no-start
 
 start:
-	docker compose start
+	docker compose --verbose up
 
 stop:
 	docker compose stop
