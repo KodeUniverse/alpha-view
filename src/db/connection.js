@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 
-export const alphaDBPool = new Pool({
+export const alphaDB = new Pool({
     host: process.env.POSTGRES_HOST,
     database: process.env.POSTGRES_DB,
     user: process.env.POSTGRES_USER,
@@ -11,9 +11,9 @@ export const alphaDBPool = new Pool({
 });
 
 process.on('SIGINT', async () =>{
-    await alphaDBPool.end();
+    await alphaDB.end();
 });
 
 process.on('SIGTERM', async () =>{
-    await alphaDBPool.end();
+    await alphaDB.end();
 });
