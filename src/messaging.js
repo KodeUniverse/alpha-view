@@ -1,6 +1,6 @@
 import redis from 'redis';
 
-class AlphaMessenger {
+class Messenger {
     constructor(){
         this.redisClient = redis.createClient({
             

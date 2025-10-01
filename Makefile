@@ -1,7 +1,7 @@
 .PHONY: build start stop
 
 build:
-	docker compose up --no-start
+	docker compose up --build --force-recreate --no-start
 
 start:
 	docker compose --verbose up
