@@ -4,6 +4,7 @@ import FileSystem from "fs";
 import cron from "node-cron";
 import redis from "redis";
 import { alphaDB } from "../db/connection.js";
+import { stringify } from "querystring";
 
 async function scrapeNews() {
 
@@ -43,27 +44,33 @@ async function scrapeNews() {
 
 async function saveToDB(articles) {
     try {
-        const insertCount = 0;
+        let insertCount = 0;
         await alphaDB.query("BEGIN"); // start transaction
         for (const article of articles) { // save article if doesn't exist
-            const existingArticle = await alphaDB.query("SELECT ArticleId FROM Article WHERE URL = $1", [article.url.substring(0,100)]);
 
-            if ((existingArticle).rows.length === 0){
+            if (!article || !article.title?.trim() || !article.URL?.trim() || !article.date?.trim()) {
+                console.log(`Skipping empty/invalid article: ${article}`);
+                continue;
+            }
+
+            const existingArticle = await alphaDB.query("SELECT ArticleId FROM Article WHERE URL = $1", [article.URL]);
+
+            if ((existingArticle).rows.length === 0) {
                 await alphaDB.query(
                     "INSERT INTO Article (Headline, URL, Date, Source) VALUES ($1, $2, $3, $4)",
                     [
-                        article.headline.substring(0,100),
-                        article.URL.substring(100),
-                        article.Date.substring(20),
+                        article.title,
+                        article.URL,
+                        article.date,
                         "Finviz"
                     ]
                 );
             }
-            insertCount++;   
+            insertCount++;
         }
         await alphaDB.query('COMMIT');
         console.log(`Saved ${insertCount} articles into AlphaDB!`);
-    } catch (error){        
+    } catch (error) {
         await alphaDB.query('ROLLBACK');
         console.error(error);
     }
@@ -77,6 +84,7 @@ async function main() {
             console.log('Starting Finviz scrape...');
             // start scrape
             const data = await scrapeNews();
+            //FileSystem.writeFileSync('finviz-news-data.json', JSON.stringify(data));
             console.log('Finviz scrape succeeded, saving to AlphaDB...');
             await saveToDB(data);
         } catch (error) {
