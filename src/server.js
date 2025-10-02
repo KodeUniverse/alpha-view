@@ -3,6 +3,12 @@ import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { Server } from 'socket.io'; // WebSockets
+import alphaDB from './db/connection.js';
+import Messenger from './messaging.js';
+import { createServer } from 'http';
+
+
 const app = express();
 const HOSTNAME = process.env.SERVER_HOST
 const PORT = process.env.SERVER_PORT
@@ -10,32 +16,63 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 console.log(__dirname);
 
+// Initialize WebSockets
+const server = createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
+io.on("connection", (socket) => {
+    console.log(`WebSocket client connected: ${socket.id}`);
+    socket.on("disconnect", () => {
+        console.log(`WebSocket disconnected: ${socket.id}`);
+    });
+});
+
+// Redis messenger, to listen for data updates
+const messenger = new Messenger();
+await messenger.connect();
+messenger.subscribe('finviz-data-update', async () => {
+    console.log('Finviz data update signal recieved!');
+    const articles = await alphaDB.query('SELECT Headline, URL, Date, Source FROM Article');
+
+    try {
+        io.emit("finviz-update", articles);
+        console.log('WebSocket: Serving updated finviz data')
+    } catch (error) {
+        console.error(`WebSocket Error: finviz-data-update: ${error}`);
+    }
+});
 // CORS Headers
 app.use(cors());
 
 // serving static assets, caching for 1hr w/ etags
-function serveStatic(cache = '1h'){
+function serveStatic(cache = '1h') {
 
     const cacheOptions = {
-        false: {etag: false, cacheControl: false},
-        "1h": {"etag": true, "maxAge": "1h"},
+        false: { etag: false, cacheControl: false },
+        "1h": { "etag": true, "maxAge": "1h" },
     }
 
-    console.log(`Serving static files from ${path.join(__dirname,'static')}`);
+    console.log(`Serving static files from ${path.join(__dirname, 'static')}`);
 
-    app.use('/static', express.static(path.join(__dirname,'static'), {
-    ...cacheOptions[cache],
-    setHeaders: (res, filepath) => {
-        const fileExt = path.extname(filepath).toLowerCase();
-        if (fileExt === '.js') {
-            res.setHeader('Content-Type', 'application/javascript');
-        } else if (fileExt === '.css') {
-            res.setHeader('Content-Type', 'text/css');
+    app.use('/static', express.static(path.join(__dirname, 'static'), {
+        ...cacheOptions[cache],
+        setHeaders: (res, filepath) => {
+            const fileExt = path.extname(filepath).toLowerCase();
+            if (fileExt === '.js') {
+                res.setHeader('Content-Type', 'application/javascript');
+            } else if (fileExt === '.css') {
+                res.setHeader('Content-Type', 'text/css');
+            }
         }
-    }}));
+    }));
 }
 
-serveStatic({cache: false});
+serveStatic({ cache: false });
 
 // serving dynamic assets, datafiles, etc. (no cache)
 app.use('/data', express.static(path.join(__dirname, 'data'), {
@@ -62,20 +99,21 @@ app.get('/', (req, res) => {
     } else {
         res.setHeader('Content-Type', 'text/html');
         res.sendFile(htmlPath);
-    } 
+    }
 });
 
 // Start server
-const server = app.listen(PORT, HOSTNAME, () =>{
+server.listen(PORT, HOSTNAME, () => {
     console.log(`Server running at http://${HOSTNAME}:${PORT}/`);
+    console.log(`WebSockets running!`);
 });
 
 // Server shutdown procedure
-function shutDown(){
+function shutDown() {
     console.log(`Recieved kill signal, gracefully shutting down http://${HOSTNAME}:${PORT}/`);
     server.close(() => {
         console.log('Graceful shutdown complete!');
-	process.exit();
+        process.exit();
     });
 
     setTimeout(() => {
@@ -85,6 +123,6 @@ function shutDown(){
 };
 
 // Listen for Ctrl+C to stop server
-process.on('SIGINT', () =>{
+process.on('SIGINT', () => {
     shutDown();
 });

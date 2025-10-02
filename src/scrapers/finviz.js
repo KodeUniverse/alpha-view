@@ -2,9 +2,9 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import FileSystem from "fs";
 import cron from "node-cron";
-import redis from "redis";
-import { alphaDB } from "../db/connection.js";
-import { stringify } from "querystring";
+import alphaDB from "../db/connection.js";
+import Messenger from "../messaging.js";
+
 
 async function scrapeNews() {
 
@@ -79,6 +79,9 @@ async function saveToDB(articles) {
 
 async function main() {
 
+    const messenger = new Messenger();
+    messenger.connect();
+
     cron.schedule('*/1 * * * *', async () => {
         try {
             console.log('Starting Finviz scrape...');
@@ -87,6 +90,7 @@ async function main() {
             //FileSystem.writeFileSync('finviz-news-data.json', JSON.stringify(data));
             console.log('Finviz scrape succeeded, saving to AlphaDB...');
             await saveToDB(data);
+            messenger.send('finviz-data-update', `Updated finviz news data!`);
         } catch (error) {
             console.error(`Finviz scrape failed: ${error.stack}`);
         }
