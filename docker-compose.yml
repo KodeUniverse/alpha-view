@@ -1,5 +1,23 @@
 services:
-  main-server:
+  frontend-server:
+    env_file:
+      - .env
+    environment:
+      LOCAL_PORT: ${FRONTEND_LOCAL_PORT}
+      SERVER_PORT: ${FRONTEND_SERVER_PORT}
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - LOCAL_PORT=${FRONTEND_LOCAL_PORT}
+    ports:
+      - "${LOCAL_PORT}:${SERVER_PORT}"
+    command: "echo AlphaView frontend active!"
+    depends_on:
+      backend-server:
+        condition: service_healthy
+
+  backend-server:
     env_file:
       - .env
     environment:
@@ -14,6 +32,11 @@ services:
         - LOCAL_PORT=${LOCAL_PORT}
     ports:
       - "${LOCAL_PORT}:${SERVER_PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl", "-X", "GET", "${SERVER_HOST}:${SERVER_PORT}/healthcheck"]
+      interval: 60s
+      timeout: 5s
+      retries: 5
     depends_on:
       postgres:
         condition: service_healthy

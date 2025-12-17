@@ -49,30 +49,40 @@ messenger.subscribe('finviz-data-update', async () => {
 // CORS Headers
 app.use(cors());
 
+
+/*
+* API ROUTES
+*/
+
+app.get('/health', (req, res) => {
+    res.status(200).send("Health check succeeded, API seems active!");
+});
+
+
 // serving static assets, caching for 1hr w/ etags
-function serveStatic(cache = '1h') {
+//function serveStatic(cache = '1h') {
+//
+//    const cacheOptions = {
+//        false: { etag: false, cacheControl: false },
+//        "1h": { "etag": true, "maxAge": "1h" },
+//    }
+//
+//    console.log(`Serving static files from ${path.join(__dirname, 'static')}`);
+//
+//    app.use('/static', express.static(path.join(__dirname, 'static'), {
+//        ...cacheOptions[cache],
+//        setHeaders: (res, filepath) => {
+//            const fileExt = path.extname(filepath).toLowerCase();
+//            if (fileExt === '.js') {
+//                res.setHeader('Content-Type', 'application/javascript');
+//            } else if (fileExt === '.css') {
+//                res.setHeader('Content-Type', 'text/css');
+//            }
+//        }
+//    }));
+//}
 
-    const cacheOptions = {
-        false: { etag: false, cacheControl: false },
-        "1h": { "etag": true, "maxAge": "1h" },
-    }
-
-    console.log(`Serving static files from ${path.join(__dirname, 'static')}`);
-
-    app.use('/static', express.static(path.join(__dirname, 'static'), {
-        ...cacheOptions[cache],
-        setHeaders: (res, filepath) => {
-            const fileExt = path.extname(filepath).toLowerCase();
-            if (fileExt === '.js') {
-                res.setHeader('Content-Type', 'application/javascript');
-            } else if (fileExt === '.css') {
-                res.setHeader('Content-Type', 'text/css');
-            }
-        }
-    }));
-}
-
-serveStatic({ cache: false });
+//serveStatic({ cache: false });
 
 // serving dynamic assets, datafiles, etc. (no cache)
 app.use('/data', express.static(path.join(__dirname, 'data'), {
@@ -91,21 +101,20 @@ app.use('/data', express.static(path.join(__dirname, 'data'), {
     }
 }));
 
-//serve the main HTML at root
-app.get('/', (req, res) => {
-    const htmlPath = path.join(__dirname, 'index.html');
-    if (!fs.existsSync(htmlPath)) {
-        res.status(500).send('Error: index.html not found on server.');
-    } else {
-        res.setHeader('Content-Type', 'text/html');
-        res.sendFile(htmlPath);
-    }
-});
+////serve the main HTML at root
+//app.get('/', (req, res) => {
+//    const htmlPath = path.join(__dirname, 'index.html');
+//    if (!fs.existsSync(htmlPath)) {
+//        res.status(500).send('Error: index.html not found on server.');
+//    } else {
+//        res.setHeader('Content-Type', 'text/html');
+//        res.sendFile(htmlPath);
+//    }
+//});st
 
 // Start server
 server.listen(PORT, HOSTNAME, () => {
-    console.log(`Server running at http://${HOSTNAME}:${PORT}/`);
-    console.log(`WebSockets running!`);
+    console.log(`Backend AlphaView server running at http://${HOSTNAME}:${PORT}/`);
 });
 
 // Server shutdown procedure

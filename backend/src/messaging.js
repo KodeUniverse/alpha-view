@@ -19,7 +19,7 @@ export default class Messenger {
 
         } catch(error) {
             console.error('Messenger: Redis Client failed to initalized.');
-            throw error;
+            //throw error;
         }
     }
 
