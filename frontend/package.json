@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "dev": "vite --host" 
+  },
+  "devDependencies": {
+    "vite": "^7.3.0"
+  }
+}

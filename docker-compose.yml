@@ -8,7 +8,7 @@ services:
       SERVER_PORT: ${SERVER_PORT}
       SERVER_HOST: ${SERVER_HOST}
     build:
-      context: .
+      context: ./backend
       dockerfile: server.Dockerfile
       args:
         - LOCAL_PORT=${LOCAL_PORT}
@@ -27,7 +27,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
     build:
-      context: .
+      context: ./backend
       dockerfile: finviz-scraper.Dockerfile
   
   redis:
@@ -47,7 +47,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - /var/lib/postgresql/data
-      - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:z #Update SELinux context to fix permissions
+      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:z #Update SELinux context to fix permissions
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
