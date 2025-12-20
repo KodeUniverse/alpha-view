@@ -7,6 +7,13 @@ services:
       dockerfile: Dockerfile
       args:
         - LOCAL_PORT=${FRONTEND_LOCAL_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend 
+          target: /app
+          ignore:
+            - node_modules
     ports:
       - "${FRONTEND_LOCAL_PORT}:${FRONTEND_SERVER_PORT}"
     depends_on:
