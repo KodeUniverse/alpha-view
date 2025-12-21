@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "vite": "^7.3.0"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.12",
+    "@tanstack/react-query-devtools": "^5.91.1",
+    "@vitejs/plugin-react": "^5.1.2",
+    "react-dom": "^19.2.3",
+    "react-router-dom": "^7.11.0"
+  }
+}

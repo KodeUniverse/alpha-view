@@ -1,5 +1,26 @@
 services:
-  main-server:
+  frontend-server:
+    env_file:
+      - ./frontend/.env
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+#      args:
+#        - LOCAL_PORT=${FRONTEND_LOCAL_PORT}
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend 
+          target: /app
+          ignore:
+            - node_modules
+    ports:
+      - "${FRONTEND_LOCAL_PORT}:${FRONTEND_SERVER_PORT}"
+    depends_on:
+      backend-server:
+        condition: service_healthy
+
+  backend-server:
     env_file:
       - .env
     environment:
@@ -8,12 +29,17 @@ services:
       SERVER_PORT: ${SERVER_PORT}
       SERVER_HOST: ${SERVER_HOST}
     build:
-      context: .
+      context: ./backend
       dockerfile: server.Dockerfile
       args:
         - LOCAL_PORT=${LOCAL_PORT}
     ports:
       - "${LOCAL_PORT}:${SERVER_PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://${SERVER_HOST}:${SERVER_PORT}/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       postgres:
         condition: service_healthy
@@ -27,7 +53,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
     build:
-      context: .
+      context: ./backend
       dockerfile: finviz-scraper.Dockerfile
   
   redis:
@@ -47,7 +73,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - /var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:z #Update SELinux context to fix permissions
+      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:z #Update SELinux context to fix permissions
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s

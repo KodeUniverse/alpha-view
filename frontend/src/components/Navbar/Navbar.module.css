@@ -1,0 +1,19 @@
+.navbar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin: 20px 10px;
+}
+
+img {
+    width: 100px;
+    height: 100px;
+    
+}
+
+.nav {
+    display: flex;
+    gap: 5px;
+}

@@ -1,0 +1,32 @@
+{
+  "name": "alpha-view",
+  "version": "1.0.0",
+  "description": "AlphaView is a multi-purpose dashboard written as an SPA that has rich features: * News aggregation * Financial market news and analysis * A rich note-taking function with advanced planning and organization features * And robust theming!",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KodeUniverse/alpha-view.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KodeUniverse/alpha-view/issues"
+  },
+  "homepage": "https://github.com/KodeUniverse/alpha-view#readme",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "cheerio": "^1.1.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "node-cron": "^4.2.1",
+    "pg": "^8.16.3",
+    "redis": "^5.8.2",
+    "socket.io": "^4.8.1"
+  }
+}

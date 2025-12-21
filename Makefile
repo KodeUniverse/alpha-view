@@ -4,7 +4,7 @@ build:
 	docker compose up --build --force-recreate --no-start
 
 start:
-	docker compose --verbose up
+	docker compose up --watch 
 
 stop:
 	docker compose stop
