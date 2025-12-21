@@ -4,11 +4,12 @@
     justify-content: center;
     align-items: center;
     gap: 5px;
+    margin: 20px 10px;
 }
 
 img {
-    width: 50px;
-    height: 50px;
+    width: 100px;
+    height: 100px;
     
 }
 

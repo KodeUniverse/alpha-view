@@ -1,12 +1,12 @@
 import Navbar from '@/components/Navbar/Navbar.jsx';
-
+import styles from './HomePage.module.css';
 
 function HomePage() {
     return (
-        <>
+        <div>
             <Navbar />
-            Home Page!
-        </>
+            <h1>Welcome!</h1>
+        </div>
     )
 }
 
