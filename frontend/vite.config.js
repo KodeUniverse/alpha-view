@@ -4,6 +4,15 @@ import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: '0.0.0.0',
+    port: process.env.FRONTEND_LOCAL_PORT,
+    hmr: {
+      host: 
+        'localhost',
+         port: process.env.FRONTEND_LOCAL_PORT
+    }
+  },
   plugins: [react()],
   resolve: {
     alias: {

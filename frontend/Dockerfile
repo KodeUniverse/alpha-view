@@ -5,4 +5,4 @@ RUN npm install
 COPY . .
 ARG LOCAL_PORT
 EXPOSE $LOCAL_PORT
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+CMD ["npm", "run", "dev", "--", "--host"]
