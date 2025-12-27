@@ -10,8 +10,10 @@ import { createServer } from 'http';
 
 
 const app = express();
-const HOSTNAME = process.env.SERVER_HOST
-const PORT = process.env.SERVER_PORT
+const HOSTNAME = "0.0.0.0";
+const PORT = 8080;
+
+const HOST_PORT = process.env.HOST_API_PORT;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 console.log(__dirname);
@@ -114,12 +116,12 @@ app.use('/data', express.static(path.join(__dirname, 'data'), {
 
 // Start server
 server.listen(PORT, HOSTNAME, () => {
-    console.log(`Backend AlphaView server running at http://${HOSTNAME}:${PORT}/`);
+    console.log(`Backend AlphaView server running at http://localhost:${HOST_PORT}/`);
 });
 
 // Server shutdown procedure
 function shutDown() {
-    console.log(`Recieved kill signal, gracefully shutting down http://${HOSTNAME}:${PORT}/`);
+    console.log(`Recieved kill signal, gracefully shutting down http://localhost:${HOST_PORT}/`);
     server.close(() => {
         console.log('Graceful shutdown complete!');
         process.exit();
