@@ -5,5 +5,5 @@ RUN apk add --no-cache curl
 COPY package*.json ./
 RUN npm install
 COPY . .
-EXPOSE $LOCAL_PORT
+EXPOSE 8080
 CMD ["node", "src/server.js"]

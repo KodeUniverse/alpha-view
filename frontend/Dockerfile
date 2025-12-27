@@ -3,6 +3,5 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-ARG LOCAL_PORT
-EXPOSE $LOCAL_PORT
+EXPOSE 5379
 CMD ["npm", "run", "dev", "--", "--host"]

@@ -6,11 +6,11 @@ import path from 'path';
 export default defineConfig({
   server: {
     host: '0.0.0.0',
-    port: process.env.FRONTEND_LOCAL_PORT,
+    port: 5379,
     hmr: {
       host: 
         'localhost',
-         port: process.env.FRONTEND_LOCAL_PORT
+         port: 5379
     }
   },
   plugins: [react()],

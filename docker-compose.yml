@@ -1,12 +1,10 @@
 services:
   frontend-server:
     env_file:
-      - ./frontend/.env
+      - .env
     build:
       context: ./frontend
       dockerfile: Dockerfile
-#      args:
-#        - LOCAL_PORT=${FRONTEND_LOCAL_PORT}
     develop:
       watch:
         - action: sync
@@ -15,7 +13,7 @@ services:
           ignore:
             - node_modules
     ports:
-      - "${FRONTEND_LOCAL_PORT}:${FRONTEND_SERVER_PORT}"
+      - "${HOST_PORT}:5379"
     depends_on:
       backend-server:
         condition: service_healthy
@@ -24,19 +22,15 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      SERVER_PORT: ${SERVER_PORT}
-      SERVER_HOST: ${SERVER_HOST}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
     build:
       context: ./backend
       dockerfile: server.Dockerfile
-      args:
-        - LOCAL_PORT=${LOCAL_PORT}
     ports:
-      - "${LOCAL_PORT}:${SERVER_PORT}"
+      - "${HOST_API_PORT}:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://${SERVER_HOST}:${SERVER_PORT}/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://0.0.0.0:8080/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -50,8 +44,8 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379 
     build:
       context: ./backend
       dockerfile: finviz-scraper.Dockerfile
@@ -73,7 +67,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - /var/lib/postgresql/data
-      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:z #Update SELinux context to fix permissions
+      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro # :'ro' gives read-only permissions. 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
