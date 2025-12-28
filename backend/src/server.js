@@ -43,20 +43,10 @@ await messenger.connect();
  * Market Data
  */
 
-// Check if there is news data already and emit
-let initArticles = await alphaDB.query('SELECT ArticleId, Headline, URL, Date, Source FROM Article');
-if (initArticles) {
-    try {
-        io.emit("market-news", initArticles.rows);
-        console.log('WebSocket: Market news found, serving');
-    } catch (error) {
-        console.error(`WebSocket Error (market news initial query): ${error}`);
-    }
-}
 // Periodically (1min) query and serve market news data thru Socket.IO
 messenger.subscribe('finviz-data-update', async () => {
     console.log('Market news update signal recieved!');
-    const articles = await alphaDB.query('SELECT ArticleId, Headline, URL, Date, Source FROM Article');
+    const articles = await alphaDB.query('SELECT ArticleId, Headline, URL, Date, Source FROM Article ORDER BY Timestamp DESC');
 
     try {
         io.emit("market-news", articles.rows);
@@ -76,7 +66,7 @@ app.get('/health', (req, res) => {
 
 
 app.get('/api/market-news/latest', async (req, res) => {
-    const articles = await alphaDB.query('SELECT ArticleId, Headline, URL, Date, Source FROM Article');
+    const articles = await alphaDB.query('SELECT ArticleId, Headline, URL, Date, Source FROM Article ORDER BY Timestamp DESC');
     if (articles) {
         res.status(200).send(articles.rows);
     } else {

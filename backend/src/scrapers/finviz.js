@@ -61,13 +61,27 @@ async function saveToDB(articles) {
             const existingArticle = await alphaDB.query("SELECT ArticleId FROM Article WHERE URL = $1", [article.URL]);
 
             if ((existingArticle).rows.length === 0) {
+                console.log("No duplicate article, adding new record.");
                 await alphaDB.query(
-                    "INSERT INTO Article (Headline, URL, Date, Source, Timestamp) VALUES ($1, $2, $3, $4, $5)",
+                    "INSERT INTO Article (Headline, URL, Date, Source, Timestamp, LastUpdated) VALUES ($1, $2, $3, $4, $5, $6)",
                     [
                         article.title,
                         article.URL,
                         article.date,
                         "Finviz",
+                        timestamp,
+                        timestamp
+                    ]
+                );
+            } else {
+                console.log(`Duplicate article detected, updating existing record, articleid=${existingArticle.rows[0].articleid}`);
+                await alphaDB.query("UPDATE Article SET Headline = $1, URL = $2, Date = $3, Source = $4, LastUpdated = $6 WHERE ArticleId = $5",
+                    [
+                        article.title,
+                        article.URL,
+                        article.date,
+                        "Finviz",
+                        existingArticle.rows[0].articleid,
                         timestamp
                     ]
                 );

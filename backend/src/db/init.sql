@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS article (
     URL TEXT NOT NULL,
     Date TEXT NOT NULL,
     Source TEXT NOT NULL,
-    Timestamp TEXT NOT NULL
+    Timestamp TIMESTAMPTZ NOT NULL,
+    LastUpdated TIMESTAMPTZ NOT NULL
 );
 
 -- Create indexes for better performance
