@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS article (
     Headline TEXT NOT NULL,
     URL TEXT NOT NULL,
     Date TEXT NOT NULL,
-    Source TEXT NOT NULL
+    Source TEXT NOT NULL,
+    Timestamp TEXT NOT NULL
 );
 
 -- Create indexes for better performance
