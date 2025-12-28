@@ -1,0 +1,15 @@
+
+
+.news-feed {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.news-head {
+
+}
+
+.news-content {
+
+}
