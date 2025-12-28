@@ -38,7 +38,22 @@ io.on("connection", (socket) => {
 const messenger = new Messenger();
 await messenger.connect();
 
-// Finviz data serving thru Socket.IO
+
+/*
+ * Market Data
+ */
+
+// Check if there is news data already and emit
+let initArticles = await alphaDB.query('SELECT ArticleId, Headline, URL, Date, Source FROM Article');
+if (initArticles) {
+    try {
+        io.emit("market-news", initArticles.rows);
+        console.log('WebSocket: Market news found, serving');
+    } catch (error) {
+        console.error(`WebSocket Error (market news initial query): ${error}`);
+    }
+}
+// Periodically (1min) query and serve market news data thru Socket.IO
 messenger.subscribe('finviz-data-update', async () => {
     console.log('Market news update signal recieved!');
     const articles = await alphaDB.query('SELECT ArticleId, Headline, URL, Date, Source FROM Article');
@@ -51,7 +66,6 @@ messenger.subscribe('finviz-data-update', async () => {
     }
 });
 
-
 /*
 * API ROUTES
 */
@@ -60,22 +74,32 @@ app.get('/health', (req, res) => {
     res.status(200).send("Health check succeeded, API seems active!");
 });
 
-// serving dynamic assets, datafiles, etc. (no cache)
-app.use('/data', express.static(path.join(__dirname, 'data'), {
-    etag: false,
-    lastModified: false,
-    cacheControl: false,
-    maxAge: 0,
-    setHeaders: (res, filepath) => {
 
-        const fileExt = path.extname(filepath).toLowerCase();
-        if (fileExt === '.json') {
-            res.setHeader('Content-Type', 'application/json');
-        } else if (fileExt === '.csv') {
-            res.setHeader('Content-Type', 'text/csv');
-        }
+app.get('/api/market-news/latest', async (req, res) => {
+    const articles = await alphaDB.query('SELECT ArticleId, Headline, URL, Date, Source FROM Article');
+    if (articles) {
+        res.status(200).send(articles.rows);
+    } else {
+        res.status(200).json(null);
     }
-}));
+});
+
+//// serving dynamic assets, datafiles, etc. (no cache)
+//app.use('/data', express.static(path.join(__dirname, 'data'), {
+//    etag: false,
+//    lastModified: false,
+//    cacheControl: false,
+//    maxAge: 0,
+//    setHeaders: (res, filepath) => {
+//
+//        const fileExt = path.extname(filepath).toLowerCase();
+//        if (fileExt === '.json') {
+//            res.setHeader('Content-Type', 'application/json');
+//        } else if (fileExt === '.csv') {
+//            res.setHeader('Content-Type', 'text/csv');
+//        }
+//    }
+//}));
 
 // Start server
 server.listen(PORT, HOSTNAME, () => {

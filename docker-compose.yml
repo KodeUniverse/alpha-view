@@ -31,6 +31,13 @@ services:
     build:
       context: ./backend
       dockerfile: server.Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: ./backend 
+          target: /app
+          ignore:
+            - node_modules
     ports:
       - "${HOST_API_PORT}:8080"
     healthcheck:
@@ -53,6 +60,13 @@ services:
     build:
       context: ./backend
       dockerfile: finviz-scraper.Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: ./backend 
+          target: /app
+          ignore:
+            - node_modules
   
   redis:
     image: redis:8-alpine

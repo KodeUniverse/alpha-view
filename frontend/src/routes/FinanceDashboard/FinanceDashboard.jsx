@@ -6,7 +6,7 @@ function FinanceDashboard() {
     return (
         <>
             <Navbar />
-            <NewsFeed />
+            <NewsFeed length={10}/>
             FINANCE DASHBOARD
         </>
     )

@@ -11,5 +11,9 @@
 }
 
 .news-content {
+}
 
+.news-item {
+    display: flex;
+    gap: 2px;
 }
