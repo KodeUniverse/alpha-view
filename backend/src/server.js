@@ -43,10 +43,10 @@ await messenger.connect();
  * Market Data
  */
 
-// Periodically (1min) query and serve market news data thru Socket.IO
-messenger.subscribe('finviz-data-update', async () => {
+// Listen for data update signal and serve market news data thru Socket.IO
+messenger.subscribe('ft-news', async () => {
     console.log('Market news update signal recieved!');
-    const articles = await alphaDB.query('SELECT ArticleId, Headline, URL, Date, Source FROM Article ORDER BY Timestamp DESC');
+    const articles = await alphaDB.query('SELECT ArticleId, Headline, Descr, URL, PubDate, NewsSource FROM Article');
 
     try {
         io.emit("market-news", articles.rows);
@@ -66,7 +66,7 @@ app.get('/health', (req, res) => {
 
 
 app.get('/api/market-news/latest', async (req, res) => {
-    const articles = await alphaDB.query('SELECT ArticleId, Headline, URL, Date, Source FROM Article ORDER BY Timestamp DESC');
+    const articles = await alphaDB.query('SELECT ArticleId, Headline, Descr, URL, PubDate, NewsSource FROM Article');
     if (articles) {
         res.status(200).send(articles.rows);
     } else {

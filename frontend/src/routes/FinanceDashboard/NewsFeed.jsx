@@ -51,9 +51,9 @@ function NewsFeed({ length }) {
                     <NewsItem 
                     key={article.articleid} 
                     title={article.headline}
-                    date={article.date}
+                    date={article.pubdate}
                     url={article.url} 
-                    source={article.source} />
+                    source={article.newssource} />
                 ))}
             </div>
         </div>

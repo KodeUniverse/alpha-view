@@ -51,7 +51,7 @@ services:
       redis:
         condition: service_healthy
   
-  finviz-scraper:
+  scraper:
     env_file:
       - .env
     environment:
@@ -59,7 +59,7 @@ services:
       REDIS_URL: redis://redis:6379 
     build:
       context: ./backend
-      dockerfile: finviz-scraper.Dockerfile
+      dockerfile: scraper.Dockerfile
     develop:
       watch:
         - action: sync
@@ -67,6 +67,11 @@ services:
           target: /app
           ignore:
             - node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend-server:
+        condition: service_healthy
   
   redis:
     image: redis:8-alpine
@@ -85,7 +90,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro # :'ro' gives read-only permissions. 
+      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:z # :'ro' gives read-only permissions. 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
