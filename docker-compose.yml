@@ -12,6 +12,10 @@ services:
           target: /app
           ignore:
             - node_modules
+    #        - action: rebuild
+    #          path: ./frontend/package.json
+    #        - action: rebuild
+    #          path: ./frontend/package-lock.json
     ports:
       - "${HOST_PORT}:5379"
     depends_on:
@@ -27,6 +31,13 @@ services:
     build:
       context: ./backend
       dockerfile: server.Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: ./backend 
+          target: /app
+          ignore:
+            - node_modules
     ports:
       - "${HOST_API_PORT}:8080"
     healthcheck:
@@ -40,7 +51,7 @@ services:
       redis:
         condition: service_healthy
   
-  finviz-scraper:
+  scraper:
     env_file:
       - .env
     environment:
@@ -48,7 +59,19 @@ services:
       REDIS_URL: redis://redis:6379 
     build:
       context: ./backend
-      dockerfile: finviz-scraper.Dockerfile
+      dockerfile: scraper.Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: ./backend 
+          target: /app
+          ignore:
+            - node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend-server:
+        condition: service_healthy
   
   redis:
     image: redis:8-alpine
@@ -66,8 +89,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - /var/lib/postgresql/data
-      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro # :'ro' gives read-only permissions. 
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:z # :'ro' gives read-only permissions. 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s

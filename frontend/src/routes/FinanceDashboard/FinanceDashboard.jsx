@@ -1,11 +1,12 @@
-import Navbar from '@/components/Navbar/Navbar.jsx';
+import Navbar from '@components/Navbar/Navbar.jsx';
+import NewsFeed from './NewsFeed.jsx';
 
 function FinanceDashboard() {
     
     return (
         <>
             <Navbar />
-            FINANCE DASHBOARD
+            <NewsFeed length={10}/>
         </>
     )
 

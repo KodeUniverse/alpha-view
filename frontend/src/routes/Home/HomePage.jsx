@@ -1,4 +1,4 @@
-import Navbar from '@/components/Navbar/Navbar.jsx';
+import Navbar from '@components/Navbar/Navbar.jsx';
 import styles from './HomePage.module.css';
 
 function HomePage() {

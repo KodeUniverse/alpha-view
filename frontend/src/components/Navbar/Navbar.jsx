@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import pyramidGif from "@/assets/pyramid.gif"
+import pyramidGif from "@assets/pyramid.gif"
 import styles from './Navbar.module.css';
 
 function Navbar() {

@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+
 import FileSystem from "fs";
 import cron from "node-cron";
 import alphaDB from "../db/connection.js";
@@ -20,15 +21,16 @@ async function scrapeNews() {
     const url = "https://finviz.com/news.ashx"
 
     const htmlContent = await axios.get(url, { headers });
-    const cheerio_obj = cheerio.load(htmlContent.data);
+    const $ = cheerio.load(htmlContent.data);
 
     const articles = [];
 
-
-    cheerio_obj("table.styled-table-new > tbody > tr.news_table-row").each((i, elem) => {
-        const headline = cheerio_obj(elem).find("td.news_link-cell > a.nn-tab-link").text();
-        const link = cheerio_obj(elem).find("td.news_link-cell > a.nn-tab-link").attr("href");
-        const _date = cheerio_obj(elem).find("td.news_date-cell").text();
+    const newsAndBlog = $("table.news_time-table > tbody").find("tr")[1];
+    const newsBlock = $(newsAndBlog).find("td")[0];
+    $(newsBlock).find("table.styled-table-new > tbody > tr.news_table-row").each((i, elem) => {
+        const headline = $(elem).find("td.news_link-cell > a.nn-tab-link").text();
+        const link = $(elem).find("td.news_link-cell > a.nn-tab-link").attr("href");
+        const _date = $(elem).find("td.news_date-cell").text();
 
         let article = {
             title: headline,
@@ -44,6 +46,9 @@ async function scrapeNews() {
 
 async function saveToDB(articles) {
     try {
+    
+        const timestamp = new Date(Date.now()).toISOString();
+
         let insertCount = 0;
         await alphaDB.query("BEGIN"); // start transaction
         for (const article of articles) { // save article if doesn't exist
@@ -56,13 +61,28 @@ async function saveToDB(articles) {
             const existingArticle = await alphaDB.query("SELECT ArticleId FROM Article WHERE URL = $1", [article.URL]);
 
             if ((existingArticle).rows.length === 0) {
+                console.log("No duplicate article, adding new record.");
                 await alphaDB.query(
-                    "INSERT INTO Article (Headline, URL, Date, Source) VALUES ($1, $2, $3, $4)",
+                    "INSERT INTO Article (Headline, URL, Date, Source, Timestamp, LastUpdated) VALUES ($1, $2, $3, $4, $5, $6)",
                     [
                         article.title,
                         article.URL,
                         article.date,
-                        "Finviz"
+                        "Finviz",
+                        timestamp,
+                        timestamp
+                    ]
+                );
+            } else {
+                console.log(`Duplicate article detected, updating existing record, articleid=${existingArticle.rows[0].articleid}`);
+                await alphaDB.query("UPDATE Article SET Headline = $1, URL = $2, Date = $3, Source = $4, LastUpdated = $6 WHERE ArticleId = $5",
+                    [
+                        article.title,
+                        article.URL,
+                        article.date,
+                        "Finviz",
+                        existingArticle.rows[0].articleid,
+                        timestamp
                     ]
                 );
             }
