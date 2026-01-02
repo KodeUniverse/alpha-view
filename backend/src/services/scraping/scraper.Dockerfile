@@ -3,5 +3,5 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install && apk add curl
 COPY . .
-CMD ["node", "src/scrapers/launchScrapers.js"]
+CMD ["node", "launchScrapers.js"]
 

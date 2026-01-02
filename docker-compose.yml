@@ -8,7 +8,7 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./frontend 
+          path: ./frontend
           target: /app
           ignore:
             - node_modules
@@ -34,7 +34,7 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./backend 
+          path: ./backend
           target: /app
           ignore:
             - node_modules
@@ -50,20 +50,20 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-  
+
   scraper:
     env_file:
       - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379 
+      REDIS_URL: redis://redis:6379
     build:
-      context: ./backend
+      context: ./backend/src/services/scraping
       dockerfile: scraper.Dockerfile
     develop:
       watch:
         - action: sync
-          path: ./backend 
+          path: ./backend/src/services/scraping
           target: /app
           ignore:
             - node_modules
@@ -72,7 +72,7 @@ services:
         condition: service_healthy
       backend-server:
         condition: service_healthy
-  
+
   redis:
     image: redis:8-alpine
     healthcheck:
@@ -90,12 +90,29 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:z # :'ro' gives read-only permissions. 
+      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:z # :'ro' gives read-only permissions.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+  marketdata:
+    env_file:
+      - .env
+    build:
+      context: ./backend/src/services/python-marketdata
+      dockerfile: marketdata.Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/src/services/python-marketdata
+          target: /app
+          ignore: venv
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:
