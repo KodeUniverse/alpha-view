@@ -1,10 +1,9 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 
-import FileSystem from "fs";
 import cron from "node-cron";
-import alphaDB from "connection.js";
-import Messenger from "messaging.js";
+import { alphaDB } from "@alpha-view/utils";
+import { Messenger } from "@alpha-view/utils";
 
 async function scrapeNews() {
   const headers = {
@@ -117,9 +116,7 @@ async function main() {
   cron.schedule("*/1 * * * *", async () => {
     try {
       console.log("Starting Finviz scrape...");
-      // start scrape
       const data = await scrapeNews();
-      //FileSystem.writeFileSync('finviz-news-data.json', JSON.stringify(data));
       console.log("Finviz scrape succeeded, saving to AlphaDB...");
       await saveToDB(data);
       messenger.send("finviz-data-update", `Updated finviz news data!`);

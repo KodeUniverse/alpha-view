@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import FTScraper from "./FTScraper.js";
-import Messenger from "./messaging.js";
+import { Messenger } from "@alpha-view/utils";
 
 async function main() {
   const ftMessenger = new Messenger();

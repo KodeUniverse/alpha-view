@@ -30,11 +30,11 @@ services:
       REDIS_URL: redis://redis:6379
     build:
       context: ./backend
-      dockerfile: server.Dockerfile
+      dockerfile: services/main-api/Dockerfile
     develop:
       watch:
         - action: sync
-          path: ./backend
+          path: ./backend/services/main-api
           target: /app
           ignore:
             - node_modules
@@ -51,19 +51,19 @@ services:
       redis:
         condition: service_healthy
 
-  scraper:
+  scraping:
     env_file:
       - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
     build:
-      context: ./backend/src/services/scraping
-      dockerfile: scraper.Dockerfile
+      context: ./backend
+      dockerfile: services/scraping/Dockerfile
     develop:
       watch:
         - action: sync
-          path: ./backend/src/services/scraping
+          path: ./backend/services/scraping
           target: /app
           ignore:
             - node_modules
@@ -90,7 +90,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:z # :'ro' gives read-only permissions.
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql:z # :'ro' gives read-only permissions.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -100,12 +100,12 @@ services:
     env_file:
       - .env
     build:
-      context: ./backend/src/services/python-marketdata
-      dockerfile: marketdata.Dockerfile
+      context: ./backend
+      dockerfile: services/python-marketdata/Dockerfile
     develop:
       watch:
         - action: sync
-          path: ./backend/src/services/python-marketdata
+          path: ./backend/services/python-marketdata
           target: /app
           ignore: venv
     depends_on:

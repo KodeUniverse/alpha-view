@@ -1,5 +1,5 @@
 import * as cheerio from "cheerio";
-import alphaDB from "./connection.js";
+import { alphaDB } from "@alpha-view/utils";
 
 export default class FTScraper {
   constructor() {
