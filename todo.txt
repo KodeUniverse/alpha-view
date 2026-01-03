@@ -1,2 +1,0 @@
-duplicated code in scraping service and server (messaging.js & connection.js for redis and postgres)
-need to create a library for use by the server and scraping microservices.
