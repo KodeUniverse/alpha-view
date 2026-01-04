@@ -83,7 +83,7 @@ services:
   postgres:
     env_file:
       - .env
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -96,16 +96,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  marketdata:
+  market-data-seed:
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     build:
       context: ./backend
-      dockerfile: services/python-marketdata/Dockerfile
+      dockerfile: services/market-data-seed/Dockerfile
     develop:
       watch:
         - action: sync
-          path: ./backend/services/python-marketdata
+          path: ./backend/services/market-data-seed
           target: /app
           ignore: venv
     depends_on:
