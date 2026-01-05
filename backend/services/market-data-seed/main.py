@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from io import StringIO
 from typing import Sequence
 
@@ -24,8 +24,29 @@ def get_symbol_id(ticker_symbol: str):
     return res
 
 
-def fetch_transform_data(ticker_list: Sequence[str]):
-    ticker_data = yf.download(tickers)
+def fetch_transform_data(ticker_list: Sequence[str], look_back: str):
+    """
+    Fetches historical OHLCV data (Yahoo Finance) for tickers and transforms
+    into pandas DataFrame ready for PostgreSQL insert.
+
+    Params:
+        ticker_list: Sequence of tickers to fetch.
+        look_back: Historical start date of time series. Possible values: ('6M', '1Y', '3Y', '5Y', '10Y')
+    """
+
+    resolve_start_date = {
+        "6M": timedelta(weeks=4.3),
+        "1Y": timedelta(weeks=52),
+        "3Y": timedelta(weeks=52 * 3),
+        "5Y": timedelta(weeks=52 * 5),
+        "10Y": timedelta(weeks=52 * 10),
+    }
+
+    today = datetime.now()
+
+    ticker_data = yf.download(
+        tickers, start=today - resolve_start_date[look_back], end=today
+    )
     update_timestamp = datetime.now(timezone.utc)
 
     dfs_to_aggregate = []
@@ -39,7 +60,7 @@ def fetch_transform_data(ticker_list: Sequence[str]):
             "Low": ticker_df.loc[:, "Low"],
             "High": ticker_df.loc[:, "High"],
             "Close": ticker_df.loc[:, "Close"],
-            "Volume": ticker_df.loc[:, "Volume"],
+            "Volume": ticker_df.loc[:, "Volume"].fillna(0).astype("int64"),
             "Symbol": pd.Series([ticker] * ticker_df.shape[0], index=ticker_df.index),
             "SymbolId": pd.Series(
                 [get_symbol_id(ticker)] * ticker_df.shape[0], index=ticker_df.index
@@ -75,7 +96,7 @@ if __name__ == "__main__":
 
     # Seed HistoricalTS table
     buffer = StringIO()
-    historical_df = fetch_transform_data(tickers)
+    historical_df = fetch_transform_data(tickers, "10Y")
     historical_df[
         [
             "SymbolId",

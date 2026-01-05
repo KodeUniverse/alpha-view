@@ -42,11 +42,11 @@ CREATE TABLE IF NOT EXISTS HistoricalTS (
     id SERIAL PRIMARY KEY,
     SymbolId INT REFERENCES Ticker(SymbolId),
     Date TIMESTAMPTZ NOT NULL,
-    ClosePrice NUMERIC(10, 2) NOT NULL,
-    HighPrice NUMERIC(10, 2) NOT NULL,
-    LowPrice NUMERIC(10, 2) NOT NULL,
-    OpenPrice NUMERIC(10, 2) NOT NULL,
-    Volume BIGINT NOT NULL,
+    ClosePrice NUMERIC(10, 2),
+    HighPrice NUMERIC(10, 2),
+    LowPrice NUMERIC(10, 2),
+    OpenPrice NUMERIC(10, 2),
+    Volume BIGINT,
     LastUpdated TIMESTAMPTZ NOT NULL
 );
 
