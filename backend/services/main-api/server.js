@@ -7,6 +7,7 @@ import { Server } from "socket.io"; // WebSockets
 import { alphaDB } from "@alpha-view/utils";
 import { Messenger } from "@alpha-view/utils";
 import { createServer } from "http";
+import marketNewsRouter from "./routes/marketNews.js";
 
 const app = express();
 const HOSTNAME = "0.0.0.0";
@@ -18,7 +19,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // CORS Headers
 app.use(cors());
 
-// Initialize Socket.iio
+// Initialize Socket.io
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -60,21 +61,22 @@ messenger.subscribe("ft-news", async () => {
 /*
  * API ROUTES
  */
+app.use("/market-news", marketNewsRouter);
 
 app.get("/health", (req, res) => {
   res.status(200).send("Health check succeeded, API seems active!");
 });
 
-app.get("/api/market-news/latest", async (req, res) => {
-  const articles = await alphaDB.query(
-    "SELECT ArticleId, Headline, Descr, URL, PubDate, NewsSource FROM Article",
-  );
-  if (articles) {
-    res.status(200).send(articles.rows);
-  } else {
-    res.status(200).json(null);
-  }
-});
+//app.get("/api/market-news/latest", async (req, res) => {
+//  const articles = await alphaDB.query(
+//    "SELECT ArticleId, Headline, Descr, URL, PubDate, NewsSource FROM Article",
+//  );
+//  if (articles) {
+//    res.status(200).send(articles.rows);
+//  } else {
+//    res.status(200).json(null);
+//  }
+//});
 
 //// serving dynamic assets, datafiles, etc. (no cache)
 //app.use('/data', express.static(path.join(__dirname, 'data'), {

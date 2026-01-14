@@ -11,7 +11,7 @@ function NewsFeed({ length }) {
   useEffect(() => {
     const initLoad = async () => {
       const response = await fetch(
-        `${import.meta.env.API_URL}/api/market-news/latest`,
+        `${import.meta.env.API_URL}/market-news/latest`,
       );
       if (response.ok) {
         const data = await response.json();
