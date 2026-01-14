@@ -1,8 +1,7 @@
 # AlphaView Dashboard
-AlphaView is a multi-purpose dashboard written as an SPA that has rich features:
-* News aggregation
-* Financial market news and analysis
-* A note-taking function with advanced planning and organization features
-* And robust theming!
 
+AlphaView is a simple and robust financial dashboard and charting tool.
 
+Features:
+
+- Financial market news and analysis
