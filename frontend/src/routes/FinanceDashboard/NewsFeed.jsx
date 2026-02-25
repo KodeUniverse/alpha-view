@@ -9,28 +9,33 @@ function NewsFeed({ length }) {
   const [newsItems, setNewsItems] = useState([]);
 
   useEffect(() => {
+    setLoading(true);
     const initLoad = async () => {
-      const response = await fetch(
-        `${import.meta.env.API_URL}/market-news/latest`,
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data) {
-          setNewsItems(data.slice(0, length - 1));
+      try {
+        const response = await fetch(
+          `${import.meta.env.API_URL}/market-news/latest`,
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setNewsItems(data.slice(0, length));
           setLoaded(true);
         } else {
-          setLoading(true);
+          setError(true);
         }
-      } else {
-        console.log("Error fetching market data from AlphaAPI");
+      } catch (e) {
+        console.log("Error: Could not contact AlphaAPI server");
         setError(true);
+      } finally {
+        setLoading(false);
       }
     };
     initLoad();
+  }, [length]);
 
+  useEffect(() => {
     const updateData = (data) => {
       console.log("Client recieved finviz data!");
-      setNewsItems(data.slice(0, length - 1));
+      setNewsItems(data.slice(0, length));
       setLoaded(true);
     };
 
@@ -39,8 +44,10 @@ function NewsFeed({ length }) {
     return () => {
       socket.off("market-news", updateData);
     };
-  }, []);
+  }, [length]);
 
+  if (isError) return <p>Failed to fetch news.</p>;
+  if (isLoading) return <p>Loading...</p>;
   return (
     <div className={styles["news-feed"]}>
       <div className={styles["news-head"]}>
