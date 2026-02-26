@@ -1,4 +1,4 @@
-import { AreaSeries, ColorType, createChart } from "lightweight-charts";
+import { CandlestickSeries, ColorType, createChart } from "lightweight-charts";
 import { useEffect, useRef } from "react";
 
 /*
@@ -15,6 +15,34 @@ import { useEffect, useRef } from "react";
  * https://github.com/ukorvl/lightweight-charts-react-components
  *
  * */
-export default function StockChart() {
-  return <div>This is chart.</div>;
+export default function StockChart({ data, chartOptions = {
+    layout:
+    {
+        textColor: 'white',
+        background: { type: 'solid', color: 'black' },
+        attributionLogo: false
+    }
+} }) {
+
+    const chartContainerRef = useRef(null);
+    const ohlcSeriesRef = useRef(null);
+
+    useEffect(() => {
+        const chart = createChart(chartContainerRef.current, chartOptions);
+        ohlcSeriesRef.current = chart.addSeries(CandlestickSeries, { upColor: '#26a69a', downColor: '#ef5350', borderVisible: false, wickUpColor: '#26a69a', wickDownColor: '#ef5350' })
+
+        chart.timeScale().fitContent();
+
+        return () => chart.remove();
+    }, []);
+
+    useEffect(() => {
+        if (!data || !ohlcSeriesRef.current) return;
+        ohlcSeriesRef.current.setData(data);
+    }, [data]);
+
+    return (
+        <>
+            <div ref={chartContainerRef} style={{ height: "400px" }}></div>
+        </>);
 }
