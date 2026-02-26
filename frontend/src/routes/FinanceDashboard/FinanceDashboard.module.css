@@ -1,0 +1,10 @@
+.pg {
+    display: flex;
+    flex-direction: column;
+}
+.pg-content {
+    display: flex;
+    flex-direction: row;
+}
+
+

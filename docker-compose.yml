@@ -89,8 +89,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql:z # :'ro' gives read-only permissions.
+      - postgres_data:/var/lib/postgresql
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql:z # :'ro' gives read-only permissions, 'z' fixes SELinux perms if running from Fedora/RHEL.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s

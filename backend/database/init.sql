@@ -31,23 +31,23 @@ CREATE TABLE IF NOT EXISTS IntradayPrices (
     id SERIAL PRIMARY KEY,
     SymbolId INT NOT NULL REFERENCES Ticker(SymbolId),
     Timestamp TIMESTAMPTZ NOT NULL,
-    OpenPrice NUMERIC(10, 2) NOT NULL,
-    ClosePrice NUMERIC(10, 2) NOT NULL,
-    HighPrice NUMERIC(10, 2) NOT NULL,
-    LowPrice NUMERIC(10, 2) NOT NULL,
+    Open NUMERIC(10, 2) NOT NULL,
+    Close NUMERIC(10, 2) NOT NULL,
+    High NUMERIC(10, 2) NOT NULL,
+    Low NUMERIC(10, 2) NOT NULL,
     Volume BIGINT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS HistoricalTS (
     id SERIAL PRIMARY KEY,
     SymbolId INT REFERENCES Ticker(SymbolId),
-    Date TIMESTAMPTZ NOT NULL,
-    ClosePrice NUMERIC(10, 2),
-    HighPrice NUMERIC(10, 2),
-    LowPrice NUMERIC(10, 2),
-    OpenPrice NUMERIC(10, 2),
+    Timestamp TIMESTAMPTZ NOT NULL,
+    Close NUMERIC(10, 2),
+    High NUMERIC(10, 2),
+    Low NUMERIC(10, 2),
+    Open NUMERIC(10, 2),
     Volume BIGINT,
     LastUpdated TIMESTAMPTZ NOT NULL
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_ts_date ON HistoricalTS(SymbolId, Date);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ts_date ON HistoricalTS(SymbolId, Timestamp);

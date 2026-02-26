@@ -114,7 +114,7 @@ if __name__ == "__main__":
     with psycopg.connect(os.environ.get("DATABASE_URL")) as conn:
         with conn.cursor() as cur:
             with cur.copy(
-                """COPY HistoricalTS (SymbolId, Date, ClosePrice, HighPrice, LowPrice, OpenPrice, Volume, LastUpdated) FROM STDIN WITH (FORMAT CSV)"""
+                """COPY HistoricalTS (SymbolId, Timestamp, Close, High, Low, Open, Volume, LastUpdated) FROM STDIN WITH (FORMAT CSV)"""
             ) as copy:
                 copy.write(buffer.read())
 

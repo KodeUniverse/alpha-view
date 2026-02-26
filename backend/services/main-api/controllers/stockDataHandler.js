@@ -1,25 +1,25 @@
 import { alphaDB } from "@alpha-view/utils";
 
 export const getHistoricalTS = async (req, res) => {
-  const ticker = req.params.ticker;
+    const ticker = req.params.ticker;
 
-  if (ticker == "null") res.sendStatus(400);
+    if (ticker == "null") res.sendStatus(400);
 
-  const data = await alphaDB.query(
-    `
+    const data = await alphaDB.query(
+        `
     SELECT 
-        Date,
-        OpenPrice,
-        LowPrice,
-        HighPrice,
-        ClosePrice,
+        Timestamp as "time",
+        Open,
+        Low,
+        High,
+        Close,
         Volume
     FROM
         Ticker t JOIN HistoricalTS ts 
         ON t.SymbolId = ts.SymbolId
     WHERE t.Symbol = $1`,
-    [ticker],
-  );
+        [ticker],
+    );
 
-  res.status(200).send(data.rows);
+    res.status(200).send(data.rows);
 };
