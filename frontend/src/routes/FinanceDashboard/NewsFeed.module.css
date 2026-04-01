@@ -25,3 +25,7 @@
 .item-date-col {
   width: 5em;
 }
+
+.item-headline {
+  font-weight: bold;
+}
