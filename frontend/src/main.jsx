@@ -14,6 +14,7 @@ const theme = createTheme({
           border: "1px solid #333333",
           borderRadius: 10,
           margin: 5,
+          width: "100%",
         },
       },
     },

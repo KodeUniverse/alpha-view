@@ -58,43 +58,41 @@ function NewsFeed({ length }) {
   if (isError) return <p>Failed to fetch news.</p>;
   if (isLoading) return <p>Loading...</p>;
   return (
-    <div className={styles["news-feed"]}>
-      <Card>
-        <CardContent>
-          <CardHeader
-            title="Market News"
-            slotProps={{ title: { align: "center" } }}
-          />
-          <div className={styles["news-content"]}>
-            <List>
-              {newsItems.map((article) => {
-                const dateObj = new Date(article.pubdate);
-                const month = dateObj.toLocaleString("default", {
-                  month: "short",
-                });
-                const day = dateObj.toLocaleString("default", {
-                  day: "2-digit",
-                });
-                const pubTime = dateObj.toLocaleString("default", {
-                  timeStyle: "short",
-                });
-                return (
-                  <NewsItem
-                    key={article.articleid}
-                    title={article.headline}
-                    descr={article.descr}
-                    date={`${month}-${day}`}
-                    time={`${pubTime}`}
-                    url={article.url}
-                    source={article.newssource}
-                  />
-                );
-              })}
-            </List>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <Card sx={{ width: "30em" }}>
+      <CardContent>
+        <CardHeader
+          title="Market News"
+          slotProps={{ title: { align: "center" } }}
+        />
+        <div className={styles["news-content"]}>
+          <List>
+            {newsItems.map((article) => {
+              const dateObj = new Date(article.pubdate);
+              const month = dateObj.toLocaleString("default", {
+                month: "short",
+              });
+              const day = dateObj.toLocaleString("default", {
+                day: "2-digit",
+              });
+              const pubTime = dateObj.toLocaleString("default", {
+                timeStyle: "short",
+              });
+              return (
+                <NewsItem
+                  key={article.articleid}
+                  title={article.headline}
+                  descr={article.descr}
+                  date={`${month}-${day}`}
+                  time={`${pubTime}`}
+                  url={article.url}
+                  source={article.newssource}
+                />
+              );
+            })}
+          </List>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
