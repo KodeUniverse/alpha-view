@@ -24,7 +24,7 @@ export default function StockChart({ data }) {
         separatorColor: separatorColor,
       },
     },
-    autoSize: true,
+    //    autoSize: true,
   };
   useEffect(() => {
     const chart = createChart(chartContainerRef.current, chartOptions);

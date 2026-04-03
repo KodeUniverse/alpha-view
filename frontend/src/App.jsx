@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import FinanceDashboard from "@routes/FinanceDashboard/FinanceDashboard.jsx";
-import HomePage from "@routes/Home/HomePage.jsx";
 import { socket } from "@services/socket";
 
 function App() {
@@ -24,14 +23,7 @@ function App() {
       socket.off("disconnect", onDisconnect);
     };
   }, []);
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<FinanceDashboard />} />
-        {/*<Route path="news" element={} />*/}
-      </Routes>
-    </BrowserRouter>
-  );
+  return <FinanceDashboard />;
 }
 
 export default App;
