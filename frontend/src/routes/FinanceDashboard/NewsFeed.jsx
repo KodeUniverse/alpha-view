@@ -9,6 +9,7 @@ import {
   Card,
   CardContent,
   CardHeader,
+  Typography,
 } from "@mui/material";
 
 function NewsFeed({ length }) {
@@ -58,39 +59,37 @@ function NewsFeed({ length }) {
   if (isError) return <p>Failed to fetch news.</p>;
   if (isLoading) return <p>Loading...</p>;
   return (
-    <Card sx={{ width: "30em" }}>
+    <Card sx={{ width: "100%", height: "100%" }}>
       <CardContent>
         <CardHeader
           title="Market News"
           slotProps={{ title: { align: "center" } }}
         />
-        <div className={styles["news-content"]}>
-          <List>
-            {newsItems.map((article) => {
-              const dateObj = new Date(article.pubdate);
-              const month = dateObj.toLocaleString("default", {
-                month: "short",
-              });
-              const day = dateObj.toLocaleString("default", {
-                day: "2-digit",
-              });
-              const pubTime = dateObj.toLocaleString("default", {
-                timeStyle: "short",
-              });
-              return (
-                <NewsItem
-                  key={article.articleid}
-                  title={article.headline}
-                  descr={article.descr}
-                  date={`${month}-${day}`}
-                  time={`${pubTime}`}
-                  url={article.url}
-                  source={article.newssource}
-                />
-              );
-            })}
-          </List>
-        </div>
+        <List>
+          {newsItems.map((article) => {
+            const dateObj = new Date(article.pubdate);
+            const month = dateObj.toLocaleString("default", {
+              month: "short",
+            });
+            const day = dateObj.toLocaleString("default", {
+              day: "2-digit",
+            });
+            const pubTime = dateObj.toLocaleString("default", {
+              timeStyle: "short",
+            });
+            return (
+              <NewsItem
+                key={article.articleid}
+                title={article.headline}
+                descr={article.descr}
+                date={`${month}-${day}`}
+                time={`${pubTime}`}
+                url={article.url}
+                source={article.newssource}
+              />
+            );
+          })}
+        </List>
       </CardContent>
     </Card>
   );
@@ -108,16 +107,34 @@ function NewsItem({ title, descr, url, source, date, time }) {
       >
         <div className={styles["news-item"]}>
           <div
-            className={`${styles["news-item-col"]} ${styles["item-date-col"]}`}
+            className={`${styles["time-date-col"]} ${styles["item-date-col"]}`}
           >
-            <p>{time}</p>
-            <p>{date}</p>
+            <Typography>{time}</Typography>
+            <Typography>{date}</Typography>
           </div>
-          <div className={styles["news-item-col"]}>
-            <p className={styles["item-headline"]} href={url}>
+          <div className={styles["headline-desc-col"]}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "block",
+              }}
+              href={url}
+            >
               {title}
-            </p>
-            <p className={styles["item-descr"]}>{descr}</p>
+            </Typography>
+            <Typography
+              sx={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "block",
+              }}
+            >
+              {descr}
+            </Typography>
           </div>
         </div>
       </ListItemButton>

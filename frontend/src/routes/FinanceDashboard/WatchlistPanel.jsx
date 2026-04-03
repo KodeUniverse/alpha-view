@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader } from "@mui/material";
 
 function WatchListCard() {
   return (
-    <Card sx={{ width: "30em" }}>
+    <Card sx={{ height: "100%", width: "100%" }}>
       <CardHeader title="Watchlist" />
       <CardContent></CardContent>
     </Card>

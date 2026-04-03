@@ -1,10 +1,12 @@
-import { Card, CardContent, CardHeader } from "@mui/material";
+import { Card, CardContent, CardHeader, Typography } from "@mui/material";
 
 function MetricsCard() {
   return (
-    <Card>
+    <Card sx={{ width: "100%", height: "100%" }}>
       <CardHeader title="Quick Metrics" />
-      <CardContent></CardContent>
+      <CardContent>
+        <Typography>Placeholder!</Typography>
+      </CardContent>
     </Card>
   );
 }

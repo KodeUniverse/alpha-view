@@ -6,6 +6,13 @@ import { createTheme, ThemeProvider } from "@mui/material";
 
 const theme = createTheme({
   components: {
+    MuiTypography: {
+      styleOverrides: {
+        root: {
+          fontFamily: "var(--font-family)",
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {

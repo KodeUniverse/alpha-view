@@ -46,10 +46,10 @@ export default function ChartArea() {
     fetchStockData();
   }, [symbol]);
   return (
-    <Card>
+    <Card sx={{ width: "100%", height: "100%" }}>
       <CardHeader title="StockChart" />
       <CardContent>
-        <div className={styles["chart-container"]}>
+        <div className={styles["chart-area"]}>
           <input
             ref={inputValRef}
             type="text"
