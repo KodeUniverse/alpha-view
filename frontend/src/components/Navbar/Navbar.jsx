@@ -8,7 +8,6 @@ function Navbar() {
             <img src={pyramidGif} alt="Logo" />
             <Autocomplete
                 options={["A", "B"]}
-                slotProps={{ popper: { backgroundColor: "var(--color-background-secondary)" } }}
                 renderInput={(params) => <TextField
                     {...params}
                     label="Ticker"
