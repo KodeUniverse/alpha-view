@@ -1,7 +1,8 @@
 import { CandlestickSeries, AreaSeries, ColorType, createChart } from "lightweight-charts";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function StockChart({ data, chartType, containerStyles = { width: "100%", height: "100%" }, chartOptionOverride = {} }) {
+
     const chartContainerRef = useRef(null);
     const seriesRef = useRef(null);
 
@@ -29,6 +30,7 @@ export default function StockChart({ data, chartType, containerStyles = { width:
     useEffect(() => {
         const chart = createChart(chartContainerRef.current, chartOptions);
 
+
         switch (chartType) {
             case "candle": {
                 seriesRef.current = chart.addSeries(CandlestickSeries, {
@@ -41,15 +43,17 @@ export default function StockChart({ data, chartType, containerStyles = { width:
                 break;
             }
             case "area": {
-                seriesRef.current = chart.addSeries(AreaSeries, {
-                    lineColor: "#26a69a",
-                    topColor: "#26a69a",
-                    bottomColor: "rgba(38, 166, 154, 0.28)"
-                })
+                let areaChartColors;
+                const upChart = data && data[0]?.value <= data[data.length - 1]?.value;
+                areaChartColors = {
+                    lineColor: upChart ? "#26a69a" : "#ef5350",
+                    topColor: upChart ? "#26a69a" : "#ef5350",
+                    bottomColor: upChart ? "rgba(38, 166, 154, 0.28)" : "rgba(239, 83, 80, 0.28)"
+                }
+                seriesRef.current = chart.addSeries(AreaSeries, areaChartColors)
                 break;
             }
         }
-
         chart.timeScale().fitContent();
 
         const resizer = new ResizeObserver((entries) => {
@@ -64,12 +68,12 @@ export default function StockChart({ data, chartType, containerStyles = { width:
             chart.remove();
             resizer.disconnect();
         };
-    }, []);
+    }, [data]);
 
     useEffect(() => {
         try {
             if (!data || !seriesRef.current) return;
-            console.log(`Data set to stockchart: ${JSON.stringify(data[0])}`)
+
             seriesRef.current.setData(data);
         } catch (error) {
             console.log(error);

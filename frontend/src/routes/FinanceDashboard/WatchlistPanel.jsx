@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, List, ListItemButton, Divider, Typography, Box } from "@mui/material";
-import StockChart from "./StockChart.jsx";
+import StockChart from "@components/StockChart.jsx";
 import { useState, useEffect } from "react";
 
 function WatchListCard({ cardStyles = {} }) {
@@ -10,6 +10,7 @@ function WatchListCard({ cardStyles = {} }) {
                 <List sx={{ height: "100%" }}>
                     <WatchListItem symbol="AAPL" />
                     <WatchListItem symbol="MSFT" />
+                    <WatchListItem symbol="WMT" />
                 </List>
             </CardContent>
         </Card>
