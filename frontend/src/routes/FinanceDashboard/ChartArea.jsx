@@ -63,7 +63,7 @@ export default function ChartArea({ cardStyles = {} }) {
                     >
                         Submit
                     </button>
-                    <StockChart data={stockData} />
+                    <StockChart data={stockData} chartType="candle" containerStyles={{ width: "100%", height: "100%" }} />
                 </div>
             </CardContent>
         </Card>
