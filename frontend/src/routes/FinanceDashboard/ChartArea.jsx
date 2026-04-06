@@ -2,7 +2,8 @@ import StockChart from "./StockChart.jsx";
 import { useState, useEffect, useRef } from "react";
 import styles from "./ChartArea.module.css";
 import { Card, CardContent, CardHeader } from "@mui/material";
-export default function ChartArea() {
+
+export default function ChartArea({ cardStyles = {} }) {
     const [symbol, setSymbol] = useState("AAPL");
     const [stockData, setStockData] = useState(null);
 
@@ -46,9 +47,9 @@ export default function ChartArea() {
         fetchStockData();
     }, [symbol]);
     return (
-        <Card sx={{ width: "100%", height: "100%" }}>
+        <Card sx={cardStyles}>
             <CardHeader title="StockChart" />
-            <CardContent sx={{ width: "100%", height: "100%" }}>
+            <CardContent sx={{ height: "100%", overflow: "auto" }}>
                 <div className={styles["chart-area"]}>
                     <input
                         ref={inputValRef}
