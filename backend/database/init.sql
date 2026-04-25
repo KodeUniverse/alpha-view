@@ -1,4 +1,20 @@
--- init.sql
+-- User Data--
+CREATE TABLE IF NOT EXISTS User (
+    UserId SERIAL PRIMARY KEY,
+    Email TEXT NOT NULL UNIQUE,
+    PasswordHash TEXT NOT NULL,
+    CreatedDate TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_created_date ON User(CreatedDate);
+
+-- create a user configs table when needed --
+CREATE TABLE IF NOT EXISTS UserWatchlist (
+    UserId INT REFERENCES User(userId) ON DELETE CASCADE,
+    SymbolId INT REFERENCES Ticker(SymbolId) ON DELETE CASCADE,
+    PRIMARY KEY (UserId, SymbolId)
+);
+
+-- News Data --
 CREATE TABLE IF NOT EXISTS Article (
     ArticleId SERIAL PRIMARY KEY,
     Headline TEXT NOT NULL,
@@ -13,6 +29,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_article_url ON Article(URL);
 CREATE INDEX IF NOT EXISTS idx_article_pubdate ON Article(PubDate DESC);
 CREATE INDEX IF NOT EXISTS idx_article_pubdate_source ON Article(NewsSource, PubDate);
 
+-- Market Data --
 CREATE TABLE IF NOT EXISTS Ticker (
     SymbolId SERIAL PRIMARY KEY,
     Symbol TEXT NOT NULL,
