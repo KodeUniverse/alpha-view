@@ -1,27 +1,13 @@
-.news-feed {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  width: 30rem;
-}
-
-.news-head {
-}
-
-.news-content {
-}
-
 .news-item {
   display: flex;
   gap: 5px;
+  min-width: 0;
 }
 
-.news-item-col {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+.time-date-col {
+  flex: 0 0 auto;
 }
-
-.item-date-col {
-  width: 5em;
+.headline-desc-col {
+  min-width: 0;
+  flex: 1;
 }
