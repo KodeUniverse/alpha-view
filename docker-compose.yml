@@ -92,7 +92,7 @@ services:
       - postgres_data:/var/lib/postgresql
       - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql:z # :'ro' gives read-only permissions, 'z' fixes SELinux perms if running from Fedora/RHEL.
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
