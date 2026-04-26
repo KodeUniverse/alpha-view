@@ -9,6 +9,7 @@ import {
   Button,
 } from "@mui/material";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 function Navbar() {
   return (
@@ -29,16 +30,7 @@ function Navbar() {
           height="100"
         />
         <img src={alphaLogo} alt="AlphaView Logo" width="300" height="40" />
-        <Autocomplete
-          options={["A", "B"]}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Ticker"
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 5 } }}
-            />
-          )}
-        />
+        <SearchBar />
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", marginRight: 5 }}>
         <Button
@@ -54,6 +46,49 @@ function Navbar() {
         </Button>
       </Box>
     </Box>
+  );
+}
+
+function SearchBar() {
+  const [symbols, setSymbols] = useState([]);
+
+  useEffect(() => {
+    const fetchSymbols = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.API_URL}/symbol/list/latest`,
+        );
+
+        if (!res.ok)
+          throw new Error(`HTTP ${res.status}: Failed to fetch symbol list`);
+
+        const symbolJSON = await res.json();
+        const symbolList = [];
+        for (const rowObj of symbolJSON) {
+          symbolList.push(rowObj.symbol);
+        }
+        setSymbols(symbolList);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchSymbols();
+  }, []);
+
+  return (
+    <Autocomplete
+      options={symbols}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Ticker"
+          sx={{
+            "& .MuiOutlinedInput-root": { borderRadius: 5 },
+            width: 130,
+          }}
+        />
+      )}
+    />
   );
 }
 

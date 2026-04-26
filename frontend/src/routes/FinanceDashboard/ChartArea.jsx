@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader } from "@mui/material";
 export default function ChartArea({ cardStyles = {} }) {
   const [symbol, setSymbol] = useState("AAPL");
   const [stockData, setStockData] = useState(null);
-
+  const [isError, setError] = useState(false);
+  const [isLoading, setLoading] = useState(false);
   const inputValRef = useRef(null);
 
   function handleStockSubmit() {
@@ -19,6 +20,7 @@ export default function ChartArea({ cardStyles = {} }) {
     console.log(`State after:${symbol}`);
     const fetchStockData = async () => {
       try {
+        setLoading(true);
         const res = await fetch(
           `${import.meta.env.API_URL}/symbol/hist-ts/${symbol}/latest`,
         );
@@ -38,7 +40,9 @@ export default function ChartArea({ cardStyles = {} }) {
           delete row.volume; // for now, will change to include this data in volume histogram in chart.
         }
         setStockData(resultData);
+        setLoading(false);
       } catch (e) {
+        setError(true);
         console.log(
           `Error fetching stock data from ${import.meta.env.API_URL}/symbol/hist-ts/${symbol}/latest\n${e}`,
         );
@@ -47,29 +51,35 @@ export default function ChartArea({ cardStyles = {} }) {
     fetchStockData();
   }, [symbol]);
   return (
-    <Card sx={cardStyles}>
-      <CardHeader title="StockChart" />
-      <CardContent sx={{ height: "100%", overflow: "auto" }}>
-        <div className={styles["chart-area"]}>
-          <input
-            ref={inputValRef}
-            type="text"
-            placeholder="Enter ticker, symbol, etc."
-            defaultValue={symbol}
-          />
-          <button
-            style={{ height: "25px", width: "50px" }}
-            onClick={handleStockSubmit}
-          >
-            Submit
-          </button>
-          <StockChart
-            data={stockData}
-            chartType="candle"
-            containerStyles={{ width: "100%", height: "100%" }}
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <>
+      {isLoading && !isError && <p>Fetching data for symbol...</p>}
+      {isError && <p>Error fetching data.</p>}
+      {!isLoading && !isError && (
+        <Card sx={cardStyles}>
+          <CardHeader title="StockChart" />
+          <CardContent sx={{ height: "100%", overflow: "auto" }}>
+            <div className={styles["chart-area"]}>
+              <input
+                ref={inputValRef}
+                type="text"
+                placeholder="Enter ticker, symbol, etc."
+                defaultValue={symbol}
+              />
+              <button
+                style={{ height: "25px", width: "50px" }}
+                onClick={handleStockSubmit}
+              >
+                Submit
+              </button>
+              <StockChart
+                data={stockData}
+                chartType="candle"
+                containerStyles={{ width: "100%", height: "100%" }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </>
   );
 }

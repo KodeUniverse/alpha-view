@@ -8,7 +8,7 @@ import { alphaDB } from "@alpha-view/utils";
 import { Messenger } from "@alpha-view/utils";
 import { createServer } from "http";
 import newsRouter from "./routes/newsData.js";
-import stockDataRouter from "./routes/stockData.js";
+import marketDataRouter from "./routes/marketData.js";
 
 const app = express();
 const HOSTNAME = "0.0.0.0";
@@ -63,7 +63,7 @@ messenger.subscribe("ft-news", async () => {
  * API ROUTES
  */
 app.use("/news", newsRouter);
-app.use("/symbol", stockDataRouter);
+app.use("/symbol", marketDataRouter);
 app.get("/health", (req, res) => {
   res.status(200).send("Health check succeeded, API seems active!");
 });
