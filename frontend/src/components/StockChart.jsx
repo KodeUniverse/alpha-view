@@ -1,90 +1,137 @@
-import { CandlestickSeries, AreaSeries, ColorType, createChart } from "lightweight-charts";
+import {
+  CandlestickSeries,
+  AreaSeries,
+  HistogramSeries,
+  ColorType,
+  createChart,
+} from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
 
-export default function StockChart({ data, chartType, containerStyles = { width: "100%", height: "100%" }, chartOptionOverride = {} }) {
+export default function StockChart({
+  priceData,
+  chartType,
+  volumeData = null,
+  containerStyles = { width: "100%", height: "100%" },
+  chartOptionOverride = null,
+}) {
+  const chartContainerRef = useRef(null);
+  const priceSeriesRef = useRef(null);
+  const volumeSeriesRef = useRef(null);
 
-    const chartContainerRef = useRef(null);
-    const seriesRef = useRef(null);
+  // need to start using Context API for themes
+  const bgColor = getComputedStyle(document.documentElement)
+    .getPropertyValue("--color-background-secondary")
+    .trim();
+  const separatorColor = getComputedStyle(document.documentElement)
+    .getPropertyValue("--color-chart-panes")
+    .trim();
 
-    const bgColor = getComputedStyle(document.documentElement)
-        .getPropertyValue("--color-background-secondary")
-        .trim();
-    const separatorColor = getComputedStyle(document.documentElement)
-        .getPropertyValue("--color-chart-panes")
-        .trim();
-    const chartOptions = {
-        layout: {
-            textColor: "white",
-            background: {
-                type: ColorType.Solid,
-                color: bgColor,
-            },
-            attributionLogo: false,
-            panes: {
-                enableResize: true,
-                separatorColor: separatorColor,
-            },
+  let chartOptions;
+  if (!chartOptionOverride) {
+    chartOptions = {
+      layout: {
+        textColor: "white",
+        background: {
+          type: ColorType.Solid,
+          color: bgColor,
         },
-        //    autoSize: true,
+        attributionLogo: false,
+        panes: {
+          enableResize: true,
+          separatorColor: separatorColor,
+        },
+      },
     };
-    useEffect(() => {
-        const chart = createChart(chartContainerRef.current, chartOptions);
-
-
-        switch (chartType) {
-            case "candle": {
-                seriesRef.current = chart.addSeries(CandlestickSeries, {
-                    upColor: "#26a69a",
-                    downColor: "#ef5350",
-                    borderVisible: true,
-                    wickUpColor: "#26a69a",
-                    wickDownColor: "#ef5350",
-                });
-                break;
-            }
-            case "area": {
-                let areaChartColors;
-                const upChart = data && data[0]?.value <= data[data.length - 1]?.value;
-                areaChartColors = {
-                    lineColor: upChart ? "#26a69a" : "#ef5350",
-                    topColor: upChart ? "#26a69a" : "#ef5350",
-                    bottomColor: upChart ? "rgba(38, 166, 154, 0.28)" : "rgba(239, 83, 80, 0.28)"
-                }
-                seriesRef.current = chart.addSeries(AreaSeries, areaChartColors)
-                break;
-            }
-        }
-        chart.timeScale().fitContent();
-
-        const resizer = new ResizeObserver((entries) => {
-            if (!entries.length) return;
-            let { width, height } = entries[0].contentRect;
-            chart.applyOptions({ width, height });
+  } else {
+    chartOptions = chartOptionOverride;
+  }
+  //    autoSize: true,
+  useEffect(() => {
+    const chart = createChart(chartContainerRef.current, chartOptions);
+    let priceSeries;
+    switch (chartType) {
+      case "candle": {
+        priceSeries = chart.addSeries(CandlestickSeries, {
+          upColor: "#26a69a",
+          downColor: "#ef5350",
+          borderVisible: true,
+          wickUpColor: "#26a69a",
+          wickDownColor: "#ef5350",
         });
-
-        resizer.observe(chartContainerRef.current);
-
-        return () => {
-            chart.remove();
-            resizer.disconnect();
+        break;
+      }
+      case "area": {
+        let areaChartColors;
+        const upChart =
+          priceData &&
+          priceData[0]?.value <= priceData[priceData.length - 1]?.value;
+        areaChartColors = {
+          lineColor: upChart ? "#26a69a" : "#ef5350",
+          topColor: upChart ? "#26a69a" : "#ef5350",
+          bottomColor: upChart
+            ? "rgba(38, 166, 154, 0.28)"
+            : "rgba(239, 83, 80, 0.28)",
         };
-    }, [data]);
+        priceSeries = chart.addSeries(AreaSeries, areaChartColors);
+        break;
+      }
+    }
+    priceSeriesRef.current = priceSeries;
+    priceSeries.priceScale().applyOptions({
+      scaleMargins: {
+        top: 0.1,
+        bottom: 0.4,
+      },
+    });
+    const volumeSeries = chart.addSeries(HistogramSeries, {
+      priceFormat: {
+        type: "volume",
+      },
+      priceScaleId: "",
+    });
+    volumeSeriesRef.current = volumeSeries;
+    volumeSeries.priceScale().applyOptions({
+      scaleMargins: {
+        top: 0.7,
+        bottom: 0,
+      },
+    });
 
-    useEffect(() => {
-        try {
-            if (!data || !seriesRef.current) return;
+    chart.timeScale().fitContent();
 
-            seriesRef.current.setData(data);
-        } catch (error) {
-            console.log(error);
-        }
-    }, [data]);
+    const resizer = new ResizeObserver((entries) => {
+      if (!entries.length) return;
+      let { width, height } = entries[0].contentRect;
+      chart.applyOptions({ width, height: height - 30 });
+    });
 
-    return (
-        <div
-            className="chart-container"
-            ref={chartContainerRef}
-            style={containerStyles}
-        ></div>
-    );
+    resizer.observe(chartContainerRef.current);
+
+    return () => {
+      chart.remove();
+      resizer.disconnect();
+    };
+  }, [priceData, volumeData]);
+
+  useEffect(() => {
+    try {
+      if (!priceData || !priceSeriesRef.current) return;
+      console.log(`Price data being set: ${JSON.stringify(priceData[1])}`);
+      priceSeriesRef.current.setData(priceData);
+      if (volumeData && volumeSeriesRef.current) {
+        console.log(`Volume data being set: ${JSON.stringify(volumeData[1])}`);
+        volumeSeriesRef.current.setData(volumeData);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }, [priceData, volumeData]);
+
+  return (
+    <div
+      className="chart-container"
+      ref={chartContainerRef}
+      style={containerStyles}
+    ></div>
+  );
 }

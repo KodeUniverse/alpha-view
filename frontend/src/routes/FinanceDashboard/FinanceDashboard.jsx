@@ -28,7 +28,7 @@ function FinanceDashboard() {
         <NewsFeed length={30} cardStyles={{ width: "35%", height: "100%" }} />
         <ChartArea
           symbol={stockSymbol}
-          cardStyles={{ width: "100%", height: "100%" }}
+          cardStyles={{ width: "100%", height: "100%", paddingBottom: 7 }}
         />
         <WatchlistCard cardStyles={{ width: "35%", height: "100%" }} />
       </div>

@@ -1,10 +1,11 @@
 import StockChart from "@components/StockChart.jsx";
 import { useState, useEffect, useRef } from "react";
 import styles from "./ChartArea.module.css";
-import { Card, CardContent, CardHeader } from "@mui/material";
+import { Box, Card, CardContent, CardHeader, Typography } from "@mui/material";
 
 export default function ChartArea({ symbol, cardStyles = {} }) {
-  const [stockData, setStockData] = useState(null);
+  const [priceData, setPriceData] = useState(null);
+  const [volumeData, setVolumeData] = useState(null);
   const [isError, setError] = useState(false);
   const [isLoading, setLoading] = useState(false);
 
@@ -23,20 +24,39 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
 
         for (const row of resultData) {
           row.time = row.time.split("T")[0];
-
+        }
+        const ohlcData = resultData.map((row) => {
+          const newRow = { ...row };
+          delete newRow.volume;
           let remaining = ["open", "low", "high", "close"];
           for (const key of remaining) {
-            row[key] = Number(row[key]);
+            newRow[key] = Number(newRow[key]);
           }
-          delete row.volume; // for now, will change to include this data in volume histogram in chart.
-        }
-        setStockData(resultData);
+          return newRow;
+        });
+        const volumeData = resultData.map((row) => {
+          let volumeBarColor;
+          if (row.open < row.close) {
+            volumeBarColor = "#26a69a";
+          } else {
+            volumeBarColor = "#ef5350";
+          }
+          const newRow = {
+            time: row.time,
+            value: Number(row.volume),
+            color: volumeBarColor,
+          };
+          return newRow;
+        });
+
+        setPriceData(ohlcData);
+        setVolumeData(volumeData);
         setError(false);
         setLoading(false);
       } catch (e) {
         setError(true);
         console.log(
-          `Error fetching stock data from ${import.meta.env.API_URL}/symbol/hist-ts/${symbol}/latest\n${e}`,
+          `Error fetching stock data from ${import.meta.env.API_URL}/symbol/hist-ts/${symbol}/latest\n\n${e}`,
         );
       }
     };
@@ -45,16 +65,23 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
   return (
     <>
       <Card sx={cardStyles}>
-        <CardHeader title="StockChart" />
-        <CardContent sx={{ height: "100%", overflow: "auto" }}>
+        <Box>
+          <Typography sx={{ fontSize: 36, fontWeight: 700 }}>
+            {symbol}
+          </Typography>
+        </Box>
+        <CardContent sx={{ height: "100%", overflow: "hidden" }}>
           {isLoading && !isError && <p>Fetching data for symbol...</p>}
           {isError && <p>Error fetching data.</p>}
           {!isLoading && !isError && (
-            <StockChart
-              data={stockData}
-              chartType="candle"
-              containerStyles={{ width: "100%", height: "100%" }}
-            />
+            <Card sx={{ height: "100%" }}>
+              <StockChart
+                priceData={priceData}
+                volumeData={volumeData}
+                chartType="candle"
+                containerStyles={{ width: "100%", height: "100%" }}
+              />
+            </Card>
           )}
         </CardContent>
       </Card>

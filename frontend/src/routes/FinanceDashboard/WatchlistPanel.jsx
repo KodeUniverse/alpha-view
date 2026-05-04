@@ -68,7 +68,7 @@ function WatchListItem({ symbol }) {
       >
         <Typography sx={{ fontWeight: 700 }}>{symbol}</Typography>
         <StockChart
-          data={stockData}
+          priceData={stockData}
           chartType="area"
           containerStyles={{ width: "50%", height: "100%" }}
         />
