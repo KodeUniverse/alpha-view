@@ -7,7 +7,7 @@ import { socket } from "@services/socket";
 
 function App() {
     const [isConnected, setConnected] = useState(socket.connected);
-
+    
     useEffect(() => {
         const onConnect = () => {
             setConnected(true);

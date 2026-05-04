@@ -11,7 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-function Navbar() {
+function Navbar({setTicker}) {
   return (
     <Box sx={{ display: "flex", justifyContent: "center" }}>
       <Box
@@ -30,7 +30,7 @@ function Navbar() {
           height="100"
         />
         <img src={alphaLogo} alt="AlphaView Logo" width="300" height="40" />
-        <SearchBar />
+        <SearchBar setTicker={setTicker} sxProps={{marginLeft: 2}}/>
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", marginRight: 5 }}>
         <Button
@@ -49,12 +49,23 @@ function Navbar() {
   );
 }
 
-function SearchBar() {
-  const [symbols, setSymbols] = useState([]);
+function SearchBar({setTicker, sxProps = {}}) {
+  
+  const [ symbols, setSymbols ] = useState([]);
+  const [ isError, setError ] = useState(false);
+  const [ isLoading, setLoading ] = useState(false);
+  const [ selectedSymbol, setSelectedSymbol ] = useState(null);
+
+  const submitHandler = (event) => {
+      event.preventDefault();
+      setTicker(selectedSymbol);
+      console.log(`Ticker submitted: ${selectedSymbol}`)
+  };
 
   useEffect(() => {
     const fetchSymbols = async () => {
       try {
+        setLoading(true);
         const res = await fetch(
           `${import.meta.env.API_URL}/symbol/list/latest`,
         );
@@ -70,26 +81,38 @@ function SearchBar() {
         setSymbols(symbolList);
       } catch (error) {
         console.log(error);
+        setError(true);
       }
     };
     fetchSymbols();
+    setLoading(false);
   }, []);
 
   return (
-    <Autocomplete
-      options={symbols}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Ticker"
-          sx={{
-            "& .MuiOutlinedInput-root": { borderRadius: 5 },
-            width: 130,
-          }}
-        />
+    <>
+      {isLoading && <p>Loading search...</p>}
+      {isError && <p>Error loading ticker search.</p>}
+      {!isError && !isLoading && (
+      <Box component="form" onSubmit={submitHandler} noValidate>
+      <Autocomplete
+        options={symbols}
+        value={selectedSymbol}
+        onChange={(event, newValue) => setSelectedSymbol(newValue)}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Ticker"
+            sx={{
+              "& .MuiOutlinedInput-root": { borderRadius: 5 },
+              width: 130,
+              ...sxProps
+            }}
+          />
+        )}
+      />
+      </Box>
       )}
-    />
-  );
-}
+  </>
+);}
 
 export default Navbar;

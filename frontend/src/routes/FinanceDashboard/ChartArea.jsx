@@ -3,21 +3,12 @@ import { useState, useEffect, useRef } from "react";
 import styles from "./ChartArea.module.css";
 import { Card, CardContent, CardHeader } from "@mui/material";
 
-export default function ChartArea({ cardStyles = {} }) {
-  const [symbol, setSymbol] = useState("AAPL");
+export default function ChartArea({ symbol, cardStyles = {} }) {
   const [stockData, setStockData] = useState(null);
   const [isError, setError] = useState(false);
   const [isLoading, setLoading] = useState(false);
-  const inputValRef = useRef(null);
-
-  function handleStockSubmit() {
-    console.log(`Submit event: ${inputValRef.current.value}`);
-    console.log(`State:${symbol}`);
-    setSymbol(inputValRef.current.value);
-  }
 
   useEffect(() => {
-    console.log(`State after:${symbol}`);
     const fetchStockData = async () => {
       try {
         setLoading(true);
@@ -59,18 +50,6 @@ export default function ChartArea({ cardStyles = {} }) {
           <CardHeader title="StockChart" />
           <CardContent sx={{ height: "100%", overflow: "auto" }}>
             <div className={styles["chart-area"]}>
-              <input
-                ref={inputValRef}
-                type="text"
-                placeholder="Enter ticker, symbol, etc."
-                defaultValue={symbol}
-              />
-              <button
-                style={{ height: "25px", width: "50px" }}
-                onClick={handleStockSubmit}
-              >
-                Submit
-              </button>
               <StockChart
                 data={stockData}
                 chartType="candle"
@@ -81,5 +60,4 @@ export default function ChartArea({ cardStyles = {} }) {
         </Card>
       )}
     </>
-  );
-}
+);

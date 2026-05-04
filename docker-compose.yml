@@ -109,7 +109,8 @@ services:
         - action: sync
           path: ./backend/services/market-data-seed
           target: /app
-          ignore: venv
+          ignore: 
+          - venv
     depends_on:
       postgres:
         condition: service_healthy
