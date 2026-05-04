@@ -92,12 +92,12 @@ export default function StockChart({
     volumeSeriesRef.current = volumeSeries;
     volumeSeries.priceScale().applyOptions({
       scaleMargins: {
-        top: 0.7,
+        top: 0.85,
         bottom: 0,
       },
     });
 
-    chart.timeScale().fitContent();
+    //    chart.timeScale().fitContent();
 
     const resizer = new ResizeObserver((entries) => {
       if (!entries.length) return;

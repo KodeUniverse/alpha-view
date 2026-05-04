@@ -65,7 +65,7 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
   return (
     <>
       <Card sx={cardStyles}>
-        <Box>
+        <Box sx={{ padding: 2, marginLeft: 2 }}>
           <Typography sx={{ fontSize: 36, fontWeight: 700 }}>
             {symbol}
           </Typography>
@@ -74,7 +74,7 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
           {isLoading && !isError && <p>Fetching data for symbol...</p>}
           {isError && <p>Error fetching data.</p>}
           {!isLoading && !isError && (
-            <Card sx={{ height: "100%" }}>
+            <Card sx={{ height: "98%" }}>
               <StockChart
                 priceData={priceData}
                 volumeData={volumeData}

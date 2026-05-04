@@ -8,7 +8,7 @@ import styles from "./FinanceDashboard.module.css";
 import { useState } from "react";
 
 function FinanceDashboard() {
-  const [stockSymbol, setStockSymbol] = useState(null);
+  const [stockSymbol, setStockSymbol] = useState("AAPL");
 
   function handleTickerInput(symbol) {
     setStockSymbol(symbol);
