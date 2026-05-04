@@ -31,6 +31,7 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
           delete row.volume; // for now, will change to include this data in volume histogram in chart.
         }
         setStockData(resultData);
+        setError(false);
         setLoading(false);
       } catch (e) {
         setError(true);
@@ -43,21 +44,20 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
   }, [symbol]);
   return (
     <>
-      {isLoading && !isError && <p>Fetching data for symbol...</p>}
-      {isError && <p>Error fetching data.</p>}
-      {!isLoading && !isError && (
-        <Card sx={cardStyles}>
-          <CardHeader title="StockChart" />
-          <CardContent sx={{ height: "100%", overflow: "auto" }}>
-            <div className={styles["chart-area"]}>
-              <StockChart
-                data={stockData}
-                chartType="candle"
-                containerStyles={{ width: "100%", height: "100%" }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Card sx={cardStyles}>
+        <CardHeader title="StockChart" />
+        <CardContent sx={{ height: "100%", overflow: "auto" }}>
+          {isLoading && !isError && <p>Fetching data for symbol...</p>}
+          {isError && <p>Error fetching data.</p>}
+          {!isLoading && !isError && (
+            <StockChart
+              data={stockData}
+              chartType="candle"
+              containerStyles={{ width: "100%", height: "100%" }}
+            />
+          )}
+        </CardContent>
+      </Card>
     </>
-);
+  );
+}

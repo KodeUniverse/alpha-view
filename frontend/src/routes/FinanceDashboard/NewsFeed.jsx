@@ -65,7 +65,7 @@ function NewsFeed({ length, cardStyles = {} }) {
       <CardContent sx={{ height: "100%", overflow: "auto" }}>
         <CardHeader
           title="Market News"
-          slotProps={{ title: { align: "center" } }}
+          slotProps={{ title: { align: "left" } }}
         />
         <List>
           {newsItems.map((article) => {
