@@ -46,8 +46,6 @@ export default class FTScraper {
       articles.push(article);
     });
 
-    console.log(`TYPE OF articles Object: ${typeof articles}`);
-
     if (articles.length === 0) {
       throw new Error("Scraped article data is empty.");
     }
@@ -58,9 +56,6 @@ export default class FTScraper {
   async saveToDB(data, timestamp) {
     try {
       await alphaDB.query("BEGIN");
-      console.log(
-        `LOGGING DATA VARIABLE: ${data}, LOGGING TIMESTAMP: ${timestamp}`,
-      );
       for (const article of Object.values(data)) {
         await alphaDB.query(
           "INSERT INTO Article (Headline, Descr, URL, PubDate, NewsSource, LastUpdated)" +

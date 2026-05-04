@@ -9,8 +9,9 @@ import {
   Button,
 } from "@mui/material";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
-function Navbar() {
+function Navbar(props) {
   return (
     <Box sx={{ display: "flex", justifyContent: "center" }}>
       <Box
@@ -29,16 +30,7 @@ function Navbar() {
           height="100"
         />
         <img src={alphaLogo} alt="AlphaView Logo" width="300" height="40" />
-        <Autocomplete
-          options={["A", "B"]}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Ticker"
-              sx={{ "& .MuiOutlinedInput-root": { borderRadius: 5 } }}
-            />
-          )}
-        />
+        {props.children}
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", marginRight: 5 }}>
         <Button

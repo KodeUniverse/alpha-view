@@ -8,7 +8,7 @@ import { alphaDB } from "@alpha-view/utils";
 import { Messenger } from "@alpha-view/utils";
 import { createServer } from "http";
 import newsRouter from "./routes/newsData.js";
-import stockDataRouter from "./routes/stockData.js";
+import marketDataRouter from "./routes/marketData.js";
 
 const app = express();
 const HOSTNAME = "0.0.0.0";
@@ -23,17 +23,17 @@ app.use(cors());
 // Initialize Socket.io
 const server = createServer(app);
 const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-    },
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
 });
 
 io.on("connection", (socket) => {
-    console.log(`WebSocket client connected: ${socket.id}`);
-    socket.on("disconnect", () => {
-        console.log(`WebSocket disconnected: ${socket.id}`);
-    });
+  console.log(`WebSocket client connected: ${socket.id}`);
+  socket.on("disconnect", () => {
+    console.log(`WebSocket disconnected: ${socket.id}`);
+  });
 });
 
 // Redis messenger, to listen for data updates
@@ -46,47 +46,47 @@ await messenger.connect();
 
 // Listen for data update signal and serve market news data thru Socket.IO
 messenger.subscribe("ft-news", async () => {
-    console.log("Market news update signal recieved!");
-    const articles = await alphaDB.query(
-        "SELECT ArticleId, Headline, Descr, URL, PubDate, NewsSource FROM Article",
-    );
+  console.log("Market news update signal recieved!");
+  const articles = await alphaDB.query(
+    "SELECT ArticleId, Headline, Descr, URL, PubDate, NewsSource FROM Article",
+  );
 
-    try {
-        io.emit("market-news", articles.rows);
-        console.log("WebSocket: Serving updated market news data");
-    } catch (error) {
-        console.error(`WebSocket Error (market news): ${error}`);
-    }
+  try {
+    io.emit("ft-news", articles.rows);
+    console.log("WebSocket: Serving updated market news data");
+  } catch (error) {
+    console.error(`WebSocket Error (market news): ${error}`);
+  }
 });
 
 /*
  * API ROUTES
  */
-app.use("/market-news", newsRouter);
-app.use("/stock-data", stockDataRouter);
+app.use("/news", newsRouter);
+app.use("/symbol", marketDataRouter);
 app.get("/health", (req, res) => {
-    res.status(200).send("Health check succeeded, API seems active!");
+  res.status(200).send("Health check succeeded, API seems active!");
 });
 
 // Start server
 server.listen(PORT, HOSTNAME, () => {
-    console.log(
-        `Backend AlphaView server running at http://localhost:${HOST_PORT}/`,
-    );
+  console.log(
+    `Backend AlphaView server running at http://localhost:${HOST_PORT}/`,
+  );
 });
 
 // Listen for Ctrl+C to shutdown server
 process.on("SIGINT", () => {
-    console.log(
-        `Recieved kill signal, gracefully shutting down http://localhost:${HOST_PORT}/`,
-    );
-    server.close(() => {
-        console.log("Graceful shutdown complete!");
-        process.exit();
-    });
+  console.log(
+    `Recieved kill signal, gracefully shutting down http://localhost:${HOST_PORT}/`,
+  );
+  server.close(() => {
+    console.log("Graceful shutdown complete!");
+    process.exit();
+  });
 
-    setTimeout(() => {
-        console.log("Graceful shutdown timed out (10s). Killing forcibly.");
-        process.exit(1);
-    }, 10000);
+  setTimeout(() => {
+    console.log("Graceful shutdown timed out (10s). Killing forcibly.");
+    process.exit(1);
+  }, 10000);
 });
