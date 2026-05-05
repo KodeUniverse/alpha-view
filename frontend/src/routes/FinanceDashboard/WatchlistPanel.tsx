@@ -7,11 +7,13 @@ import {
   Divider,
   Typography,
   Box,
+  SxProps,
 } from "@mui/material";
 import StockChart from "@components/StockChart.jsx";
 import { useState, useEffect } from "react";
+import { OHLCVData, Ticker } from "@shared/types";
 
-function WatchListCard({ cardStyles = {} }) {
+function WatchListCard(cardStyles: SxProps = {}) {
   return (
     <Card sx={cardStyles}>
       <CardHeader title="Watchlist" />
@@ -28,21 +30,21 @@ function WatchListCard({ cardStyles = {} }) {
 
 export default WatchListCard;
 
-function WatchListItem({ symbol }) {
+function WatchListItem(ticker: Ticker) {
   const [stockData, setStockData] = useState(null);
 
   useEffect(() => {
     const fetchStockData = async () => {
       try {
         const res = await fetch(
-          `${import.meta.env.API_URL}/symbol/hist-ts/${symbol}/latest`,
+          `${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest`,
         );
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}: Could not fetch stock data.`);
         }
 
         let data = await res.json();
-        data = data.map((row) => {
+        data = data.map((row: OHLCVData) => {
           const { close: value, time } = row;
           return { time: row.time.split("T")[0], value: Number(value) };
         });
@@ -65,7 +67,7 @@ function WatchListItem({ symbol }) {
           gap: 2,
         }}
       >
-        <Typography sx={{ fontWeight: 700 }}>{symbol}</Typography>
+        <Typography sx={{ fontWeight: 700 }}>{ticker.symbol}</Typography>
         <StockChart
           priceData={stockData}
           chartType="area"

@@ -1,4 +1,5 @@
 import { Autocomplete, TextField, SxProps } from "@mui/material";
+import { Ticker } from "@shared/types";
 import { useEffect, useState } from "react";
 
 function SearchBar({
@@ -6,11 +7,11 @@ function SearchBar({
   value,
   sxProps = {},
 }: {
-  onTickerSelect: (symbol: string | null) => void;
-  value: string | null;
+  onTickerSelect: (ticker: Ticker | null) => void;
+  value: Ticker | null;
   sxProps: SxProps; // should be SxProps<Theme> once you start using MUI Theme
 }) {
-  const [symbols, setSymbols] = useState<string[]>([]);
+  const [symbols, setSymbols] = useState<Ticker[]>([]);
   const [isError, setError] = useState(false);
   const [isLoading, setLoading] = useState(false);
 
@@ -26,9 +27,9 @@ function SearchBar({
           throw new Error(`HTTP ${res.status}: Failed to fetch symbol list`);
 
         const symbolJSON = await res.json();
-        const symbolList = [];
+        const symbolList: Ticker[] = [];
         for (const rowObj of symbolJSON) {
-          symbolList.push(rowObj.symbol);
+          symbolList.push({ symbol: rowObj.symbol });
         }
         setSymbols(symbolList);
       } catch (error) {
@@ -47,6 +48,7 @@ function SearchBar({
       {!isError && !isLoading && (
         <Autocomplete
           options={symbols}
+          getOptionLabel={(option) => option.symbol}
           value={value}
           onChange={(event, newValue) => {
             onTickerSelect(newValue);

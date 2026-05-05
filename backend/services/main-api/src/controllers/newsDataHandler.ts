@@ -7,7 +7,6 @@ const sourceMapping: Record<string, string> = {
 };
 
 async function fetchNews(source: string): Promise<NewsArticle[]> {
-  console.log(`Source mapped: ${source} `);
   if (!sourceMapping[source])
     throw new Error(
       `Passed source: '${source}' is not correct or does not exist.`,
@@ -18,8 +17,6 @@ async function fetchNews(source: string): Promise<NewsArticle[]> {
     [sourceMapping[source]],
   );
   const res = articles.rows;
-  console.log(`Type of articles object:${typeof res}`);
-  console.log(`Value of articles object.keys: ${Object.keys(res)}`);
   if (Object.keys(res).length === 0) {
     throw new Error("Fetched articles are null!");
   }

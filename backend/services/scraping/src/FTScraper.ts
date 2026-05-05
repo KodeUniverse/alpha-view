@@ -1,6 +1,5 @@
 import * as cheerio from "cheerio";
 import { alphaDB } from "@alpha-view/utils";
-import { NewsArticle } from "@shared/types";
 import { ScrapedArticle } from "./types/scrapeResult.js";
 
 export default class FTScraper {
