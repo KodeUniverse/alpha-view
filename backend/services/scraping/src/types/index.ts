@@ -1,1 +1,1 @@
-export type { ScrapedArticle } from "./scrapeResult";
+export type { ScrapedArticle } from "./scrapeResult.js";

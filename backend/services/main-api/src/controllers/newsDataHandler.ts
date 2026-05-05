@@ -2,10 +2,17 @@ import { alphaDB } from "@alpha-view/utils";
 import { Request, Response } from "express";
 import { NewsArticle } from "@shared/types";
 
+const sourceMapping: Record<string, string> = {
+  ft: "Financial Times",
+};
+
 async function fetchNews(source: string): Promise<NewsArticle[]> {
-  const sourceMapping: Record<string, string> = {
-    ft: "Financial Times",
-  };
+  console.log(`Source mapped: ${source} `);
+  if (!sourceMapping[source])
+    throw new Error(
+      `Passed source: '${source}' is not correct or does not exist.`,
+    );
+
   const articles = await alphaDB.query(
     "SELECT ArticleId, Headline, Descr, URL, PubDate, NewsSource FROM Article WHERE NewsSource = $1;",
     [sourceMapping[source]],
@@ -27,7 +34,10 @@ export const getLatestNews = async (
   try {
     res.status(200).send(await fetchNews(newsSource));
   } catch (error) {
-    console.log(`Failed to query news with NewsSource=${newsSource} from DB`);
+    const errorMsg = error instanceof Error ? error.stack : String(error);
+    console.log(
+      `Failed to query news with NewsSource=${sourceMapping[newsSource]} from DB\n\n${errorMsg}`,
+    );
     res.status(500).send("Internal Server Error");
   }
 };

@@ -12,7 +12,7 @@
     "sourceMap": true,
     "composite": true,
     "lib": ["ES2022"],
-    "baseUrl": ".",
+    "types": ["node"],
     "paths": {
       "@shared/types": ["../../../shared/types"]
     }

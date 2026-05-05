@@ -70,72 +70,77 @@ export default function StockChart({
   }
 
   useEffect(() => {
-    if (!chartContainerRef.current) return;
-    const chart = createChart(chartContainerRef.current, chartOptions);
-    let priceSeries: ISeriesApi<"Candlestick" | "Area">;
+    try {
+      if (!chartContainerRef.current) return;
+      const chart = createChart(chartContainerRef.current, chartOptions);
+      let priceSeries: ISeriesApi<"Candlestick" | "Area">;
 
-    switch (chartType) {
-      case "candle": {
-        priceSeries = chart.addSeries(CandlestickSeries, {
-          upColor: "#26a69a",
-          downColor: "#ef5350",
-          borderVisible: true,
-          wickUpColor: "#26a69a",
-          wickDownColor: "#ef5350",
-        });
-        break;
+      switch (chartType) {
+        case "candle": {
+          priceSeries = chart.addSeries(CandlestickSeries, {
+            upColor: "#26a69a",
+            downColor: "#ef5350",
+            borderVisible: true,
+            wickUpColor: "#26a69a",
+            wickDownColor: "#ef5350",
+          });
+          break;
+        }
+        case "area": {
+          const upChart =
+            priceData[0]?.value <= priceData[priceData.length - 1]?.value;
+          const areaChartColors = {
+            lineColor: upChart ? "#26a69a" : "#ef5350",
+            topColor: upChart ? "#26a69a" : "#ef5350",
+            bottomColor: upChart
+              ? "rgba(38, 166, 154, 0.28)"
+              : "rgba(239, 83, 80, 0.28)",
+          };
+          priceSeries = chart.addSeries(AreaSeries, areaChartColors);
+          break;
+        }
       }
-      case "area": {
-        const upChart =
-          priceData[0]?.value <= priceData[priceData.length - 1]?.value;
-        const areaChartColors = {
-          lineColor: upChart ? "#26a69a" : "#ef5350",
-          topColor: upChart ? "#26a69a" : "#ef5350",
-          bottomColor: upChart
-            ? "rgba(38, 166, 154, 0.28)"
-            : "rgba(239, 83, 80, 0.28)",
-        };
-        priceSeries = chart.addSeries(AreaSeries, areaChartColors);
-        break;
-      }
+
+      priceSeriesRef.current = priceSeries;
+      priceSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.4,
+        },
+      });
+
+      const volumeSeries = chart.addSeries(HistogramSeries, {
+        priceFormat: {
+          type: "volume",
+        },
+        priceScaleId: "",
+      });
+      volumeSeriesRef.current = volumeSeries;
+      volumeSeries.priceScale().applyOptions({
+        scaleMargins: {
+          top: 0.85,
+          bottom: 0,
+        },
+      });
+
+      if (timeScale) chart.timeScale().fitContent();
+
+      const resizer = new ResizeObserver((entries) => {
+        if (!entries.length) return;
+        const { width, height } = entries[0].contentRect;
+        chart.applyOptions({ width, height: height - 30 });
+      });
+
+      resizer.observe(chartContainerRef.current);
+
+      return () => {
+        chart.remove();
+        resizer.disconnect();
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.stack : String(error);
+      console.log(errorMsg);
     }
-
-    priceSeriesRef.current = priceSeries;
-    priceSeries.priceScale().applyOptions({
-      scaleMargins: {
-        top: 0.1,
-        bottom: 0.4,
-      },
-    });
-
-    const volumeSeries = chart.addSeries(HistogramSeries, {
-      priceFormat: {
-        type: "volume",
-      },
-      priceScaleId: "",
-    });
-    volumeSeriesRef.current = volumeSeries;
-    volumeSeries.priceScale().applyOptions({
-      scaleMargins: {
-        top: 0.85,
-        bottom: 0,
-      },
-    });
-
-    if (timeScale) chart.timeScale().fitContent();
-
-    const resizer = new ResizeObserver((entries) => {
-      if (!entries.length) return;
-      const { width, height } = entries[0].contentRect;
-      chart.applyOptions({ width, height: height - 30 });
-    });
-
-    resizer.observe(chartContainerRef.current);
-
-    return () => {
-      chart.remove();
-      resizer.disconnect();
-    };
   }, [priceData, volumeData, chartType, timeScale]);
 
   useEffect(() => {
@@ -146,7 +151,8 @@ export default function StockChart({
         volumeSeriesRef.current.setData(volumeData);
       }
     } catch (error) {
-      console.log(error);
+      const errorMsg = error instanceof Error ? error.stack : String(error);
+      console.log(errorMsg);
     }
   }, [priceData, volumeData]);
 

@@ -7,9 +7,8 @@ const getHistoricalTS = async (
   res: Response<OHLCVData[] | string>,
 ) => {
   const ticker = req.params.symbol;
-
-  if (ticker == "null") {
-    res.sendStatus(400);
+  if (!ticker) {
+    res.status(400).send("Symbol is undefined or null.");
     return;
   }
 
