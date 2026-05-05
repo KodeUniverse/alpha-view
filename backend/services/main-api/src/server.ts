@@ -1,9 +1,8 @@
 import path from "path";
 import express from "express";
 import cors from "cors";
-import fs from "fs";
 import { fileURLToPath } from "url";
-import { Server } from "socket.io"; // WebSockets
+import { Server } from "socket.io";
 import { alphaDB } from "@alpha-view/utils";
 import { Messenger } from "@alpha-view/utils";
 import { createServer } from "http";

@@ -1,16 +1,18 @@
-import { Box, Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, TextField, SxProps } from "@mui/material";
 import { useEffect, useState } from "react";
 
-function SearchBar({ onTickerSelect, value, sxProps = {} }) {
-  const [symbols, setSymbols] = useState([]);
+function SearchBar({
+  onTickerSelect,
+  value,
+  sxProps = {},
+}: {
+  onTickerSelect: (symbol: string | null) => void;
+  value: string | null;
+  sxProps: SxProps; // should be SxProps<Theme> once you start using MUI Theme
+}) {
+  const [symbols, setSymbols] = useState<string[]>([]);
   const [isError, setError] = useState(false);
   const [isLoading, setLoading] = useState(false);
-
-  //  const submitHandler = (event) => {
-  //    event.preventDefault();
-  //    onTickerSelect(selectedTicker);
-  //    console.log(`Ticker submitted: ${selectedSymbol}`);
-  //  };
 
   useEffect(() => {
     const fetchSymbols = async () => {

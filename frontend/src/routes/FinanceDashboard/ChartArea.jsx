@@ -1,4 +1,4 @@
-import StockChart from "@components/StockChart.jsx";
+import StockChart from "@components/StockChart.tsx";
 import { useState, useEffect, useRef } from "react";
 import { Box, Card, CardContent, CardHeader, Typography } from "@mui/material";
 

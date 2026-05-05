@@ -107,7 +107,7 @@ function NewsItem({ title, descr, url, source, date, time }) {
           "&:hover": { backgroundColor: "var(--color-highlighted)" },
         }}
       >
-      <Box sx={{ display: "flex", gap: 0.5, minWidth: 0 }}>
+        <Box sx={{ display: "flex", gap: 0.5, minWidth: 0 }}>
           <Box sx={{ flex: "0 0 auto" }}>
             <Typography>{time}</Typography>
             <Typography>{date}</Typography>

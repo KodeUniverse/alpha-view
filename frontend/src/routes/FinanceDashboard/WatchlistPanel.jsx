@@ -47,7 +47,6 @@ function WatchListItem({ symbol }) {
           return { time: row.time.split("T")[0], value: Number(value) };
         });
         data = data.slice(-20); // last 5 days
-        console.log(`after map, data: ${JSON.stringify(data[0])}`);
         setStockData(data);
       } catch (error) {
         console.log(error);

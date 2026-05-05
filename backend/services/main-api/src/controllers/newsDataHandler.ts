@@ -1,7 +1,9 @@
 import { alphaDB } from "@alpha-view/utils";
+import { Request, Response } from "express";
+import { NewsArticle } from "@shared/types";
 
-async function fetchNews(source) {
-  const sourceMapping = {
+async function fetchNews(source: string): Promise<NewsArticle[]> {
+  const sourceMapping: Record<string, string> = {
     ft: "Financial Times",
   };
   const articles = await alphaDB.query(
@@ -17,9 +19,12 @@ async function fetchNews(source) {
   return res;
 }
 
-export const getLatestNews = async (req, res) => {
+export const getLatestNews = async (
+  req: Request<{ source: string }>,
+  res: Response<NewsArticle[] | string>,
+) => {
+  const newsSource = req.params.source;
   try {
-    const newsSource = req.params.source;
     res.status(200).send(await fetchNews(newsSource));
   } catch (error) {
     console.log(`Failed to query news with NewsSource=${newsSource} from DB`);

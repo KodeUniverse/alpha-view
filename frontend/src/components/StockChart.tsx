@@ -4,8 +4,31 @@ import {
   HistogramSeries,
   ColorType,
   createChart,
+  ChartOptions,
+  DeepPartial,
+  ISeriesApi,
 } from "lightweight-charts";
-import { useEffect, useRef, useState } from "react";
+import { OHLCData, VolumeData, PriceData } from "@shared/types";
+import { useEffect, useRef } from "react";
+
+interface BaseChartProps {
+  volumeData?: VolumeData[] | null;
+  containerStyles?: React.CSSProperties;
+  chartOptionOverride?: DeepPartial<ChartOptions>;
+  timeScale?: boolean;
+}
+
+interface CandleChartProps extends BaseChartProps {
+  chartType: "candle";
+  priceData: OHLCData[];
+}
+
+interface AreaChartProps extends BaseChartProps {
+  chartType: "area";
+  priceData: PriceData[];
+}
+
+type StockChartProps = CandleChartProps | AreaChartProps;
 
 export default function StockChart({
   priceData,
@@ -14,12 +37,11 @@ export default function StockChart({
   containerStyles = { width: "100%", height: "100%" },
   chartOptionOverride = null,
   timeScale = true,
-}) {
-  const chartContainerRef = useRef(null);
-  const priceSeriesRef = useRef(null);
-  const volumeSeriesRef = useRef(null);
+}: StockChartProps) {
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const priceSeriesRef = useRef<ISeriesApi<"Candlestick" | "Area">>(null);
+  const volumeSeriesRef = useRef<ISeriesApi<"Histogram">>(null);
 
-  // need to start using Context API for themes
   const bgColor = getComputedStyle(document.documentElement)
     .getPropertyValue("--color-background-secondary")
     .trim();
@@ -27,7 +49,7 @@ export default function StockChart({
     .getPropertyValue("--color-chart-panes")
     .trim();
 
-  let chartOptions;
+  let chartOptions: DeepPartial<ChartOptions>;
   if (!chartOptionOverride) {
     chartOptions = {
       layout: {
@@ -46,10 +68,12 @@ export default function StockChart({
   } else {
     chartOptions = chartOptionOverride;
   }
-  //    autoSize: true,
+
   useEffect(() => {
+    if (!chartContainerRef.current) return;
     const chart = createChart(chartContainerRef.current, chartOptions);
-    let priceSeries;
+    let priceSeries: ISeriesApi<"Candlestick" | "Area">;
+
     switch (chartType) {
       case "candle": {
         priceSeries = chart.addSeries(CandlestickSeries, {
@@ -62,11 +86,9 @@ export default function StockChart({
         break;
       }
       case "area": {
-        let areaChartColors;
         const upChart =
-          priceData &&
           priceData[0]?.value <= priceData[priceData.length - 1]?.value;
-        areaChartColors = {
+        const areaChartColors = {
           lineColor: upChart ? "#26a69a" : "#ef5350",
           topColor: upChart ? "#26a69a" : "#ef5350",
           bottomColor: upChart
@@ -77,6 +99,7 @@ export default function StockChart({
         break;
       }
     }
+
     priceSeriesRef.current = priceSeries;
     priceSeries.priceScale().applyOptions({
       scaleMargins: {
@@ -84,6 +107,7 @@ export default function StockChart({
         bottom: 0.4,
       },
     });
+
     const volumeSeries = chart.addSeries(HistogramSeries, {
       priceFormat: {
         type: "volume",
@@ -98,11 +122,11 @@ export default function StockChart({
       },
     });
 
-    timeScale ? chart.timeScale().fitContent() : null;
+    if (timeScale) chart.timeScale().fitContent();
 
     const resizer = new ResizeObserver((entries) => {
       if (!entries.length) return;
-      let { width, height } = entries[0].contentRect;
+      const { width, height } = entries[0].contentRect;
       chart.applyOptions({ width, height: height - 30 });
     });
 
@@ -112,15 +136,13 @@ export default function StockChart({
       chart.remove();
       resizer.disconnect();
     };
-  }, [priceData, volumeData]);
+  }, [priceData, volumeData, chartType, timeScale]);
 
   useEffect(() => {
     try {
       if (!priceData || !priceSeriesRef.current) return;
-      console.log(`Price data being set: ${JSON.stringify(priceData[1])}`);
       priceSeriesRef.current.setData(priceData);
       if (volumeData && volumeSeriesRef.current) {
-        console.log(`Volume data being set: ${JSON.stringify(volumeData[1])}`);
         volumeSeriesRef.current.setData(volumeData);
       }
     } catch (error) {

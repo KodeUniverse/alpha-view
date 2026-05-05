@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/alpha-utils" },
+    { "path": "services/main-api" },
+    { "path": "services/scraping" }
+  ]
+}

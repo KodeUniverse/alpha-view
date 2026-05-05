@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import FinanceDashboard from "@routes/FinanceDashboard/FinanceDashboard.jsx";
-import LoginPage from "@routes/LoginPage.jsx";
-import { socket } from "@services/socket";
+import FinanceDashboard from "@routes/FinanceDashboard/FinanceDashboard.tsx";
+import LoginPage from "@routes/LoginPage.tsx";
+import { socket } from "@services/socket.ts";
 
 function App() {
   const [isConnected, setConnected] = useState(socket.connected);

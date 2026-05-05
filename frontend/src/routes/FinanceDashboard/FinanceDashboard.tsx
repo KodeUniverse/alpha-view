@@ -1,8 +1,8 @@
-import Navbar from "@components/Navbar/Navbar.jsx";
-import SearchBar from "@components/SearchBar/SearchBar.jsx";
+import Navbar from "@components/Navbar/Navbar.tsx";
+import SearchBar from "@components/SearchBar/SearchBar.tsx";
 import NewsFeed from "./NewsFeed.jsx";
 import ChartArea from "./ChartArea.jsx";
-import MetricsCard from "./BottomBarMetrics.jsx";
+import MetricsCard from "./BottomBarMetrics.tsx";
 import WatchlistCard from "./WatchlistPanel.jsx";
 import { useState } from "react";
 import { Box } from "@mui/material";
@@ -10,7 +10,7 @@ import { Box } from "@mui/material";
 function FinanceDashboard() {
   const [stockSymbol, setStockSymbol] = useState("AAPL");
 
-  function handleTickerInput(symbol) {
+  function handleTickerInput(symbol: string) {
     setStockSymbol(symbol);
     console.log(`Stock symbol changed at app level: ${symbol}`);
   }
