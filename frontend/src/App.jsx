@@ -6,32 +6,32 @@ import LoginPage from "@routes/LoginPage.jsx";
 import { socket } from "@services/socket";
 
 function App() {
-    const [isConnected, setConnected] = useState(socket.connected);
-    
-    useEffect(() => {
-        const onConnect = () => {
-            setConnected(true);
-        };
-        const onDisconnect = () => {
-            setConnected(false);
-        };
+  const [isConnected, setConnected] = useState(socket.connected);
 
-        socket.on("connect", onConnect);
-        socket.on("disconnect", onDisconnect);
+  useEffect(() => {
+    const onConnect = () => {
+      setConnected(true);
+    };
+    const onDisconnect = () => {
+      setConnected(false);
+    };
 
-        return () => {
-            socket.off("connect", onConnect);
-            socket.off("disconnect", onDisconnect);
-        };
-    }, []);
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
 
-    return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<FinanceDashboard />} />
-                <Route path="/login" element={<LoginPage />} />
-            </Routes>
-        </BrowserRouter>
-    );
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+    };
+  }, []);
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<FinanceDashboard />} />
+        <Route path="/login" element={<LoginPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 export default App;

@@ -27,7 +27,7 @@ function LoginPage() {
           height: "100%",
         }}
       >
-        <Card sx={{ width: "25%"}}>
+        <Card sx={{ width: "25%" }}>
           <CardContent overflow="auto">
             <Box sx={{ display: "flex", justifyContent: "center" }}>
               <Box sx={{ display: "flex" }}></Box>

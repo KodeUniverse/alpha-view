@@ -4,11 +4,11 @@ import NewsFeed from "./NewsFeed.jsx";
 import ChartArea from "./ChartArea.jsx";
 import MetricsCard from "./BottomBarMetrics.jsx";
 import WatchlistCard from "./WatchlistPanel.jsx";
-import styles from "./FinanceDashboard.module.css";
 import { useState } from "react";
+import { Box } from "@mui/material";
 
 function FinanceDashboard() {
-  const [stockSymbol, setStockSymbol] = useState(null);
+  const [stockSymbol, setStockSymbol] = useState("AAPL");
 
   function handleTickerInput(symbol) {
     setStockSymbol(symbol);
@@ -16,7 +16,7 @@ function FinanceDashboard() {
   }
 
   return (
-    <div className={styles["pg"]}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <Navbar>
         <SearchBar
           value={stockSymbol}
@@ -24,15 +24,15 @@ function FinanceDashboard() {
           sxProps={{ marginLeft: 2 }}
         />
       </Navbar>
-      <div className={styles["pg-content"]}>
+      <Box sx={{ display: "flex", flexDirection: "row", height: "100%" }}>
         <NewsFeed length={30} cardStyles={{ width: "35%", height: "100%" }} />
         <ChartArea
           symbol={stockSymbol}
-          cardStyles={{ width: "100%", height: "100%" }}
+          cardStyles={{ width: "100%", height: "100%", paddingBottom: 7 }}
         />
         <WatchlistCard cardStyles={{ width: "35%", height: "100%" }} />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { socket } from "@services/socket.js";
-import styles from "./NewsFeed.module.css";
 import {
   List,
   ListItemButton,
@@ -10,6 +9,7 @@ import {
   CardContent,
   CardHeader,
   Typography,
+  Box,
 } from "@mui/material";
 
 function NewsFeed({ length, cardStyles = {} }) {
@@ -107,14 +107,12 @@ function NewsItem({ title, descr, url, source, date, time }) {
           "&:hover": { backgroundColor: "var(--color-highlighted)" },
         }}
       >
-        <div className={styles["news-item"]}>
-          <div
-            className={`${styles["time-date-col"]} ${styles["item-date-col"]}`}
-          >
+      <Box sx={{ display: "flex", gap: 0.5, minWidth: 0 }}>
+          <Box sx={{ flex: "0 0 auto" }}>
             <Typography>{time}</Typography>
             <Typography>{date}</Typography>
-          </div>
-          <div className={styles["headline-desc-col"]}>
+          </Box>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography
               sx={{
                 fontWeight: 700,
@@ -137,8 +135,8 @@ function NewsItem({ title, descr, url, source, date, time }) {
             >
               {descr}
             </Typography>
-          </div>
-        </div>
+          </Box>
+        </Box>
       </ListItemButton>
       <Divider sx={{ borderColor: "#FFFFFF" }} />
     </>
