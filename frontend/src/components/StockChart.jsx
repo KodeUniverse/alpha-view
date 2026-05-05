@@ -13,6 +13,7 @@ export default function StockChart({
   volumeData = null,
   containerStyles = { width: "100%", height: "100%" },
   chartOptionOverride = null,
+  timeScale = true,
 }) {
   const chartContainerRef = useRef(null);
   const priceSeriesRef = useRef(null);
@@ -97,7 +98,7 @@ export default function StockChart({
       },
     });
 
-    //    chart.timeScale().fitContent();
+    timeScale ? chart.timeScale().fitContent() : null;
 
     const resizer = new ResizeObserver((entries) => {
       if (!entries.length) return;

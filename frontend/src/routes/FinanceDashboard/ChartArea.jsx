@@ -79,6 +79,7 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
                 priceData={priceData}
                 volumeData={volumeData}
                 chartType="candle"
+                timeScale={false}
                 containerStyles={{ width: "100%", height: "100%" }}
               />
             </Card>
