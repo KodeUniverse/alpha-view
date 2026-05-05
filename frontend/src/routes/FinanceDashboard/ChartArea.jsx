@@ -1,6 +1,5 @@
 import StockChart from "@components/StockChart.jsx";
 import { useState, useEffect, useRef } from "react";
-import styles from "./ChartArea.module.css";
 import { Box, Card, CardContent, CardHeader, Typography } from "@mui/material";
 
 export default function ChartArea({ symbol, cardStyles = {} }) {
@@ -11,6 +10,11 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
 
   useEffect(() => {
     const fetchStockData = async () => {
+      if (!symbol) {
+        setLoading(false);
+        setError(false);
+        return;
+      }
       try {
         setLoading(true);
         const res = await fetch(
@@ -55,6 +59,7 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
         setLoading(false);
       } catch (e) {
         setError(true);
+        setLoading(false);
         console.log(
           `Error fetching stock data from ${import.meta.env.API_URL}/symbol/hist-ts/${symbol}/latest\n\n${e}`,
         );
@@ -62,6 +67,7 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
     };
     fetchStockData();
   }, [symbol]);
+
   return (
     <>
       <Card sx={cardStyles}>
@@ -70,10 +76,13 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
             {symbol}
           </Typography>
         </Box>
-        <CardContent sx={{ height: "100%", overflow: "hidden" }}>
-          {isLoading && !isError && <p>Fetching data for symbol...</p>}
-          {isError && <p>Error fetching data.</p>}
-          {!isLoading && !isError && (
+        <CardContent sx={{ height: "100%", overflow: "auto" }}>
+          {!symbol && <Typography>Please enter a ticker.</Typography>}
+          {isLoading && !isError && (
+            <Typography>Fetching data for symbol...</Typography>
+          )}
+          {isError && <Typography>Error fetching data.</Typography>}
+          {!isLoading && !isError && symbol && (
             <Card sx={{ height: "98%" }}>
               <StockChart
                 priceData={priceData}
