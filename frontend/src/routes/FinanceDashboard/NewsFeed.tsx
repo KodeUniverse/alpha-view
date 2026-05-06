@@ -10,9 +10,14 @@ import {
   CardHeader,
   Typography,
   Box,
+  SxProps,
 } from "@mui/material";
 
-function NewsFeed({ length, cardStyles = {} }) {
+interface NewsFeedProps {
+  length: Number;
+  cardStyles?: SxProps;
+}
+function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
   const [isLoaded, setLoaded] = useState(false);
   const [isLoading, setLoading] = useState(false);
   const [isError, setError] = useState(false);
@@ -70,9 +75,7 @@ function NewsFeed({ length, cardStyles = {} }) {
         <List>
           {newsItems.map((article) => {
             const dateObj = new Date(article.pubdate);
-            const month = dateObj.toLocaleString("default", {
-              month: "short",
-            });
+            const month = dateObj.toLocaleString("default", { month: "short" });
             const day = dateObj.toLocaleString("default", {
               day: "2-digit",
             });
@@ -82,9 +85,9 @@ function NewsFeed({ length, cardStyles = {} }) {
             return (
               <NewsItem
                 key={article.articleid}
-                title={article.headline}
+                headline={article.headline}
                 descr={article.descr}
-                date={`${month}-${day}`}
+                pubdate={`${month}-${day}`}
                 time={`${pubTime}`}
                 url={article.url}
                 source={article.newssource}
@@ -97,7 +100,22 @@ function NewsFeed({ length, cardStyles = {} }) {
   );
 }
 
-function NewsItem({ title, descr, url, source, date, time }) {
+interface NewsItemProps {
+  headline: string;
+  descr: string;
+  url: string;
+  source: string;
+  pubdate: string;
+  time: string;
+}
+function NewsItem({
+  headline,
+  descr,
+  url,
+  source,
+  pubdate,
+  time,
+}: NewsItemProps) {
   return (
     <>
       <ListItemButton
@@ -107,10 +125,10 @@ function NewsItem({ title, descr, url, source, date, time }) {
           "&:hover": { backgroundColor: "var(--color-highlighted)" },
         }}
       >
-      <Box sx={{ display: "flex", gap: 0.5, minWidth: 0 }}>
+        <Box sx={{ display: "flex", gap: 0.5, minWidth: 0 }}>
           <Box sx={{ flex: "0 0 auto" }}>
             <Typography>{time}</Typography>
-            <Typography>{date}</Typography>
+            <Typography>{pubdate}</Typography>
           </Box>
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography
@@ -121,9 +139,8 @@ function NewsItem({ title, descr, url, source, date, time }) {
                 textOverflow: "ellipsis",
                 display: "block",
               }}
-              href={url}
             >
-              {title}
+              {headline}
             </Typography>
             <Typography
               sx={{

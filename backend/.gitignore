@@ -1,0 +1,12 @@
+# Build output
+**/dist/
+**/*.js.map
+**/*.d.ts.map
+**/*.tsbuildinfo
+
+# Dependencies
+**/node_modules/
+
+# Environment
+.env
+.env.*

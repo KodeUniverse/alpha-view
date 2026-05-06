@@ -10,9 +10,9 @@ async function main() {
   const runFTScraper = async () => {
     try {
       console.log("Starting Financial Times scrape...");
-      const { data, timestamp } = await ftScraper.scrapeArticles();
-      console.log(`ARTICLES SCRAPED: ${data}`, `TIMESTAMP: ${timestamp}`);
-
+      const scrapeResult = await ftScraper.scrapeArticles();
+      if (!scrapeResult) return;
+      const { data, timestamp } = scrapeResult;
       await ftScraper.saveToDB(data, timestamp);
       ftMessenger.send("ft-news", "New FT articles ready!");
     } catch (error) {

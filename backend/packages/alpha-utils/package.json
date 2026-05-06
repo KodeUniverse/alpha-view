@@ -2,14 +2,22 @@
   "name": "@alpha-view/utils",
   "version": "1.0.0",
   "description": "Shared backend utils library for the AlphaView application.",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc --build",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "@types/redis": "^2.8.32",
+    "typescript": "^5.6.0"
+  },
   "dependencies": {
     "dotenv": "^17.2.2",
     "pg": "^8.16.3",

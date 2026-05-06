@@ -1,8 +1,20 @@
-import StockChart from "@components/StockChart.jsx";
+import StockChart from "@components/StockChart.tsx";
 import { useState, useEffect, useRef } from "react";
-import { Box, Card, CardContent, CardHeader, Typography } from "@mui/material";
+import {
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  SxProps,
+  Typography,
+} from "@mui/material";
+import { OHLCVData, Ticker, VolumeData } from "@shared/types";
 
-export default function ChartArea({ symbol, cardStyles = {} }) {
+interface ChartAreaProps {
+  ticker: Ticker;
+  cardStyles?: SxProps;
+}
+export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   const [priceData, setPriceData] = useState(null);
   const [volumeData, setVolumeData] = useState(null);
   const [isError, setError] = useState(false);
@@ -10,7 +22,7 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
 
   useEffect(() => {
     const fetchStockData = async () => {
-      if (!symbol) {
+      if (!ticker.symbol) {
         setLoading(false);
         setError(false);
         return;
@@ -18,7 +30,7 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
       try {
         setLoading(true);
         const res = await fetch(
-          `${import.meta.env.API_URL}/symbol/hist-ts/${symbol}/latest`,
+          `${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest`,
         );
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}: Error fetching stock data`);
@@ -29,7 +41,7 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
         for (const row of resultData) {
           row.time = row.time.split("T")[0];
         }
-        const ohlcData = resultData.map((row) => {
+        const ohlcData = resultData.map((row: OHLCVData) => {
           const newRow = { ...row };
           delete newRow.volume;
           let remaining = ["open", "low", "high", "close"];
@@ -38,8 +50,8 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
           }
           return newRow;
         });
-        const volumeData = resultData.map((row) => {
-          let volumeBarColor;
+        const volumeData = resultData.map((row: OHLCVData) => {
+          let volumeBarColor: string;
           if (row.open < row.close) {
             volumeBarColor = "#26a69a";
           } else {
@@ -61,28 +73,28 @@ export default function ChartArea({ symbol, cardStyles = {} }) {
         setError(true);
         setLoading(false);
         console.log(
-          `Error fetching stock data from ${import.meta.env.API_URL}/symbol/hist-ts/${symbol}/latest\n\n${e}`,
+          `Error fetching stock data from ${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest\n\n${e}`,
         );
       }
     };
     fetchStockData();
-  }, [symbol]);
+  }, [ticker]);
 
   return (
     <>
       <Card sx={cardStyles}>
         <Box sx={{ padding: 2, marginLeft: 2 }}>
           <Typography sx={{ fontSize: 36, fontWeight: 700 }}>
-            {symbol}
+            {ticker.symbol}
           </Typography>
         </Box>
         <CardContent sx={{ height: "100%", overflow: "auto" }}>
-          {!symbol && <Typography>Please enter a ticker.</Typography>}
+          {!ticker.symbol && <Typography>Please enter a ticker.</Typography>}
           {isLoading && !isError && (
             <Typography>Fetching data for symbol...</Typography>
           )}
           {isError && <Typography>Error fetching data.</Typography>}
-          {!isLoading && !isError && symbol && (
+          {!isLoading && !isError && ticker.symbol && (
             <Card sx={{ height: "98%" }}>
               <StockChart
                 priceData={priceData}

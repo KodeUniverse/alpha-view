@@ -1,17 +1,10 @@
 import pyramidGif from "@assets/pyramid.gif";
 import alphaLogo from "@assets/alpha-view-logo.png";
-import {
-  Autocomplete,
-  TextField,
-  Box,
-  Card,
-  CardContent,
-  Button,
-} from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { ReactNode } from "react";
 
-function Navbar(props) {
+function Navbar({ children }: { children: ReactNode }) {
   return (
     <Box sx={{ display: "flex", justifyContent: "center" }}>
       <Box
@@ -30,7 +23,7 @@ function Navbar(props) {
           height="100"
         />
         <img src={alphaLogo} alt="AlphaView Logo" width="300" height="40" />
-        {props.children}
+        {children}
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", marginRight: 5 }}>
         <Button

@@ -7,47 +7,53 @@ import {
   Divider,
   Typography,
   Box,
+  SxProps,
 } from "@mui/material";
 import StockChart from "@components/StockChart.jsx";
 import { useState, useEffect } from "react";
+import { OHLCVData, PriceData, Ticker } from "@shared/types";
 
-function WatchListCard({ cardStyles = {} }) {
+interface WatchListCardProps {
+  cardStyles?: SxProps;
+}
+
+function WatchListCard({ cardStyles }: WatchListCardProps) {
   return (
     <Card sx={cardStyles}>
       <CardHeader title="Watchlist" />
       <CardContent sx={{ height: "100%", overflow: "auto" }}>
         <List sx={{ height: "100%" }}>
-          <WatchListItem symbol="AAPL" />
-          <WatchListItem symbol="MSFT" />
-          <WatchListItem symbol="WMT" />
+          <WatchListItem ticker={{ symbol: "AAPL" }} />
+          <WatchListItem ticker={{ symbol: "MSFT" }} />
+          <WatchListItem ticker={{ symbol: "WMT" }} />
         </List>
       </CardContent>
     </Card>
   );
 }
 
-export default WatchListCard;
-
-function WatchListItem({ symbol }) {
-  const [stockData, setStockData] = useState(null);
+interface WatchListItemProps {
+  ticker: Ticker;
+}
+function WatchListItem({ ticker }: WatchListItemProps) {
+  const [stockData, setStockData] = useState<PriceData[]>([]);
 
   useEffect(() => {
     const fetchStockData = async () => {
       try {
         const res = await fetch(
-          `${import.meta.env.API_URL}/symbol/hist-ts/${symbol}/latest`,
+          `${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest`,
         );
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}: Could not fetch stock data.`);
         }
 
         let data = await res.json();
-        data = data.map((row) => {
+        data = data.map((row: OHLCVData) => {
           const { close: value, time } = row;
           return { time: row.time.split("T")[0], value: Number(value) };
         });
-        data = data.slice(-20); // last 5 days
-        console.log(`after map, data: ${JSON.stringify(data[0])}`);
+        data = data.slice(-10);
         setStockData(data);
       } catch (error) {
         console.log(error);
@@ -60,17 +66,18 @@ function WatchListItem({ symbol }) {
     <>
       <ListItemButton
         sx={{
-          height: "15%",
+          height: 75,
+          minHeight: 30,
           display: "flex",
           justifyContent: "center",
           gap: 2,
         }}
       >
-        <Typography sx={{ fontWeight: 700 }}>{symbol}</Typography>
+        <Typography sx={{ fontWeight: 700 }}>{ticker.symbol}</Typography>
         <StockChart
           priceData={stockData}
           chartType="area"
-          containerStyles={{ width: "50%", height: "100%" }}
+          containerStyles={{ width: "30%", height: "100%" }}
         />
         <Box
           sx={{
@@ -89,3 +96,5 @@ function WatchListItem({ symbol }) {
     </>
   );
 }
+
+export default WatchListCard;

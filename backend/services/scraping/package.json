@@ -2,21 +2,28 @@
   "name": "alpha-view-scraper",
   "version": "1.0.0",
   "description": "Web scraping tools for AlphaView",
-  "main": "index.js",
+  "main": "dist/launchScrapers.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc --build && tsc-alias",
+    "start": "node dist/launchScrapers.js",
+    "dev": "node --watch dist/launchScrapers.js",
+    "clean": "rm -rf dist"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@shared/types": "file:../../../shared/types",
+    "@alpha-view/utils": "file:../../packages/alpha-utils",
     "axios": "^1.13.2",
     "cheerio": "^1.1.2",
-    "cheerio-select": "^2.1.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.2",
     "node-cron": "^4.2.1",
-    "@alpha-view/utils": "file:./packages/alpha-utils"
+    "@alpha-view/utils": "file:../../packages/alpha-utils"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsc-alias": "^1.8.10",
+    "typescript": "^5.6.0"
   }
 }

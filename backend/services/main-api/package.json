@@ -1,30 +1,31 @@
 {
-  "name": "alpha-view",
+  "name": "alpha-view-api",
   "version": "1.0.0",
-  "description": "AlphaView is a multi-purpose dashboard written as an SPA that has rich features: * News aggregation * Financial market news and analysis * A rich note-taking function with advanced planning and organization features * And robust theming!",
-  "main": "index.js",
+  "description": "AlphaView main API service.",
+  "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/KodeUniverse/alpha-view.git"
+    "build": "tsc --build && tsc-alias",
+    "start": "node dist/server.js",
+    "dev": "node --watch dist/server.js",
+    "clean": "rm -rf dist"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/KodeUniverse/alpha-view/issues"
-  },
-  "homepage": "https://github.com/KodeUniverse/alpha-view#readme",
   "dependencies": {
+    "@shared/types": "file:../../../shared/types",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
-    "pg": "^8.16.3",
-    "redis": "^5.8.2",
     "socket.io": "^4.8.1",
-    "@alpha-view/utils": "file:./packages/alpha-utils"
+    "@alpha-view/utils": "file:../../packages/alpha-utils"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "tsc-alias": "^1.8.10",
+    "typescript": "^5.6.0"
   }
 }

@@ -1,0 +1,14 @@
+{
+  "name": "@shared/types",
+  "version": "1.0.0",
+  "description": "Shared type definitions for the AlphaView frontend and backend.",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"No tests configured\" && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

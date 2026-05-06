@@ -5,7 +5,7 @@ import {
 } from "../controllers/marketDataHandler.js";
 const router = express.Router();
 
-router.get("/hist-ts/:ticker/latest", getHistoricalTS);
+router.get("/hist-ts/:symbol/latest", getHistoricalTS);
 router.get("/list/latest", getSymbolList);
 
 export default router;

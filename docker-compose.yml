@@ -3,8 +3,8 @@ services:
     env_file:
       - .env
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
     develop:
       watch:
         - action: sync
@@ -29,8 +29,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
     build:
-      context: ./backend
-      dockerfile: services/main-api/Dockerfile
+      context: .
+      dockerfile: backend/services/main-api/Dockerfile
     develop:
       watch:
         - action: sync
@@ -58,8 +58,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
     build:
-      context: ./backend
-      dockerfile: services/scraping/Dockerfile
+      context: .
+      dockerfile: backend/services/scraping/Dockerfile
     develop:
       watch:
         - action: sync
