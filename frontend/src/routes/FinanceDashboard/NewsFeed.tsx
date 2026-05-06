@@ -2,20 +2,18 @@ import { useEffect, useState } from "react";
 import { socket } from "@services/socket.js";
 import {
   List,
-  ListItemButton,
-  ListItemIcon,
-  Divider,
+  ListItem,
   Card,
-  CardContent,
-  CardHeader,
-  Typography,
+  Text,
+  Group,
+  Stack,
+  Divider,
   Box,
-  SxProps,
-} from "@mui/material";
+} from "@mantine/core";
 
 interface NewsFeedProps {
   length: Number;
-  cardStyles?: SxProps;
+  cardStyles?: React.CSSProperties;
 }
 function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
   const [isLoaded, setLoaded] = useState(false);
@@ -63,15 +61,12 @@ function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
     };
   }, [length, source]);
 
-  if (isError) return <p>Failed to fetch news.</p>;
-  if (isLoading) return <p>Loading...</p>;
+  if (isError) return <Text>Failed to fetch news.</Text>;
+  if (isLoading) return <Text>Loading...</Text>;
   return (
-    <Card sx={cardStyles}>
-      <CardContent sx={{ height: "100%", overflow: "auto" }}>
-        <CardHeader
-          title="Market News"
-          slotProps={{ title: { align: "left" } }}
-        />
+    <Card style={cardStyles}>
+      <Box style={{ height: "100%", overflow: "auto" }}>
+        <Text fw={700} size="lg" mb={10}>Market News</Text>
         <List>
           {newsItems.map((article) => {
             const dateObj = new Date(article.pubdate);
@@ -95,7 +90,7 @@ function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
             );
           })}
         </List>
-      </CardContent>
+      </Box>
     </Card>
   );
 }
@@ -118,44 +113,36 @@ function NewsItem({
 }: NewsItemProps) {
   return (
     <>
-      <ListItemButton
-        component="a"
-        href={url}
-        sx={{
-          "&:hover": { backgroundColor: "var(--color-highlighted)" },
-        }}
+      <ListItem
+        style={{ padding: "8px 0" }}
+        className="news-item"
       >
-        <Box sx={{ display: "flex", gap: 0.5, minWidth: 0 }}>
-          <Box sx={{ flex: "0 0 auto" }}>
-            <Typography>{time}</Typography>
-            <Typography>{pubdate}</Typography>
-          </Box>
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "block",
-              }}
+        <a href={url} style={{ textDecoration: "none", color: "inherit", width: "100%" }}>
+          <Group gap="xs" style={{ minWidth: 0 }}>
+          <Stack gap={0} style={{ flex: "0 0 auto" }}>
+            <Text size="sm">{time}</Text>
+            <Text size="sm">{pubdate}</Text>
+          </Stack>
+          <Box style={{ minWidth: 0, flex: 1 }}>
+            <Text
+              fw={700}
+              truncate
+              display="block"
             >
               {headline}
-            </Typography>
-            <Typography
-              sx={{
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "block",
-              }}
+            </Text>
+            <Text
+              size="sm"
+              truncate
+              display="block"
             >
               {descr}
-            </Typography>
+            </Text>
           </Box>
-        </Box>
-      </ListItemButton>
-      <Divider sx={{ borderColor: "#FFFFFF" }} />
+        </Group>
+        </a>
+      </ListItem>
+      <Divider color="var(--color-text-primary)" />
     </>
   );
 }

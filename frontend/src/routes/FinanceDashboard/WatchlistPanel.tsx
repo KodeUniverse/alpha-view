@@ -1,33 +1,21 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  List,
-  ListItemButton,
-  Divider,
-  Typography,
-  Box,
-  SxProps,
-} from "@mui/material";
+import { Card, List, ListItem, Text, Group, Box, Stack, Divider } from "@mantine/core";
 import StockChart from "@components/StockChart.jsx";
 import { useState, useEffect } from "react";
 import { OHLCVData, PriceData, Ticker } from "@shared/types";
 
 interface WatchListCardProps {
-  cardStyles?: SxProps;
+  cardStyles?: React.CSSProperties;
 }
 
 function WatchListCard({ cardStyles }: WatchListCardProps) {
   return (
-    <Card sx={cardStyles}>
-      <CardHeader title="Watchlist" />
-      <CardContent sx={{ height: "100%", overflow: "auto" }}>
-        <List sx={{ height: "100%" }}>
-          <WatchListItem ticker={{ symbol: "AAPL" }} />
-          <WatchListItem ticker={{ symbol: "MSFT" }} />
-          <WatchListItem ticker={{ symbol: "WMT" }} />
-        </List>
-      </CardContent>
+    <Card style={cardStyles}>
+      <Text fw={700} size="lg" mb={10}>Watchlist</Text>
+      <List style={{ height: "100%" }}>
+        <WatchListItem ticker={{ symbol: "AAPL" }} />
+        <WatchListItem ticker={{ symbol: "MSFT" }} />
+        <WatchListItem ticker={{ symbol: "WMT" }} />
+      </List>
     </Card>
   );
 }
@@ -64,35 +52,29 @@ function WatchListItem({ ticker }: WatchListItemProps) {
 
   return (
     <>
-      <ListItemButton
-        sx={{
+      <ListItem
+        style={{
           height: 75,
           minHeight: 30,
           display: "flex",
-          justifyContent: "center",
-          gap: 2,
+          alignItems: "center",
+          gap: 8,
         }}
       >
-        <Typography sx={{ fontWeight: 700 }}>{ticker.symbol}</Typography>
-        <StockChart
-          priceData={stockData}
-          chartType="area"
-          containerStyles={{ width: "30%", height: "100%" }}
-        />
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            flex: 1,
-            minWidth: 0,
-          }}
-        >
-          <Typography>Last Price</Typography>
-          <Typography>Last % Chg</Typography>
+        <Text fw={700}>{ticker.symbol}</Text>
+        <Box style={{ width: "30%", height: "100%" }}>
+          <StockChart
+            priceData={stockData}
+            chartType="area"
+            containerStyles={{ width: "100%", height: "100%" }}
+          />
         </Box>
-      </ListItemButton>
-      <Divider sx={{ borderColor: "var(--color-text-primary)" }} />
+        <Stack style={{ flex: 1, minWidth: 0 }} gap={0}>
+          <Text>Last Price</Text>
+          <Text>Last % Chg</Text>
+        </Stack>
+      </ListItem>
+      <Divider color="var(--color-text-primary)" />
     </>
   );
 }

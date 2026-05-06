@@ -1,18 +1,11 @@
 import StockChart from "@components/StockChart.tsx";
-import { useState, useEffect, useRef } from "react";
-import {
-  Box,
-  Card,
-  CardContent,
-  CardHeader,
-  SxProps,
-  Typography,
-} from "@mui/material";
+import { useState, useEffect } from "react";
+import { Card, Text, Group, Box } from "@mantine/core";
 import { OHLCVData, Ticker, VolumeData } from "@shared/types";
 
 interface ChartAreaProps {
   ticker: Ticker;
-  cardStyles?: SxProps;
+  cardStyles?: React.CSSProperties;
 }
 export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   const [priceData, setPriceData] = useState(null);
@@ -82,20 +75,20 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
 
   return (
     <>
-      <Card sx={cardStyles}>
-        <Box sx={{ padding: 2, marginLeft: 2 }}>
-          <Typography sx={{ fontSize: 36, fontWeight: 700 }}>
+      <Card style={cardStyles}>
+        <Group p="xs" ml="md">
+          <Text size="36px" fw={700}>
             {ticker.symbol}
-          </Typography>
-        </Box>
-        <CardContent sx={{ height: "100%", overflow: "auto" }}>
-          {!ticker.symbol && <Typography>Please enter a ticker.</Typography>}
+          </Text>
+        </Group>
+        <Box style={{ height: "100%", overflow: "auto" }}>
+          {!ticker.symbol && <Text>Please enter a ticker.</Text>}
           {isLoading && !isError && (
-            <Typography>Fetching data for symbol...</Typography>
+            <Text>Fetching data for symbol...</Text>
           )}
-          {isError && <Typography>Error fetching data.</Typography>}
+          {isError && <Text>Error fetching data.</Text>}
           {!isLoading && !isError && ticker.symbol && (
-            <Card sx={{ height: "98%" }}>
+            <Card h="98%">
               <StockChart
                 priceData={priceData}
                 volumeData={volumeData}
@@ -105,7 +98,7 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
               />
             </Card>
           )}
-        </CardContent>
+        </Box>
       </Card>
     </>
   );

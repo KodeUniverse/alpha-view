@@ -5,8 +5,8 @@ import ChartArea from "./ChartArea.jsx";
 import MetricsCard from "./BottomBarMetrics.tsx";
 import WatchlistCard from "./WatchlistPanel.jsx";
 import { useState } from "react";
-import { Box } from "@mui/material";
 import { Ticker } from "@shared/types";
+import { Group, Stack } from "@mantine/core";
 
 function FinanceDashboard() {
   const [ticker, setTicker] = useState<Ticker>({ symbol: "AAPL" });
@@ -16,23 +16,23 @@ function FinanceDashboard() {
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <Stack h="100%" gap={0}>
       <Navbar>
         <SearchBar
           value={ticker}
           onTickerSelect={handleTickerInput}
-          sxProps={{ marginLeft: 2 }}
+          sxProps={{ marginLeft: 8 }}
         />
       </Navbar>
-      <Box sx={{ display: "flex", flexDirection: "row", height: "100%" }}>
+      <Group h="100%" align="stretch" gap={0}>
         <NewsFeed length={30} cardStyles={{ width: "35%", height: "100%" }} />
         <ChartArea
           ticker={ticker}
-          cardStyles={{ width: "100%", height: "100%", paddingBottom: 7 }}
+          cardStyles={{ width: "100%", height: "100%", paddingBottom: 28 }}
         />
         <WatchlistCard cardStyles={{ width: "35%", height: "100%" }} />
-      </Box>
-    </Box>
+      </Group>
+    </Stack>
   );
 }
 

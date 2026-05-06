@@ -1,4 +1,4 @@
-import { Autocomplete, TextField, SxProps } from "@mui/material";
+import { Select, Loader } from "@mantine/core";
 import { Ticker } from "@shared/types";
 import { useEffect, useState } from "react";
 
@@ -9,7 +9,7 @@ function SearchBar({
 }: {
   onTickerSelect: (ticker: Ticker | null) => void;
   value: Ticker | null;
-  sxProps: SxProps; // should be SxProps<Theme> once you start using MUI Theme
+  sxProps?: React.CSSProperties;
 }) {
   const [symbols, setSymbols] = useState<Ticker[]>([]);
   const [isError, setError] = useState(false);
@@ -35,35 +35,33 @@ function SearchBar({
       } catch (error) {
         console.log(error);
         setError(true);
+      } finally {
+        setLoading(false);
       }
     };
     fetchSymbols();
-    setLoading(false);
   }, []);
+
+  const data = symbols.map((t) => ({ value: t.symbol, label: t.symbol }));
 
   return (
     <>
-      {isLoading && <p>Loading search...</p>}
+      {isLoading && <Loader size="sm" />}
       {isError && <p>Error loading ticker search.</p>}
       {!isError && !isLoading && (
-        <Autocomplete
-          options={symbols}
-          getOptionLabel={(option) => option.symbol}
-          value={value}
-          onChange={(event, newValue) => {
-            onTickerSelect(newValue);
+        <Select
+          placeholder="Search ticker..."
+          data={data}
+          value={value?.symbol || null}
+          onChange={(val) => {
+            onTickerSelect(val ? { symbol: val } : null);
           }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Ticker"
-              sx={{
-                "& .MuiOutlinedInput-root": { borderRadius: 5 },
-                width: 130,
-                ...sxProps,
-              }}
-            />
-          )}
+          searchable
+          clearable
+          style={{ width: 130, ...sxProps }}
+          styles={{
+            input: { borderRadius: 5 },
+          }}
         />
       )}
     </>

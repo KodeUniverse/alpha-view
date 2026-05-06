@@ -2,31 +2,28 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
-import {
-  createTheme,
-  ThemeProvider,
-  StyledEngineProvider,
-} from "@mui/material";
+import { MantineProvider, createTheme } from "@mantine/core";
+import "@mantine/core/styles.css";
 
 const theme = createTheme({
+  primaryColor: "custom",
+  colors: {
+    custom: [
+      "var(--color-highlighted)",
+      "var(--color-highlighted)",
+      "var(--color-highlighted)",
+      "var(--color-highlighted)",
+      "var(--color-highlighted)",
+      "var(--color-highlighted)",
+      "var(--color-highlighted)",
+      "var(--color-highlighted)",
+      "var(--color-highlighted)",
+      "var(--color-highlighted)",
+    ],
+  },
   components: {
-    MuiTypography: {
-      styleOverrides: {
-        root: {
-          fontFamily: "var(--font-family)",
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          backgroundColor: "var(--color-background-secondary)",
-          color: "var(--color-text-primary)",
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
+    Card: {
+      styles: {
         root: {
           color: "var(--color-text-primary)",
           backgroundColor: "var(--color-background-secondary)",
@@ -37,52 +34,26 @@ const theme = createTheme({
         },
       },
     },
-    MuiCardHeader: {
-      styleOverrides: {
+    CardHeader: {
+      styles: {
         title: {
-          fontFamily: "var(--font-family)",
           fontSize: "var(--font-size-lg)",
           fontWeight: 700,
           color: "var(--color-text-primary)",
         },
         subheader: {
           color: "var(--color-text-secondary)",
-          fontFamily: "var(--font-family)",
         },
       },
     },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          "& .MuiInputBase-input": { color: "var(--color-text-primary)" },
-          "& .MuiInputLabel-root": { color: "var(--color-text-primary)" },
-          "& .MuiOutlinedInput-root": {
-            backgroundColor: "var(--color-background-secondary)",
-          },
-          "& .MuiInputLabel-root.Mui-focused": {
-            color: "var(--color-text-primary)",
-          },
+    TextInput: {
+      styles: {
+        input: {
+          color: "var(--color-text-primary)",
+          backgroundColor: "var(--color-background-secondary)",
         },
-      },
-    },
-    MuiFilledInput: {
-      styleOverrides: {
-        root: {
-          "&::after": {
-            content: '""',
-            display: "block",
-            borderBottom: "2px solid",
-            borderColor: "var(--color-highlighted)",
-          },
-        },
-      },
-    },
-    MuiAutocomplete: {
-      styleOverrides: {
-        option: {
-          "&.Mui-focused": {
-            backgroundColor: "var(--color-highlighted) !important",
-          },
+        label: {
+          color: "var(--color-text-primary)",
         },
       },
     },
@@ -91,10 +62,8 @@ const theme = createTheme({
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={theme}>
-        <App />
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <MantineProvider theme={theme} defaultColorScheme="dark">
+      <App />
+    </MantineProvider>
   </StrictMode>,
 );

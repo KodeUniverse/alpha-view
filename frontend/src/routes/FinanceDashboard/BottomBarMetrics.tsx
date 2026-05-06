@@ -1,12 +1,10 @@
-import { Card, CardContent, CardHeader, Typography } from "@mui/material";
+import { Card, Text } from "@mantine/core";
 
 function MetricsCard() {
   return (
-    <Card sx={{ width: "100%", height: "100%" }}>
-      <CardHeader title="Quick Metrics" />
-      <CardContent>
-        <Typography>Placeholder!</Typography>
-      </CardContent>
+    <Card w="100%" h="100%">
+      <Text>Quick Metrics</Text>
+      <Text>Placeholder!</Text>
     </Card>
   );
 }
