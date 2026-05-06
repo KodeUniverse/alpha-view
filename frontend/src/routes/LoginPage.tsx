@@ -1,20 +1,28 @@
-import { Card, TextInput, Button, Divider, Text, Stack, Group } from "@mantine/core";
+import {
+  Card,
+  TextInput,
+  Button,
+  Divider,
+  Text,
+  Stack,
+  Group,
+} from "@mantine/core";
 import alphaPyramid from "@assets/pyramid-transparent.gif";
 import alphaLogo from "@assets/alpha-view-logo.png";
 import { Link } from "react-router-dom";
 
-function LoginPage() {
+function LoginPage({ styles = {} }: { styles?: React.CSSProperties }) {
   return (
     <>
-      <Button component={Link} to="/" variant="subtle" mb={10}>
+      <Button component={Link} to="/" variant="outline" mb={10}>
         Back
       </Button>
       <Group justify="center" align="center" h="100vh">
-        <Card w="25%" padding="lg" radius="md" withBorder>
-          <Stack gap="md">
+        <Card style={styles} padding="lg" radius="md" withBorder>
+          <Stack gap="md" align="center">
             <Group justify="center" align="center">
               <img src={alphaPyramid} width="120" height="120" />
-              <img src={alphaLogo} width="100%" height="50" />
+              <img src={alphaLogo} width="300" height="50" />
             </Group>
             <Stack gap="md" align="center" w="70%">
               <TextInput
@@ -52,17 +60,9 @@ function LoginPage() {
             </Stack>
             <Stack gap="sm">
               <Group align="center" gap="xs">
-                <Divider
-                  flex={1}
-                  color="var(--color-text-primary)"
-                  h={1}
-                />
+                <Divider flex={1} color="var(--color-text-primary)" h={1} />
                 <Text>or continue with</Text>
-                <Divider
-                  flex={1}
-                  color="var(--color-text-primary)"
-                  h={1}
-                />
+                <Divider flex={1} color="var(--color-text-primary)" h={1} />
               </Group>
               <Group justify="center">
                 <Button variant="default">Google</Button>

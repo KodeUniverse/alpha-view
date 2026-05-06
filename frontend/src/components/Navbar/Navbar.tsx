@@ -1,4 +1,4 @@
-import pyramidGif from "@assets/pyramid.gif";
+import pyramidGif from "@assets/pyramid-transparent.gif";
 import alphaLogo from "@assets/alpha-view-logo.png";
 import { Group, Button, ActionIcon } from "@mantine/core";
 import { Link } from "react-router-dom";
@@ -8,16 +8,22 @@ import { IconSun, IconMoon } from "@tabler/icons-react";
 
 function ThemeToggle() {
   const { setColorScheme } = useMantineColorScheme();
-  const computedColorScheme = useComputedColorScheme("dark");
+  const computedColorScheme = useComputedColorScheme();
 
   return (
     <ActionIcon
-      onClick={() => setColorScheme(computedColorScheme === "dark" ? "light" : "dark")}
+      onClick={() =>
+        setColorScheme(computedColorScheme === "dark" ? "light" : "dark")
+      }
       variant="default"
       size="lg"
       aria-label="Toggle color scheme"
     >
-      {computedColorScheme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
+      {computedColorScheme === "dark" ? (
+        <IconSun size={18} />
+      ) : (
+        <IconMoon size={18} />
+      )}
     </ActionIcon>
   );
 }

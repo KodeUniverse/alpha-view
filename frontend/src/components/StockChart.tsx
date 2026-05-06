@@ -10,6 +10,7 @@ import {
 } from "lightweight-charts";
 import { OHLCData, VolumeData, PriceData } from "@shared/types";
 import { useEffect, useRef } from "react";
+import { useComputedColorScheme } from "@mantine/core";
 
 interface BaseChartProps {
   volumeData?: VolumeData[] | null;
@@ -41,6 +42,8 @@ export default function StockChart({
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const priceSeriesRef = useRef<ISeriesApi<"Candlestick" | "Area">>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram">>(null);
+
+  const computedColorScheme = useComputedColorScheme();
 
   const bgColor = getComputedStyle(document.documentElement)
     .getPropertyValue("--color-background-secondary")
@@ -144,7 +147,7 @@ export default function StockChart({
       const errorMsg = error instanceof Error ? error.stack : String(error);
       console.log(errorMsg);
     }
-  }, [priceData, volumeData, chartType, timeScale]);
+  }, [priceData, volumeData, chartType, timeScale, computedColorScheme]);
 
   useEffect(() => {
     try {
@@ -157,7 +160,7 @@ export default function StockChart({
       const errorMsg = error instanceof Error ? error.stack : String(error);
       console.log(errorMsg);
     }
-  }, [priceData, volumeData]);
+  }, [priceData, volumeData, computedColorScheme]);
 
   return (
     <div

@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { socket } from "@services/socket.js";
 import {
-  List,
-  ListItem,
   Card,
   Text,
   Group,
@@ -67,7 +65,7 @@ function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
     <Card style={cardStyles}>
       <Box style={{ height: "100%", overflow: "auto" }}>
         <Text fw={700} size="lg" mb={10}>Market News</Text>
-        <List>
+        <Stack gap={0}>
           {newsItems.map((article) => {
             const dateObj = new Date(article.pubdate);
             const month = dateObj.toLocaleString("default", { month: "short" });
@@ -89,7 +87,7 @@ function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
               />
             );
           })}
-        </List>
+        </Stack>
       </Box>
     </Card>
   );
@@ -112,13 +110,14 @@ function NewsItem({
   time,
 }: NewsItemProps) {
   return (
-    <>
-      <ListItem
-        style={{ padding: "8px 0" }}
+    <Box>
+      <Box
+        component="a"
+        href={url}
         className="news-item"
+        style={{ padding: "8px 0", textDecoration: "none", color: "inherit", width: "100%", display: "block" }}
       >
-        <a href={url} style={{ textDecoration: "none", color: "inherit", width: "100%" }}>
-          <Group gap="xs" style={{ minWidth: 0 }}>
+        <Group gap="xs" style={{ minWidth: 0 }}>
           <Stack gap={0} style={{ flex: "0 0 auto" }}>
             <Text size="sm">{time}</Text>
             <Text size="sm">{pubdate}</Text>
@@ -140,10 +139,9 @@ function NewsItem({
             </Text>
           </Box>
         </Group>
-        </a>
-      </ListItem>
+      </Box>
       <Divider color="var(--color-text-primary)" />
-    </>
+    </Box>
   );
 }
 

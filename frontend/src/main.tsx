@@ -2,7 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
-import { MantineProvider, createTheme } from "@mantine/core";
+import { MantineProvider, createTheme, DEFAULT_THEME } from "@mantine/core";
+import type { CSSVariablesResolver } from "@mantine/core";
 import "@mantine/core/styles.css";
 
 const theme = createTheme({
@@ -60,9 +61,24 @@ const theme = createTheme({
   },
 });
 
+const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
+  variables: {
+    "--mantine-color-body": "var(--color-background-primary)",
+    "--mantine-color-text": "var(--color-text-primary)",
+  },
+  light: {
+    "--mantine-color-body": "var(--color-background-primary)",
+    "--mantine-color-text": "var(--color-text-primary)",
+  },
+  dark: {
+    "--mantine-color-body": "var(--color-background-primary)",
+    "--mantine-color-text": "var(--color-text-primary)",
+  },
+});
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <MantineProvider theme={theme} defaultColorScheme="dark">
+    <MantineProvider theme={theme} cssVariablesResolver={cssVariablesResolver} defaultColorScheme="dark">
       <App />
     </MantineProvider>
   </StrictMode>,

@@ -24,13 +24,18 @@ function FinanceDashboard() {
           sxProps={{ marginLeft: 8 }}
         />
       </Navbar>
-      <Group h="100%" align="stretch" gap={0}>
-        <NewsFeed length={30} cardStyles={{ width: "35%", height: "100%" }} />
+      <Group h="100%" align="stretch" gap={0} wrap="nowrap">
+        <NewsFeed length={30} cardStyles={{ width: "20%", height: "100%" }} />
         <ChartArea
           ticker={ticker}
-          cardStyles={{ width: "100%", height: "100%", paddingBottom: 28 }}
+          cardStyles={{
+            flex: 1,
+            minWidth: 0,
+            height: "100%",
+            paddingBottom: 28,
+          }}
         />
-        <WatchlistCard cardStyles={{ width: "35%", height: "100%" }} />
+        <WatchlistCard cardStyles={{ width: "15%", height: "100%" }} />
       </Group>
     </Stack>
   );
