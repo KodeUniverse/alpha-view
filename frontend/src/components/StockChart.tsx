@@ -87,8 +87,10 @@ export default function StockChart({
           break;
         }
         case "area": {
-          const upChart =
-            priceData[0]?.value <= priceData[priceData.length - 1]?.value;
+          const hasData = priceData && priceData.length > 0;
+          const upChart = hasData
+            ? priceData[0].value <= priceData[priceData.length - 1].value
+            : true;
           const areaChartColors = {
             lineColor: upChart ? "#26a69a" : "#ef5350",
             topColor: upChart ? "#26a69a" : "#ef5350",
@@ -127,8 +129,9 @@ export default function StockChart({
 
       const resizer = new ResizeObserver((entries) => {
         if (!entries.length) return;
-        const { width, height } = entries[0].contentRect;
-        chart.applyOptions({ width, height: height - 30 });
+        const rect = entries[0].target.getBoundingClientRect();
+        const { width, height } = rect;
+        chart.applyOptions({ width, height });
       });
 
       resizer.observe(chartContainerRef.current);
@@ -160,7 +163,11 @@ export default function StockChart({
     <div
       className="chart-container"
       ref={chartContainerRef}
-      style={containerStyles}
+      style={{
+        ...containerStyles,
+        position: "relative",
+        overflow: "hidden",
+      }}
     ></div>
   );
 }

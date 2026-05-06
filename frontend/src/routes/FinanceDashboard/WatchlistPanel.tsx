@@ -11,27 +11,32 @@ import {
 } from "@mui/material";
 import StockChart from "@components/StockChart.jsx";
 import { useState, useEffect } from "react";
-import { OHLCVData, Ticker } from "@shared/types";
+import { OHLCVData, PriceData, Ticker } from "@shared/types";
 
-function WatchListCard(cardStyles: SxProps = {}) {
+interface WatchListCardProps {
+  cardStyles?: SxProps;
+}
+
+function WatchListCard({ cardStyles }: WatchListCardProps) {
   return (
     <Card sx={cardStyles}>
       <CardHeader title="Watchlist" />
       <CardContent sx={{ height: "100%", overflow: "auto" }}>
         <List sx={{ height: "100%" }}>
-          <WatchListItem symbol="AAPL" />
-          <WatchListItem symbol="MSFT" />
-          <WatchListItem symbol="WMT" />
+          <WatchListItem ticker={{ symbol: "AAPL" }} />
+          <WatchListItem ticker={{ symbol: "MSFT" }} />
+          <WatchListItem ticker={{ symbol: "WMT" }} />
         </List>
       </CardContent>
     </Card>
   );
 }
 
-export default WatchListCard;
-
-function WatchListItem(ticker: Ticker) {
-  const [stockData, setStockData] = useState(null);
+interface WatchListItemProps {
+  ticker: Ticker;
+}
+function WatchListItem({ ticker }: WatchListItemProps) {
+  const [stockData, setStockData] = useState<PriceData[]>([]);
 
   useEffect(() => {
     const fetchStockData = async () => {
@@ -48,7 +53,7 @@ function WatchListItem(ticker: Ticker) {
           const { close: value, time } = row;
           return { time: row.time.split("T")[0], value: Number(value) };
         });
-        data = data.slice(-20); // last 5 days
+        data = data.slice(-10);
         setStockData(data);
       } catch (error) {
         console.log(error);
@@ -61,7 +66,8 @@ function WatchListItem(ticker: Ticker) {
     <>
       <ListItemButton
         sx={{
-          height: "15%",
+          height: 75,
+          minHeight: 30,
           display: "flex",
           justifyContent: "center",
           gap: 2,
@@ -71,7 +77,7 @@ function WatchListItem(ticker: Ticker) {
         <StockChart
           priceData={stockData}
           chartType="area"
-          containerStyles={{ width: "50%", height: "100%" }}
+          containerStyles={{ width: "30%", height: "100%" }}
         />
         <Box
           sx={{
@@ -90,3 +96,5 @@ function WatchListItem(ticker: Ticker) {
     </>
   );
 }
+
+export default WatchListCard;
