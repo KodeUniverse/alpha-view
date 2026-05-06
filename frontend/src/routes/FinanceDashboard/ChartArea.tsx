@@ -1,7 +1,8 @@
 import StockChart from "@components/StockChart.tsx";
 import { useState, useEffect } from "react";
-import { Card, Text, Group, Box } from "@mantine/core";
+import { Card, Text, Group, Box, Stack } from "@mantine/core";
 import { OHLCVData, Ticker, VolumeData } from "@shared/types";
+import MetricsCard from "./MetricsCard";
 
 interface ChartAreaProps {
   ticker: Ticker;
@@ -81,22 +82,28 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
             {ticker.symbol}
           </Text>
         </Group>
-        <Box style={{ height: "100%", overflow: "auto" }}>
+        <Box style={{ height: "100%" }}>
           {!ticker.symbol && <Text>Please enter a ticker.</Text>}
-          {isLoading && !isError && (
-            <Text>Fetching data for symbol...</Text>
-          )}
+          {isLoading && !isError && <Text>Fetching data for symbol...</Text>}
           {isError && <Text>Error fetching data.</Text>}
           {!isLoading && !isError && ticker.symbol && (
-            <Card h="98%">
-              <StockChart
-                priceData={priceData}
-                volumeData={volumeData}
-                chartType="candle"
-                timeScale={false}
-                containerStyles={{ width: "100%", height: "100%" }}
-              />
-            </Card>
+            <Stack h={"100%"}>
+              <Card h="98%">
+                <StockChart
+                  priceData={priceData}
+                  volumeData={volumeData}
+                  chartType="candle"
+                  timeScale={false}
+                  containerStyles={{
+                    width: "100%",
+                    minHeight: 0,
+                    margin: 5,
+                    flex: 1,
+                  }}
+                />
+              </Card>
+              <MetricsCard columns={6} styles={{ overflow: "visible" }} />
+            </Stack>
           )}
         </Box>
       </Card>

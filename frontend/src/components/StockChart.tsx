@@ -17,6 +17,10 @@ interface BaseChartProps {
   containerStyles?: React.CSSProperties;
   chartOptionOverride?: DeepPartial<ChartOptions>;
   timeScale?: boolean;
+  interactive?: boolean;
+  showHorizAxis?: boolean;
+  showVertAxis?: boolean;
+  showGrid?: boolean;
 }
 
 interface CandleChartProps extends BaseChartProps {
@@ -38,6 +42,10 @@ export default function StockChart({
   containerStyles = { width: "100%", height: "100%" },
   chartOptionOverride = null,
   timeScale = true,
+  interactive = true,
+  showHorizAxis = true,
+  showVertAxis = true,
+  showGrid = true,
 }: StockChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const priceSeriesRef = useRef<ISeriesApi<"Candlestick" | "Area">>(null);
@@ -69,26 +77,49 @@ export default function StockChart({
         .trim();
     }
   }
-
-  let chartOptions: DeepPartial<ChartOptions>;
-  if (!chartOptionOverride) {
-    chartOptions = {
-      layout: {
-        textColor: computedColors.textPrimary,
-        background: {
-          type: ColorType.Solid,
-          color: computedColors.backgroundSecondary,
-        },
-        attributionLogo: false,
-        panes: {
-          enableResize: true,
-          separatorColor: computedColors.chartPanes,
-        },
+  let chartOptionBuilder: DeepPartial<ChartOptions> = {
+    layout: {
+      textColor: computedColors.textPrimary,
+      background: {
+        type: ColorType.Solid,
+        color: computedColors.backgroundSecondary,
       },
-    };
-  } else {
-    chartOptions = chartOptionOverride;
-  }
+      attributionLogo: false,
+      panes: {
+        enableResize: true,
+        separatorColor: computedColors.chartPanes,
+      },
+    },
+    ...chartOptionOverride,
+  };
+
+  !interactive
+    ? (chartOptionBuilder = {
+        handleScale: false,
+        handleScroll: false,
+        ...chartOptionBuilder,
+      })
+    : null;
+  !showHorizAxis
+    ? (chartOptionBuilder = {
+        timeScale: { visible: false },
+        ...chartOptionBuilder,
+      })
+    : null;
+  !showVertAxis
+    ? (chartOptionBuilder = {
+        rightPriceScale: { visible: false },
+        leftPriceScale: { visible: false },
+        ...chartOptionBuilder,
+      })
+    : null;
+  !showGrid
+    ? (chartOptionBuilder = {
+        grid: { horzLines: { visible: false }, vertLines: { visible: false } },
+        ...chartOptionBuilder,
+      })
+    : null;
+  const chartOptions = chartOptionBuilder;
 
   useEffect(() => {
     try {
@@ -162,8 +193,7 @@ export default function StockChart({
         resizer.disconnect();
       };
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.stack : String(error);
-      console.log(errorMsg);
+      console.log(String(error));
     }
   }, [priceData, volumeData, chartType, timeScale, computedColorScheme]);
 
@@ -175,8 +205,7 @@ export default function StockChart({
         volumeSeriesRef.current.setData(volumeData);
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.stack : String(error);
-      console.log(errorMsg);
+      console.log(String(error));
     }
   }, [priceData, volumeData, computedColorScheme]);
 

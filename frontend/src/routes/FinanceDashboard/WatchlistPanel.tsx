@@ -43,7 +43,7 @@ function WatchListItem({ ticker }: WatchListItemProps) {
           const { close: value, time } = row;
           return { time: row.time.split("T")[0], value: Number(value) };
         });
-        data = data.slice(-10);
+        data = data.slice(-5);
         setStockData(data);
       } catch (error) {
         console.log(error);
@@ -53,31 +53,34 @@ function WatchListItem({ ticker }: WatchListItemProps) {
   }, []);
 
   return (
-    <Box>
+    <Card style={{ padding: 0 }}>
       <Group
         style={{
           height: 75,
           minHeight: 30,
           display: "flex",
           alignItems: "center",
+          justifyContent: "center",
           gap: 8,
         }}
       >
         <Text fw={700}>{ticker.symbol}</Text>
-        <Box style={{ flex: 1, height: "100%" }}>
-          <StockChart
-            priceData={stockData}
-            chartType="area"
-            containerStyles={{ flex: 1, minWidth: 20, height: "100%" }}
-          />
-        </Box>
-        <Stack style={{ flex: 0, minWidth: 45 }} gap={0}>
-          <Text>Last Price</Text>
-          <Text>Last % Chg</Text>
-        </Stack>
+        <StockChart
+          priceData={stockData}
+          chartType="area"
+          containerStyles={{ width: 50, height: 35 }}
+          showHorizAxis={false}
+          showVertAxis={false}
+          interactive={false}
+          showGrid={false}
+        />
+        <Group gap={5}>
+          <Text>$123.45</Text>
+          <Text>+$2.7653</Text>
+          <Text>+2.24%</Text>
+        </Group>
       </Group>
-      <Divider color="var(--color-text-primary)" />
-    </Box>
+    </Card>
   );
 }
 

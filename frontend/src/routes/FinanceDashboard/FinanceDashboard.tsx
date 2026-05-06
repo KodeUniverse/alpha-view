@@ -2,7 +2,7 @@ import Navbar from "@components/Navbar/Navbar.tsx";
 import SearchBar from "@components/SearchBar/SearchBar.tsx";
 import NewsFeed from "./NewsFeed.jsx";
 import ChartArea from "./ChartArea.jsx";
-import MetricsCard from "./BottomBarMetrics.tsx";
+import MetricsCard from "./MetricsCard.tsx";
 import WatchlistCard from "./WatchlistPanel.jsx";
 import { useState } from "react";
 import { Ticker } from "@shared/types";
