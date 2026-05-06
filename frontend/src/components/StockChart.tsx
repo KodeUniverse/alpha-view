@@ -45,26 +45,44 @@ export default function StockChart({
 
   const computedColorScheme = useComputedColorScheme();
 
-  const bgColor = getComputedStyle(document.documentElement)
-    .getPropertyValue("--color-background-secondary")
-    .trim();
-  const separatorColor = getComputedStyle(document.documentElement)
-    .getPropertyValue("--color-chart-panes")
-    .trim();
+  interface ComputedColorsCSS {
+    backgroundPrimary?: string;
+    backgroundSecondary?: string;
+    chartPanes?: string;
+    textPrimary?: string;
+  }
+
+  const cssVarMap: Record<string, keyof ComputedColorsCSS> = {
+    "--color-background-primary": "backgroundPrimary",
+    "--color-background-secondary": "backgroundSecondary",
+    "--color-chart-panes": "chartPanes",
+    "--color-text-primary": "textPrimary",
+  };
+  const cssVars: string[] = Object.keys(cssVarMap);
+  const computedColors: ComputedColorsCSS = {};
+
+  for (const cssVar of cssVars) {
+    const property = cssVarMap[cssVar];
+    if (property) {
+      computedColors[property] = getComputedStyle(document.documentElement)
+        .getPropertyValue(cssVar)
+        .trim();
+    }
+  }
 
   let chartOptions: DeepPartial<ChartOptions>;
   if (!chartOptionOverride) {
     chartOptions = {
       layout: {
-        textColor: "white",
+        textColor: computedColors.textPrimary,
         background: {
           type: ColorType.Solid,
-          color: bgColor,
+          color: computedColors.backgroundSecondary,
         },
         attributionLogo: false,
         panes: {
           enableResize: true,
-          separatorColor: separatorColor,
+          separatorColor: computedColors.chartPanes,
         },
       },
     };
