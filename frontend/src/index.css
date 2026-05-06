@@ -63,7 +63,3 @@ body {
   background-color: var(--color-background-primary);
   color: var(--color-text-primary);
 }
-
-.news-item:hover {
-  background-color: var(--color-highlighted);
-}

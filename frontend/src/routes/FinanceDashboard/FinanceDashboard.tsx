@@ -21,7 +21,7 @@ function FinanceDashboard() {
         <SearchBar
           value={ticker}
           onTickerSelect={handleTickerInput}
-          sxProps={{ marginLeft: 8 }}
+          styles={{ marginLeft: 8 }}
         />
       </Navbar>
       <Group h="100%" align="stretch" gap={0} wrap="nowrap">

@@ -5,11 +5,11 @@ import { useEffect, useState } from "react";
 function SearchBar({
   onTickerSelect,
   value,
-  sxProps = {},
+  styles = {},
 }: {
   onTickerSelect: (ticker: Ticker | null) => void;
   value: Ticker | null;
-  sxProps?: React.CSSProperties;
+  styles?: React.CSSProperties;
 }) {
   const [symbols, setSymbols] = useState<Ticker[]>([]);
   const [isError, setError] = useState(false);
@@ -58,7 +58,7 @@ function SearchBar({
           }}
           searchable
           clearable
-          style={{ width: 130, ...sxProps }}
+          style={{ width: 130, ...styles }}
           styles={{
             input: { borderRadius: 5 },
           }}
