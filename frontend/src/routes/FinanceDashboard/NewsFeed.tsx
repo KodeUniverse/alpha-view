@@ -1,21 +1,11 @@
 import { useEffect, useState } from "react";
 import { socket } from "@services/socket.js";
-import {
-  List,
-  ListItemButton,
-  ListItemIcon,
-  Divider,
-  Card,
-  CardContent,
-  CardHeader,
-  Typography,
-  Box,
-  SxProps,
-} from "@mui/material";
+import { Card, Text, Group, Stack, Divider, Box } from "@mantine/core";
+import { NewsArticle } from "@shared/types";
 
 interface NewsFeedProps {
-  length: Number;
-  cardStyles?: SxProps;
+  length: number;
+  cardStyles?: React.CSSProperties;
 }
 function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
   const [isLoaded, setLoaded] = useState(false);
@@ -49,7 +39,7 @@ function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
   }, [length, source]);
 
   useEffect(() => {
-    const updateData = (data) => {
+    const updateData = (data: NewsArticle[]) => {
       console.log("Client recieved FT news data!");
       setNewsItems(data.slice(0, length));
       setLoaded(true);
@@ -63,39 +53,36 @@ function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
     };
   }, [length, source]);
 
-  if (isError) return <p>Failed to fetch news.</p>;
-  if (isLoading) return <p>Loading...</p>;
+  if (isError) return <Text>Failed to fetch news.</Text>;
+  if (isLoading) return <Text>Loading...</Text>;
   return (
-    <Card sx={cardStyles}>
-      <CardContent sx={{ height: "100%", overflow: "auto" }}>
-        <CardHeader
-          title="Market News"
-          slotProps={{ title: { align: "left" } }}
-        />
-        <List>
-          {newsItems.map((article) => {
-            const dateObj = new Date(article.pubdate);
-            const month = dateObj.toLocaleString("default", { month: "short" });
-            const day = dateObj.toLocaleString("default", {
-              day: "2-digit",
-            });
-            const pubTime = dateObj.toLocaleString("default", {
-              timeStyle: "short",
-            });
-            return (
-              <NewsItem
-                key={article.articleid}
-                headline={article.headline}
-                descr={article.descr}
-                pubdate={`${month}-${day}`}
-                time={`${pubTime}`}
-                url={article.url}
-                source={article.newssource}
-              />
-            );
-          })}
-        </List>
-      </CardContent>
+    <Card style={{ overflowY: "auto", ...cardStyles }}>
+      <Text fw={700} size="lg" mb={10}>
+        Market News
+      </Text>
+      <Stack gap={0}>
+        {newsItems.map((article) => {
+          const dateObj = new Date(article.pubdate);
+          const month = dateObj.toLocaleString("default", { month: "short" });
+          const day = dateObj.toLocaleString("default", {
+            day: "2-digit",
+          });
+          const pubTime = dateObj.toLocaleString("default", {
+            timeStyle: "short",
+          });
+          return (
+            <NewsItem
+              key={article.articleid}
+              headline={article.headline}
+              descr={article.descr}
+              pubdate={`${month}-${day}`}
+              time={`${pubTime}`}
+              url={article.url}
+              source={article.newssource}
+            />
+          );
+        })}
+      </Stack>
     </Card>
   );
 }
@@ -116,47 +103,39 @@ function NewsItem({
   pubdate,
   time,
 }: NewsItemProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
-    <>
-      <ListItemButton
-        component="a"
-        href={url}
-        sx={{
-          "&:hover": { backgroundColor: "var(--color-highlighted)" },
-        }}
-      >
-        <Box sx={{ display: "flex", gap: 0.5, minWidth: 0 }}>
-          <Box sx={{ flex: "0 0 auto" }}>
-            <Typography>{time}</Typography>
-            <Typography>{pubdate}</Typography>
-          </Box>
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "block",
-              }}
-            >
-              {headline}
-            </Typography>
-            <Typography
-              sx={{
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "block",
-              }}
-            >
-              {descr}
-            </Typography>
-          </Box>
+    <Card
+      component="a"
+      href={url}
+      className="news-item"
+      style={{
+        textDecoration: "none",
+        color: "inherit",
+        width: "100%",
+        display: "block",
+        boxShadow: isHovered ? "0 0 15px 2px var(--color-highlighted)" : "none",
+        transition: "box-shadow 0.2s ease",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Group gap="xs" style={{ minWidth: 0 }}>
+        <Stack gap={0} style={{ flex: "0 0 auto" }}>
+          <Text size="sm">{time}</Text>
+          <Text size="sm">{pubdate}</Text>
+        </Stack>
+        <Box style={{ minWidth: 0, flex: 1 }}>
+          <Text fw={700} truncate display="block">
+            {headline}
+          </Text>
+          <Text size="sm" truncate display="block">
+            {descr}
+          </Text>
         </Box>
-      </ListItemButton>
-      <Divider sx={{ borderColor: "#FFFFFF" }} />
-    </>
+      </Group>
+    </Card>
   );
 }
 

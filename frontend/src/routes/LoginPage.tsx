@@ -1,148 +1,81 @@
 import {
-  Box,
   Card,
-  CardHeader,
-  CardContent,
-  Typography,
+  TextInput,
   Button,
-  TextField,
   Divider,
-} from "@mui/material";
-
+  Text,
+  Stack,
+  Group,
+} from "@mantine/core";
 import alphaPyramid from "@assets/pyramid-transparent.gif";
 import alphaLogo from "@assets/alpha-view-logo.png";
 import { Link } from "react-router-dom";
 
-function LoginPage() {
+function LoginPage({ styles = {} }: { styles?: React.CSSProperties }) {
   return (
     <>
-      <Button component={Link} to="/">
+      <Button component={Link} to="/" variant="outline" mb={10}>
         Back
       </Button>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100%",
-        }}
-      >
-        <Card sx={{ width: "25%" }}>
-          <CardContent sx={{ overflow: "auto" }}>
-            <Box sx={{ display: "flex", justifyContent: "center" }}>
-              <Box sx={{ display: "flex" }}></Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <img src={alphaPyramid} width="120" height="120" />
-                  <img src={alphaLogo} width="100%" height="50" />
-                </Box>
-              </Box>
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 5,
-                alignItems: "center",
-              }}
-            >
-              <TextField
+      <Group justify="center" align="center" h="100vh">
+        <Card style={styles} padding="lg" radius="md" withBorder>
+          <Stack gap="md" align="center">
+            <Group justify="center" align="center">
+              <img src={alphaPyramid} width="120" height="120" />
+              <img src={alphaLogo} width="300" height="50" />
+            </Group>
+            <Stack gap="md" align="center" w="70%">
+              <TextInput
                 label="Username"
                 variant="filled"
-                sx={{
-                  width: "70%",
-                  backgroundColor: "var(--color-background-tertiary)",
+                w="100%"
+                styles={{
+                  input: {
+                    backgroundColor: "var(--color-background-tertiary)",
+                  },
                 }}
               />
-              <TextField
+              <TextInput
                 label="Password"
+                type="password"
                 variant="filled"
-                sx={{
-                  width: "70%",
-                  backgroundColor: "var(--color-background-tertiary)",
+                w="100%"
+                styles={{
+                  input: {
+                    backgroundColor: "var(--color-background-tertiary)",
+                  },
                 }}
               />
               <Button
-                sx={{
-                  width: "70%",
-                  backgroundColor: "var(--color-highlighted)",
+                w="100%"
+                color="custom"
+                styles={{
+                  root: {
+                    backgroundColor: "var(--color-highlighted)",
+                  },
                 }}
-                variant="contained"
               >
                 Login
               </Button>
-            </Box>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingTop: 5,
-                  paddingBottom: 1,
-                  paddingLeft: 5,
-                  paddingRight: 5,
-                  gap: 2,
-                }}
-              >
-                <Divider
-                  sx={{
-                    width: "50%",
-                    backgroundColor: "var(--color-text-primary)",
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                />
-                <Typography>or continue with</Typography>
-                <Divider
-                  sx={{
-                    width: "50%",
-                    backgroundColor: "var(--color-text-primary)",
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                />
-              </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Button>Google</Button>
-                <Button>Facebook</Button>
-                <Button>GitHub</Button>
-              </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                }}
-              >
-                <Typography>Don't have an account?</Typography>
-              </Box>
-            </Box>
-          </CardContent>
+            </Stack>
+            <Stack gap="sm">
+              <Group align="center" gap="xs">
+                <Divider flex={1} color="var(--color-text-primary)" h={1} />
+                <Text>or continue with</Text>
+                <Divider flex={1} color="var(--color-text-primary)" h={1} />
+              </Group>
+              <Group justify="center">
+                <Button variant="default">Google</Button>
+                <Button variant="default">Facebook</Button>
+                <Button variant="default">GitHub</Button>
+              </Group>
+              <Group justify="center">
+                <Text>Don't have an account?</Text>
+              </Group>
+            </Stack>
+          </Stack>
         </Card>
-      </Box>
+      </Group>
     </>
   );
 }

@@ -29,7 +29,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<FinanceDashboard />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage styles={{ width: 500 }} />} />
       </Routes>
     </BrowserRouter>
   );

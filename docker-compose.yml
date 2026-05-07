@@ -12,10 +12,10 @@ services:
           target: /app
           ignore:
             - node_modules
-    #        - action: rebuild
-    #          path: ./frontend/package.json
-    #        - action: rebuild
-    #          path: ./frontend/package-lock.json
+        - action: rebuild
+          path: ./frontend/package.json
+        - action: rebuild
+          path: ./frontend/package-lock.json
     ports:
       - "${HOST_PORT}:5379"
     depends_on:

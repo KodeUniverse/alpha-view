@@ -1,18 +1,12 @@
 import StockChart from "@components/StockChart.tsx";
-import { useState, useEffect, useRef } from "react";
-import {
-  Box,
-  Card,
-  CardContent,
-  CardHeader,
-  SxProps,
-  Typography,
-} from "@mui/material";
+import { useState, useEffect } from "react";
+import { Card, Text, Group, Box, Stack } from "@mantine/core";
 import { OHLCVData, Ticker, VolumeData } from "@shared/types";
+import MetricsCard from "./MetricsCard";
 
 interface ChartAreaProps {
   ticker: Ticker;
-  cardStyles?: SxProps;
+  cardStyles?: React.CSSProperties;
 }
 export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   const [priceData, setPriceData] = useState(null);
@@ -82,30 +76,36 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
 
   return (
     <>
-      <Card sx={cardStyles}>
-        <Box sx={{ padding: 2, marginLeft: 2 }}>
-          <Typography sx={{ fontSize: 36, fontWeight: 700 }}>
+      <Card style={cardStyles}>
+        <Group p="xs" ml="md">
+          <Text size="36px" fw={700}>
             {ticker.symbol}
-          </Typography>
-        </Box>
-        <CardContent sx={{ height: "100%", overflow: "auto" }}>
-          {!ticker.symbol && <Typography>Please enter a ticker.</Typography>}
-          {isLoading && !isError && (
-            <Typography>Fetching data for symbol...</Typography>
-          )}
-          {isError && <Typography>Error fetching data.</Typography>}
+          </Text>
+        </Group>
+        <Box style={{ height: "100%" }}>
+          {!ticker.symbol && <Text>Please enter a ticker.</Text>}
+          {isLoading && !isError && <Text>Fetching data for symbol...</Text>}
+          {isError && <Text>Error fetching data.</Text>}
           {!isLoading && !isError && ticker.symbol && (
-            <Card sx={{ height: "98%" }}>
-              <StockChart
-                priceData={priceData}
-                volumeData={volumeData}
-                chartType="candle"
-                timeScale={false}
-                containerStyles={{ width: "100%", height: "100%" }}
-              />
-            </Card>
+            <Stack h={"100%"}>
+              <Card h="98%">
+                <StockChart
+                  priceData={priceData}
+                  volumeData={volumeData}
+                  chartType="candle"
+                  timeScale={false}
+                  containerStyles={{
+                    width: "100%",
+                    minHeight: 0,
+                    margin: 5,
+                    flex: 1,
+                  }}
+                />
+              </Card>
+              <MetricsCard columns={6} styles={{ overflow: "visible" }} />
+            </Stack>
           )}
-        </CardContent>
+        </Box>
       </Card>
     </>
   );

@@ -1,0 +1,14 @@
+# Node.js
+frontend/node_modules
+backend/node_modules
+backend/venv
+
+# Environment & Config
+.env*
+.npmrc
+
+# Git
+.git
+
+# Logs
+*.log

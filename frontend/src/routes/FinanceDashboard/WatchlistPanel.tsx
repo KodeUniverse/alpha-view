@@ -1,33 +1,23 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  List,
-  ListItemButton,
-  Divider,
-  Typography,
-  Box,
-  SxProps,
-} from "@mui/material";
+import { Card, Text, Group, Box, Stack, Divider } from "@mantine/core";
 import StockChart from "@components/StockChart.jsx";
 import { useState, useEffect } from "react";
 import { OHLCVData, PriceData, Ticker } from "@shared/types";
 
 interface WatchListCardProps {
-  cardStyles?: SxProps;
+  cardStyles?: React.CSSProperties;
 }
 
 function WatchListCard({ cardStyles }: WatchListCardProps) {
   return (
-    <Card sx={cardStyles}>
-      <CardHeader title="Watchlist" />
-      <CardContent sx={{ height: "100%", overflow: "auto" }}>
-        <List sx={{ height: "100%" }}>
-          <WatchListItem ticker={{ symbol: "AAPL" }} />
-          <WatchListItem ticker={{ symbol: "MSFT" }} />
-          <WatchListItem ticker={{ symbol: "WMT" }} />
-        </List>
-      </CardContent>
+    <Card style={cardStyles}>
+      <Text fw={700} size="lg" mb={10}>
+        Watchlist
+      </Text>
+      <Stack style={{ height: "100%" }} gap={0}>
+        <WatchListItem ticker={{ symbol: "AAPL" }} />
+        <WatchListItem ticker={{ symbol: "MSFT" }} />
+        <WatchListItem ticker={{ symbol: "WMT" }} />
+      </Stack>
     </Card>
   );
 }
@@ -53,7 +43,7 @@ function WatchListItem({ ticker }: WatchListItemProps) {
           const { close: value, time } = row;
           return { time: row.time.split("T")[0], value: Number(value) };
         });
-        data = data.slice(-10);
+        data = data.slice(-5);
         setStockData(data);
       } catch (error) {
         console.log(error);
@@ -63,37 +53,34 @@ function WatchListItem({ ticker }: WatchListItemProps) {
   }, []);
 
   return (
-    <>
-      <ListItemButton
-        sx={{
+    <Card style={{ padding: 0 }}>
+      <Group
+        style={{
           height: 75,
           minHeight: 30,
           display: "flex",
+          alignItems: "center",
           justifyContent: "center",
-          gap: 2,
+          gap: 8,
         }}
       >
-        <Typography sx={{ fontWeight: 700 }}>{ticker.symbol}</Typography>
+        <Text fw={700}>{ticker.symbol}</Text>
         <StockChart
           priceData={stockData}
           chartType="area"
-          containerStyles={{ width: "30%", height: "100%" }}
+          containerStyles={{ width: 50, height: 35 }}
+          showHorizAxis={false}
+          showVertAxis={false}
+          interactive={false}
+          showGrid={false}
         />
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            flex: 1,
-            minWidth: 0,
-          }}
-        >
-          <Typography>Last Price</Typography>
-          <Typography>Last % Chg</Typography>
-        </Box>
-      </ListItemButton>
-      <Divider sx={{ borderColor: "var(--color-text-primary)" }} />
-    </>
+        <Group gap={5}>
+          <Text>$123.45</Text>
+          <Text>+$2.7653</Text>
+          <Text>+2.24%</Text>
+        </Group>
+      </Group>
+    </Card>
   );
 }
 

@@ -10,12 +10,17 @@ import {
 } from "lightweight-charts";
 import { OHLCData, VolumeData, PriceData } from "@shared/types";
 import { useEffect, useRef } from "react";
+import { useComputedColorScheme } from "@mantine/core";
 
 interface BaseChartProps {
   volumeData?: VolumeData[] | null;
   containerStyles?: React.CSSProperties;
   chartOptionOverride?: DeepPartial<ChartOptions>;
   timeScale?: boolean;
+  interactive?: boolean;
+  showHorizAxis?: boolean;
+  showVertAxis?: boolean;
+  showGrid?: boolean;
 }
 
 interface CandleChartProps extends BaseChartProps {
@@ -37,37 +42,92 @@ export default function StockChart({
   containerStyles = { width: "100%", height: "100%" },
   chartOptionOverride = null,
   timeScale = true,
+  interactive = true,
+  showHorizAxis = true,
+  showVertAxis = true,
+  showGrid = true,
 }: StockChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const priceSeriesRef = useRef<ISeriesApi<"Candlestick" | "Area">>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram">>(null);
 
-  const bgColor = getComputedStyle(document.documentElement)
-    .getPropertyValue("--color-background-secondary")
-    .trim();
-  const separatorColor = getComputedStyle(document.documentElement)
-    .getPropertyValue("--color-chart-panes")
-    .trim();
+  const computedColorScheme = useComputedColorScheme();
 
-  let chartOptions: DeepPartial<ChartOptions>;
-  if (!chartOptionOverride) {
-    chartOptions = {
-      layout: {
-        textColor: "white",
-        background: {
-          type: ColorType.Solid,
-          color: bgColor,
-        },
-        attributionLogo: false,
-        panes: {
-          enableResize: true,
-          separatorColor: separatorColor,
-        },
-      },
-    };
-  } else {
-    chartOptions = chartOptionOverride;
+  interface ComputedColorsCSS {
+    backgroundPrimary?: string;
+    backgroundSecondary?: string;
+    chartGrid?: string;
+    textPrimary?: string;
   }
+
+  const cssVarMap: Record<string, keyof ComputedColorsCSS> = {
+    "--color-background-primary": "backgroundPrimary",
+    "--color-background-secondary": "backgroundSecondary",
+    "--color-chart-grid": "chartGrid",
+    "--color-text-primary": "textPrimary",
+  };
+  const cssVars: string[] = Object.keys(cssVarMap);
+  const computedColors: ComputedColorsCSS = {};
+
+  for (const cssVar of cssVars) {
+    const property = cssVarMap[cssVar];
+    if (property) {
+      computedColors[property] = getComputedStyle(document.documentElement)
+        .getPropertyValue(cssVar)
+        .trim();
+    }
+  }
+  let chartOptionBuilder: DeepPartial<ChartOptions> = {
+    layout: {
+      textColor: computedColors.textPrimary,
+      background: {
+        type: ColorType.Solid,
+        color: computedColors.backgroundSecondary,
+      },
+      attributionLogo: false,
+      panes: {
+        enableResize: true,
+        separatorColor: computedColors.chartGrid,
+      },
+    },
+    grid: {
+      vertLines: {
+        color: computedColors.chartGrid,
+      },
+      horzLines: {
+        color: computedColors.chartGrid,
+      },
+    },
+    ...chartOptionOverride,
+  };
+
+  !interactive
+    ? (chartOptionBuilder = {
+        handleScale: false,
+        handleScroll: false,
+        ...chartOptionBuilder,
+      })
+    : null;
+  !showHorizAxis
+    ? (chartOptionBuilder = {
+        timeScale: { visible: false },
+        ...chartOptionBuilder,
+      })
+    : null;
+  !showVertAxis
+    ? (chartOptionBuilder = {
+        rightPriceScale: { visible: false },
+        leftPriceScale: { visible: false },
+        ...chartOptionBuilder,
+      })
+    : null;
+  !showGrid
+    ? (chartOptionBuilder = {
+        grid: { horzLines: { visible: false }, vertLines: { visible: false } },
+        ...chartOptionBuilder,
+      })
+    : null;
+  const chartOptions = chartOptionBuilder;
 
   useEffect(() => {
     try {
@@ -141,10 +201,9 @@ export default function StockChart({
         resizer.disconnect();
       };
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.stack : String(error);
-      console.log(errorMsg);
+      console.log(String(error));
     }
-  }, [priceData, volumeData, chartType, timeScale]);
+  }, [priceData, volumeData, chartType, timeScale, computedColorScheme]);
 
   useEffect(() => {
     try {
@@ -154,10 +213,9 @@ export default function StockChart({
         volumeSeriesRef.current.setData(volumeData);
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.stack : String(error);
-      console.log(errorMsg);
+      console.log(String(error));
     }
-  }, [priceData, volumeData]);
+  }, [priceData, volumeData, computedColorScheme]);
 
   return (
     <div
