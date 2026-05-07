@@ -56,14 +56,14 @@ export default function StockChart({
   interface ComputedColorsCSS {
     backgroundPrimary?: string;
     backgroundSecondary?: string;
-    chartPanes?: string;
+    chartGrid?: string;
     textPrimary?: string;
   }
 
   const cssVarMap: Record<string, keyof ComputedColorsCSS> = {
     "--color-background-primary": "backgroundPrimary",
     "--color-background-secondary": "backgroundSecondary",
-    "--color-chart-panes": "chartPanes",
+    "--color-chart-grid": "chartGrid",
     "--color-text-primary": "textPrimary",
   };
   const cssVars: string[] = Object.keys(cssVarMap);
@@ -87,7 +87,15 @@ export default function StockChart({
       attributionLogo: false,
       panes: {
         enableResize: true,
-        separatorColor: computedColors.chartPanes,
+        separatorColor: computedColors.chartGrid,
+      },
+    },
+    grid: {
+      vertLines: {
+        color: computedColors.chartGrid,
+      },
+      horzLines: {
+        color: computedColors.chartGrid,
       },
     },
     ...chartOptionOverride,

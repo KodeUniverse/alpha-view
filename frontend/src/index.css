@@ -13,7 +13,7 @@
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-highlighted: rgba(225, 32, 102, 0.5);
 
-  --color-chart-panes: #1c1c1c;
+  --color-chart-grid: rgba(45, 82, 82, 0.3);
 
   /* Fonts */
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -37,7 +37,7 @@
   --color-shadow: rgba(0, 0, 0, 0.1);
   --color-highlighted: rgba(225, 32, 102, 0.5);
 
-  --color-chart-panes: #ffffff;
+  --color-chart-grid: rgba(45, 82, 82, 0.3);
 }
 
 /* Mantine theme overrides */
