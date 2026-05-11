@@ -4,7 +4,7 @@ import { Group, Button, ActionIcon } from "@mantine/core";
 import { Link } from "react-router-dom";
 import { ReactNode } from "react";
 import { useMantineColorScheme, useComputedColorScheme } from "@mantine/core";
-import { IconSun, IconMoon } from "@tabler/icons-react";
+import { Sun, Moon } from "lucide-react";
 
 function ThemeToggle() {
   const { setColorScheme } = useMantineColorScheme();
@@ -20,9 +20,9 @@ function ThemeToggle() {
       aria-label="Toggle color scheme"
     >
       {computedColorScheme === "dark" ? (
-        <IconSun size={18} />
+        <Sun size={18} />
       ) : (
-        <IconMoon size={18} />
+        <Moon size={18} />
       )}
     </ActionIcon>
   );
