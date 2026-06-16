@@ -1,5 +1,12 @@
 {
+  "dependencies": {
+    "pg": "^8.11.5",
+    "redis": "^4.6.13"
+  },
   "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.5",
+    "typescript": "^5.0.0",
     "typescript-eslint": "^8.59.2"
   }
 }

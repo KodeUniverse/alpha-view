@@ -8,6 +8,8 @@ RUN apk add --no-cache curl
 COPY shared /shared
 
 # Copy alpha-utils to /packages/alpha-utils so ../../packages/alpha-utils from /app works
+COPY backend/packages/alpha-utils/package.json /packages/alpha-utils/
+RUN cd /packages/alpha-utils && npm install
 COPY backend/packages/alpha-utils /packages/alpha-utils
 
 COPY backend/services/main-api/package.json ./
