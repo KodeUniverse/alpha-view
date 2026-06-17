@@ -115,19 +115,3 @@ Then open `http://localhost:3000` in your browser.
 | `make clean`   | Stop and remove all containers                        |
 | `make connect_db` | Open a `psql` shell into the running database      |
 | `make delete_db`  | Remove the postgres data volume (destructive)      |
-
----
-
-## Project Structure
-
-```
-alpha-view/
-├── frontend/         # React + TypeScript SPA
-├── backend/          # Node.js + TypeScript REST API
-├── shared/types/     # Shared TypeScript type definitions
-├── mockups/          # UI design mockups
-├── docker-compose.yml
-├── Makefile
-└── .env.example
-```
----
