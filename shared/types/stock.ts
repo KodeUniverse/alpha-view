@@ -27,6 +27,8 @@ export interface VolumeData {
 }
 export interface Ticker {
   symbol: string;
+  name: string;
+  exchange?: string;
 }
 
 export type Frequency =

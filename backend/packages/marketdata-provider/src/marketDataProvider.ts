@@ -6,4 +6,5 @@ export default interface MarketDataProvider {
     onTick: (data: unknown) => void,
   ) => void;
   stopLiveTickerFeed: () => void;
+  getSymbolList: () => Promise<Ticker[]>;
 }
