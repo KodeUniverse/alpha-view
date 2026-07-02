@@ -1,10 +1,51 @@
-import MarketDataProvider from "../marketDataProvider.ts";
-import { Ticker } from "@shared/types";
+import MarketDataProvider from "../MarketDataProvider.ts";
+import { Ticker, OHLCVData } from "@shared/types";
+
+type AlpacaMessage = AlpacaAuthMessage | AlpacaBarMessage;
+
+interface AlpacaAuthMessage {
+  T: "success" | "error";
+  msg: string;
+}
+
+interface AlpacaBarMessage {
+  T: "b";
+  S: string;
+  o: number;
+  h: number;
+  l: number;
+  c: number;
+  v: number;
+  vw: number;
+  n: number;
+  t: string; // need to start using Date objects.
+}
+
+interface AlpacaAsset {
+  name: string;
+  symbol: string;
+  class: "us_equity" | "us_option" | "crypto" | "ipo";
+  exchange: "AMEX" | "ARCA" | "BATS" | "NYSE" | "NASDAQ" | "NYSEARCA" | "OTC";
+  tradeable: boolean;
+  marginable: boolean;
+  shortable: boolean;
+  status: "active" | "inactive";
+  fractionable: boolean;
+  id: string; // UUID string
+  margin_requirement_long?: string;
+  margin_requirement_short?: string;
+  min_order_size?: string;
+  min_trade_increment?: string;
+  price_increment?: string;
+  attributes?: string[];
+  borrow_status?: "easy_to_borrow" | "hard_to_borrow";
+  cusip?: string | null;
+}
 
 export class AlpacaProvider implements MarketDataProvider {
   private socket?: WebSocket;
 
-  startLiveTickerFeed(ticker: Ticker, onTick: (data: unknown) => void) {
+  startLiveTickerFeed(ticker: Ticker, onTick: (data: OHLCVData) => void) {
     this.stopLiveTickerFeed();
 
     const version = "v2";
@@ -34,14 +75,22 @@ export class AlpacaProvider implements MarketDataProvider {
       try {
         const messages = JSON.parse(msg.data);
         // check for authentication reply message
-        for (const data of messages) {
+        for (const data of messages as AlpacaMessage[]) {
           if (data.T === "success" && data.msg === "authenticated") {
             console.log("Alpaca WebSocket Authenticated.");
             this.socket!.send(
               JSON.stringify({ action: "subscribe", bars: [ticker.symbol] }),
             );
-          } else if (data.T === "t") {
-            onTick(data);
+          } else if (data.T === "b") {
+            const transformData: OHLCVData = {
+              open: data.o,
+              close: data.c,
+              high: data.h,
+              low: data.l,
+              volume: data.v,
+              time: data.t,
+            };
+            onTick(transformData);
           }
         }
       } catch (error) {
@@ -75,7 +124,7 @@ export class AlpacaProvider implements MarketDataProvider {
 
     if (res.ok) {
       const symbolData = await res.json();
-      const tickerList = symbolData.map((x) => {
+      const tickerList = symbolData.map((x: AlpacaAsset) => {
         const ticker: Ticker = {
           symbol: x.symbol,
           name: x.name,

@@ -72,7 +72,7 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
       }
     };
     fetchStockData();
-  }, [ticker]);
+  }, [ticker.symbol]);
 
   return (
     <>
