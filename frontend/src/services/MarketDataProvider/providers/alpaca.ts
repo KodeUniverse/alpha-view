@@ -1,7 +1,7 @@
 import MarketDataProvider from "../marketDataProvider.ts";
 import { Ticker } from "@shared/types";
 
-class AlpacaProvider implements MarketDataProvider {
+export class AlpacaProvider implements MarketDataProvider {
   private socket?: WebSocket;
 
   startLiveTickerFeed(ticker: Ticker, onTick: (data: unknown) => void) {
@@ -38,7 +38,7 @@ class AlpacaProvider implements MarketDataProvider {
           if (data.T === "success" && data.msg === "authenticated") {
             console.log("Alpaca WebSocket Authenticated.");
             this.socket!.send(
-              JSON.stringify({ action: "subscribe", trades: [ticker.symbol] }),
+              JSON.stringify({ action: "subscribe", bars: [ticker.symbol] }),
             );
           } else if (data.T === "t") {
             onTick(data);
