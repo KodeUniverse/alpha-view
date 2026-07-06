@@ -1,5 +1,5 @@
 import MarketDataProvider from "../MarketDataProvider.ts";
-import { Ticker, OHLCVData } from "@shared/types";
+import { Ticker, OHLCVData, Frequency } from "@shared/types";
 
 type AlpacaMessage = AlpacaAuthMessage | AlpacaBarMessage;
 
@@ -42,6 +42,21 @@ interface AlpacaAsset {
   cusip?: string | null;
 }
 
+interface AlpacaHistBar {
+  c: number;
+  h: number;
+  l: number;
+  n: number;
+  o: number;
+  t: string;
+  v: number;
+  vw: number;
+}
+interface AlpacaHistBarsResponse {
+  bars: Record<string, AlpacaHistBar[]>;
+  next_page_token: string | null;
+}
+
 export class AlpacaProvider implements MarketDataProvider {
   private socket?: WebSocket;
 
@@ -60,8 +75,8 @@ export class AlpacaProvider implements MarketDataProvider {
       this.socket!.send(
         JSON.stringify({
           action: "auth",
-          key: process.env.ALPACA_API_KEY,
-          secret: process.env.ALPACA_API_SECRET,
+          key: import.meta.env.ALPACA_API_KEY,
+          secret: import.meta.env.ALPACA_API_SECRET,
         }),
       );
     });
@@ -135,6 +150,76 @@ export class AlpacaProvider implements MarketDataProvider {
       return tickerList;
     } else {
       throw new Error(`HTTP ${res.status}: Failed to fetch symbol list.`);
+    }
+  }
+  async getBars(
+    tickers: Ticker[],
+    freq: Frequency,
+    start: Date,
+    end: Date,
+  ): Promise<OHLCVData[]> {
+    const apiKey = import.meta.env.ALPACA_API_KEY;
+    const apiSecret = import.meta.env.ALPACA_API_SECRET;
+
+    if (!apiKey || !apiSecret)
+      throw new Error("Missing Alpaca API secrets in environment.");
+    const url = new URL("https://data.alpaca.markets/v2/stocks/bars");
+
+    const freqMapping: Record<Frequency, string> = {
+      intraday: "1T",
+      daily: "1D",
+      weekly: "1W",
+      monthly: "1M",
+    };
+
+    url.searchParams.set("symbols", JSON.stringify(tickers));
+    url.searchParams.set("timeframe", freqMapping[freq]);
+    url.searchParams.set("start", start.toISOString());
+    url.searchParams.set("end", end.toISOString());
+    url.searchParams.set("adjustment", "split");
+    url.searchParams.set("feed", "iex");
+
+    let next_page_token: string | null = "dummy";
+    const responses: AlpacaHistBarsResponse[] = [];
+
+    let isFirstPage = true;
+    while (next_page_token || isFirstPage) {
+      isFirstPage = false;
+
+      if (next_page_token) {
+        url.searchParams.set("next_page_token", next_page_token);
+      }
+      const res = await fetch(url, {
+        headers: {
+          "APCA-API-KEY-ID": apiKey,
+          "APCA-API-SECRET-KEY": apiSecret,
+        },
+      });
+      if (!res.ok) {
+        throw new Error(
+          `Failed to get stock bars from Alpaca for symbols ${tickers.toString()}`,
+        );
+      }
+      const data: AlpacaHistBarsResponse = await res.json();
+      responses.push(data);
+      next_page_token = data.next_page_token;
+    }
+    // TODO: finish this logic below
+    const symbolBars: Record<string, OHLCVData[]> = {};
+    for (const res of responses) {
+      const bars: OHLCVData[] = [];
+      for (const symbol of Object.keys(res.bars)) {
+        res.bars[symbol].map((bar) => {
+          bars.push({
+            open: bar.o,
+            low: bar.l,
+            high: bar.h,
+            close: bar.c,
+            volume: bar.v,
+            time: bar.t,
+          });
+        });
+      }
     }
   }
 }

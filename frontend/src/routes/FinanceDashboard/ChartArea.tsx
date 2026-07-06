@@ -1,6 +1,6 @@
 import StockChart from "@components/StockChart.tsx";
 import { useState, useEffect } from "react";
-import { Card, Text, Group, Box, Stack } from "@mantine/core";
+import { Card, Text, Group, Box, Stack, SegmentedControl } from "@mantine/core";
 import { OHLCVData, Ticker, VolumeData } from "@shared/types";
 import MetricsCard from "./MetricsCard";
 
@@ -10,7 +10,7 @@ interface ChartAreaProps {
 }
 export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   const [priceData, setPriceData] = useState(null);
-  const [volumeData, setVolumeData] = useState(null);
+  const [volumeData, setVolumeData] = useState<VolumeData[] | null>(null);
   const [isError, setError] = useState(false);
   const [isLoading, setLoading] = useState(false);
 
@@ -81,6 +81,10 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
           <Text size="36px" fw={700}>
             {ticker.symbol}
           </Text>
+          <SegmentedControl
+            data={["intraday", "daily", "weekly", "monthly"]}
+            withItemsBorders={false}
+          ></SegmentedControl>
         </Group>
         <Box style={{ height: "100%" }}>
           {!ticker.symbol && <Text>Please enter a ticker.</Text>}

@@ -31,13 +31,4 @@ export interface Ticker {
   exchange?: string;
 }
 
-export type Frequency =
-  | "ms"
-  | "sec"
-  | "min"
-  | "15m"
-  | "hr"
-  | "day"
-  | "week"
-  | "month"
-  | "year";
+export type Frequency = "intraday" | "daily" | "weekly" | "monthly";

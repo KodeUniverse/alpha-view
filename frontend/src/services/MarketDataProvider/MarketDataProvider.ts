@@ -1,4 +1,4 @@
-import { OHLCVData, Ticker } from "@shared/types";
+import { Frequency, OHLCVData, Ticker } from "@shared/types";
 
 export default interface MarketDataProvider {
   startLiveTickerFeed: (
@@ -7,4 +7,10 @@ export default interface MarketDataProvider {
   ) => void;
   stopLiveTickerFeed: () => void;
   getSymbolList: () => Promise<Ticker[]>;
+  getBars: (
+    tickers: Ticker[],
+    freq: Frequency,
+    start: Date,
+    end: Date,
+  ) => Promise<OHLCVData[]>;
 }
