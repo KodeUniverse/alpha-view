@@ -8,6 +8,8 @@ function createMarketDataProvider(): MarketDataProvider {
     case "alpaca":
       provider = new AlpacaProvider();
       break;
+    default:
+      throw new Error("DATA_PROVIDER env variable not set.");
   }
   return provider;
 }
@@ -16,7 +18,7 @@ const MarketDataContext = createContext<MarketDataProvider | null>(null);
 
 export function MarketDataProviderRoot({ children }: { children: ReactNode }) {
   const provider = useRef<MarketDataProvider>(null);
-  if (!provider) {
+  if (!provider.current) {
     provider.current = createMarketDataProvider();
   }
   return (

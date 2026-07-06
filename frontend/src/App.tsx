@@ -17,6 +17,8 @@ function App() {
       setConnected(false);
     };
 
+    console.log(`DATA_PROVIDER: ${import.meta.env.DATA_PROVIDER}`);
+
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
 

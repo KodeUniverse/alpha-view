@@ -105,8 +105,8 @@ export class AlpacaProvider implements MarketDataProvider {
     this.socket = undefined;
   }
   async getSymbolList() {
-    const apiKey = process.env.ALPACA_API_KEY;
-    const apiSecret = process.env.ALPACA_API_SECRET;
+    const apiKey = import.meta.env.ALPACA_API_KEY;
+    const apiSecret = import.meta.env.ALPACA_API_SECRET;
 
     if (!apiKey || !apiSecret)
       throw new Error("Missing Alpaca API secrets in environment.");

@@ -1,6 +1,6 @@
 import { Select, Loader } from "@mantine/core";
 import { Ticker } from "@shared/types";
-import { useEffect, useState } from "react";
+import { useSymbolList } from "@/hooks/queries";
 
 function SearchBar({
   onTickerSelect,
@@ -11,38 +11,15 @@ function SearchBar({
   value: Ticker | null;
   styles?: React.CSSProperties;
 }) {
-  const [symbols, setSymbols] = useState<Ticker[]>([]);
-  const [isError, setError] = useState(false);
-  const [isLoading, setLoading] = useState(false);
+  const { data: symbols, isLoading, isError, error } = useSymbolList();
 
-  useEffect(() => {
-    const fetchSymbols = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(
-          `${import.meta.env.API_URL}/symbol/list/latest`,
-        );
-
-        if (!res.ok)
-          throw new Error(`HTTP ${res.status}: Failed to fetch symbol list`);
-
-        const symbolJSON = await res.json();
-        const symbolList: Ticker[] = [];
-        for (const rowObj of symbolJSON) {
-          symbolList.push({ symbol: rowObj.symbol });
-        }
-        setSymbols(symbolList);
-      } catch (error) {
-        console.log(error);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSymbols();
-  }, []);
-
-  const data = symbols.map((t) => ({ value: t.symbol, label: t.symbol }));
+  if (isError) {
+    console.log(error);
+  }
+  let data;
+  if (symbols != null) {
+    data = symbols.map((t) => ({ value: t.symbol, label: t.symbol }));
+  }
 
   return (
     <>
@@ -58,6 +35,7 @@ function SearchBar({
           }}
           searchable
           clearable
+          limit={100}
           style={{ width: 130, ...styles }}
           styles={{
             input: { borderRadius: 5 },

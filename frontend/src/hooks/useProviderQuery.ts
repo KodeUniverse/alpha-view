@@ -2,19 +2,25 @@ import { useMarketDataProvider } from "@/services/MarketDataProvider/MarketDataC
 import MarketDataProvider from "@/services/MarketDataProvider/MarketDataProvider";
 import { useState, useEffect } from "react";
 
-export default function useProviderQuery<T>(
+export interface ProviderQueryResponse<T> {
+  data: T;
+  isLoading: boolean;
+  error: Error | null;
+  isError: boolean;
+}
+export function useProviderQuery<T>(
   deps: unknown[],
   queryFn: (provider: MarketDataProvider) => Promise<T>,
-) {
+): ProviderQueryResponse<T> {
   const provider = useMarketDataProvider();
   const [isLoading, setLoading] = useState(false);
-  const [isError, setError] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   const [queryData, setQueryData] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    setError(false);
+    setError(null);
     setLoading(true);
 
     queryFn(provider)
@@ -22,7 +28,7 @@ export default function useProviderQuery<T>(
         if (!cancelled) setQueryData(data);
       })
       .catch((error) => {
-        if (!cancelled) setError(true);
+        if (!cancelled) setError(error);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -31,5 +37,5 @@ export default function useProviderQuery<T>(
       cancelled = true;
     };
   }, deps);
-  return { queryData, isLoading, isError };
+  return { data: queryData, isLoading, error, isError: !!error };
 }

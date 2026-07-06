@@ -29,6 +29,11 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.API_URL": JSON.stringify(
         `http://localhost:${env.HOST_API_PORT}`,
       ),
+      "import.meta.env.DATA_PROVIDER": JSON.stringify(env.DATA_PROVIDER),
+      "import.meta.env.ALPACA_API_KEY": JSON.stringify(env.ALPACA_API_KEY),
+      "import.meta.env.ALPACA_API_SECRET": JSON.stringify(
+        env.ALPACA_API_SECRET,
+      ),
     },
   };
 });
