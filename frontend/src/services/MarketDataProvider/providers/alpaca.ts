@@ -224,4 +224,14 @@ export class AlpacaProvider implements MarketDataProvider {
     }
     return symbolBars;
   }
+  async getBarsForTicker(
+    ticker: Ticker,
+    freq: Frequency,
+    start: Date,
+    end: Date,
+  ): Promise<OHLCVData[]> {
+    const bars = await this.getBars([ticker], freq, start, end);
+    const ohlcv = bars[ticker.symbol] ?? [];
+    return ohlcv;
+  }
 }

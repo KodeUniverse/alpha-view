@@ -13,4 +13,10 @@ export default interface MarketDataProvider {
     start: Date,
     end: Date,
   ) => Promise<Record<string, OHLCVData[]>>;
+  getBarsForTicker: (
+    ticker: Ticker,
+    freq: Frequency,
+    start: Date,
+    end: Date,
+  ) => Promise<OHLCVData[]>;
 }
