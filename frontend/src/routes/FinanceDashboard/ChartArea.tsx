@@ -1,20 +1,110 @@
 import StockChart from "@components/StockChart.tsx";
-import { Card, Text, Group, Box, Stack, SegmentedControl } from "@mantine/core";
-import { OHLCData, Ticker, VolumeData } from "@shared/types";
+import {
+  Card,
+  Text,
+  Group,
+  Box,
+  Stack,
+  SegmentedControl,
+  Divider,
+} from "@mantine/core";
+import { OHLCData, Ticker, VolumeData, Frequency } from "@shared/types";
 import MetricsCard from "./MetricsCard";
 import { useBarsForTicker } from "@/hooks/queries";
+import { useState, useMemo } from "react";
+
+type ChartRange = "1d" | "5d" | "3m" | "6m" | "1y" | "3y" | "Max";
 
 interface ChartAreaProps {
   ticker: Ticker;
   cardStyles?: React.CSSProperties;
 }
+
+interface ChartDisplayOptionsWidgetProps {
+  onFreqChange: (value: string) => void;
+  onRangeChange: (value: string) => void;
+  frequency: Frequency;
+  range: ChartRange;
+}
+
+function ChartDisplayOptionsWidget({
+  onFreqChange,
+  onRangeChange,
+  frequency,
+  range,
+}: ChartDisplayOptionsWidgetProps) {
+  return (
+    <>
+      <Stack style={{ gap: 5 }}>
+        <Group style={{ display: "flex", justifyContent: "center" }}>
+          <Text style={{ marginRight: "auto" }}>Frequency</Text>
+          <SegmentedControl
+            data={["intraday", "daily", "weekly", "monthly"]}
+            withItemsBorders={false}
+            size="sm"
+            onChange={onFreqChange}
+            value={frequency}
+          />
+        </Group>
+        <Group style={{ display: "flex", justifyContent: "center" }}>
+          <Text style={{ marginRight: "auto" }}>Data History</Text>
+          <SegmentedControl
+            data={["1d", "5d", "3m", "6m", "1y", "3y", "Max"]}
+            withItemsBorders={false}
+            size="sm"
+            onChange={onRangeChange}
+            value={range}
+          />
+        </Group>
+      </Stack>
+    </>
+  );
+}
+
 export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
-  // need to add useMemo's for the dates and time series
-  const start = new Date("2016-01-01");
-  const end = new Date("2026-01-01");
+  const [frequency, setFrequency] = useState<Frequency>("daily");
+  const [range, setRange] = useState<ChartRange>("3m");
+
+  const handleFreqChange = (newFreq: string) => {
+    setFrequency(newFreq as Frequency);
+  };
+  const handleRangeChange = (newRange: string) => {
+    setRange(newRange as ChartRange);
+  };
+
+  const { start, end } = useMemo(() => {
+    const end = new Date();
+    let start: Date;
+
+    switch (range) {
+      case "1d":
+        start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case "5d":
+        start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 5);
+        break;
+      case "3m":
+        start = new Date(end.getFullYear(), end.getMonth() - 3, end.getDate());
+        break;
+      case "6m":
+        start = new Date(end.getFullYear(), end.getMonth() - 6, end.getDate());
+        break;
+      case "1y":
+        start = new Date(end.getFullYear() - 1, end.getMonth(), end.getDate());
+        break;
+      case "3y":
+        start = new Date(end.getFullYear() - 3, end.getMonth(), end.getDate());
+        break;
+      case "Max":
+        start = new Date(end.getFullYear() - 5, end.getMonth(), end.getDate());
+        break;
+    }
+    return { start, end };
+  }, [range]);
+
   const { isLoading, isError, data, error } = useBarsForTicker(
     ticker,
-    "daily",
+    frequency,
     start,
     end,
   );
@@ -46,13 +136,15 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
     <>
       <Card style={cardStyles}>
         <Group p="xs" ml="md">
-          <Text size="36px" fw={700}>
+          <Text size="36px" fw={700} style={{ marginRight: "auto" }}>
             {ticker.symbol}
           </Text>
-          <SegmentedControl
-            data={["intraday", "daily", "weekly", "monthly"]}
-            withItemsBorders={false}
-          ></SegmentedControl>
+          <ChartDisplayOptionsWidget
+            onFreqChange={handleFreqChange}
+            onRangeChange={handleRangeChange}
+            frequency={frequency}
+            range={range}
+          />
         </Group>
         <Box style={{ height: "100%" }}>
           {!ticker.symbol && <Text>Please enter a ticker.</Text>}
@@ -65,7 +157,7 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
                   priceData={priceData}
                   volumeData={volumeData}
                   chartType="candle"
-                  timeScale={false}
+                  timeScale={true}
                   containerStyles={{
                     width: "100%",
                     minHeight: 0,

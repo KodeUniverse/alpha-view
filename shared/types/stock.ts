@@ -27,7 +27,7 @@ export interface VolumeData {
 }
 export interface Ticker {
   symbol: string;
-  name: string;
+  name?: string;
   exchange?: string;
 }
 

@@ -1,6 +1,7 @@
-import { Select, Loader } from "@mantine/core";
+import { Select, Loader, ComboboxData } from "@mantine/core";
 import { Ticker } from "@shared/types";
 import { useSymbolList } from "@/hooks/queries";
+import { useMemo } from "react";
 
 function SearchBar({
   onTickerSelect,
@@ -12,11 +13,10 @@ function SearchBar({
   styles?: React.CSSProperties;
 }) {
   const { data: symbols, isLoading, isError, error } = useSymbolList();
-
   if (isError) {
     console.log(error);
   }
-  let data;
+  let data: ComboboxData;
   if (symbols != null) {
     data = symbols.map((t) => ({ value: t.symbol, label: t.symbol }));
   }
@@ -31,7 +31,7 @@ function SearchBar({
           data={data}
           value={value?.symbol || null}
           onChange={(val) => {
-            onTickerSelect(val ? { symbol: val } : null);
+            onTickerSelect(val ? { symbol: val, name: val } : null);
           }}
           searchable
           clearable
