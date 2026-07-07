@@ -21,7 +21,7 @@ export interface PriceData {
 }
 
 export interface VolumeData {
-  value: string;
+  value: number;
   time: string;
   color: string;
 }

@@ -172,22 +172,29 @@ export class AlpacaProvider implements MarketDataProvider {
       monthly: "1M",
     };
 
-    url.searchParams.set("symbols", JSON.stringify(tickers));
+    url.searchParams.set(
+      "symbols",
+      tickers.map((ticker) => ticker.symbol).join(","),
+    );
     url.searchParams.set("timeframe", freqMapping[freq]);
     url.searchParams.set("start", start.toISOString());
     url.searchParams.set("end", end.toISOString());
     url.searchParams.set("adjustment", "split");
     url.searchParams.set("feed", "iex");
 
-    let next_page_token: string | null = "dummy";
+    let pageCount = 0;
+    const MAX_PAGES = 50;
+
+    let next_page_token: string | null;
     const responses: AlpacaHistBarsResponse[] = [];
 
     let isFirstPage = true;
-    while (next_page_token || isFirstPage) {
+    while ((next_page_token || isFirstPage) && pageCount < MAX_PAGES) {
+      pageCount++;
       isFirstPage = false;
 
       if (next_page_token) {
-        url.searchParams.set("next_page_token", next_page_token);
+        url.searchParams.set("page_token", next_page_token);
       }
       const res = await fetch(url, {
         headers: {
@@ -202,7 +209,12 @@ export class AlpacaProvider implements MarketDataProvider {
       }
       const data: AlpacaHistBarsResponse = await res.json();
       responses.push(data);
-      next_page_token = data.next_page_token;
+      next_page_token = data.next_page_token ?? null;
+    }
+    if (pageCount >= MAX_PAGES) {
+      console.warn(
+        `Hit max page limit (${MAX_PAGES}) fetching bars for ${tickers.map((ticker) => ticker.symbol).toString()}`,
+      );
     }
     // TODO: finish this logic below
     const symbolBars: Record<string, OHLCVData[]> = {};

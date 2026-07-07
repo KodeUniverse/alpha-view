@@ -1,78 +1,109 @@
 import StockChart from "@components/StockChart.tsx";
 import { useState, useEffect } from "react";
 import { Card, Text, Group, Box, Stack, SegmentedControl } from "@mantine/core";
-import { OHLCVData, Ticker, VolumeData } from "@shared/types";
+import { OHLCData, OHLCVData, Ticker, VolumeData } from "@shared/types";
 import MetricsCard from "./MetricsCard";
+import { useBarsForTicker } from "@/hooks/queries";
 
 interface ChartAreaProps {
   ticker: Ticker;
   cardStyles?: React.CSSProperties;
 }
 export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
-  const [priceData, setPriceData] = useState(null);
-  const [volumeData, setVolumeData] = useState<VolumeData[] | null>(null);
-  const [isError, setError] = useState(false);
-  const [isLoading, setLoading] = useState(false);
+  // const [priceData, setPriceData] = useState(null);
+  // const [volumeData, setVolumeData] = useState(null);
 
-  useEffect(() => {
-    const fetchStockData = async () => {
-      if (!ticker.symbol) {
-        setLoading(false);
-        setError(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        const res = await fetch(
-          `${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest`,
-        );
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: Error fetching stock data`);
+  const start = new Date("2025-12-01");
+  const end = new Date("2026-01-01");
+  const { isLoading, isError, data, error } = useBarsForTicker(
+    ticker,
+    "daily",
+    start,
+    end,
+  );
+
+  const priceData: OHLCData[] = data
+    ? data.map((bar) => {
+        const { volume, ...transformed } = bar;
+        return transformed;
+      })
+    : null;
+  const volumeData: VolumeData[] = data
+    ? data.map((bar) => {
+        let volumeBarColor: string;
+        if (bar.open < bar.close) {
+          volumeBarColor = "#26a69a";
+        } else {
+          volumeBarColor = "#ef5350";
         }
+        const newRow = {
+          time: bar.time,
+          value: Number(bar.volume),
+          color: volumeBarColor,
+        };
+        return newRow;
+      })
+    : null;
 
-        const resultData = await res.json();
-
-        for (const row of resultData) {
-          row.time = row.time.split("T")[0];
-        }
-        const ohlcData = resultData.map((row: OHLCVData) => {
-          const newRow = { ...row };
-          delete newRow.volume;
-          let remaining = ["open", "low", "high", "close"];
-          for (const key of remaining) {
-            newRow[key] = Number(newRow[key]);
-          }
-          return newRow;
-        });
-        const volumeData = resultData.map((row: OHLCVData) => {
-          let volumeBarColor: string;
-          if (row.open < row.close) {
-            volumeBarColor = "#26a69a";
-          } else {
-            volumeBarColor = "#ef5350";
-          }
-          const newRow = {
-            time: row.time,
-            value: Number(row.volume),
-            color: volumeBarColor,
-          };
-          return newRow;
-        });
-
-        setPriceData(ohlcData);
-        setVolumeData(volumeData);
-        setError(false);
-        setLoading(false);
-      } catch (e) {
-        setError(true);
-        setLoading(false);
-        console.log(
-          `Error fetching stock data from ${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest\n\n${e}`,
-        );
-      }
-    };
-    fetchStockData();
-  }, [ticker.symbol]);
+  //  useEffect(() => {
+  //    const fetchStockData = async () => {
+  //      if (!ticker.symbol) {
+  //        setLoading(false);
+  //        setError(false);
+  //        return;
+  //      }
+  //      try {
+  //        setLoading(true);
+  //        const res = await fetch(
+  //          `${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest`,
+  //        );
+  //        if (!res.ok) {
+  //          throw new Error(`HTTP ${res.status}: Error fetching stock data`);
+  //        }
+  //
+  //        const resultData = await res.json();
+  //
+  //        for (const row of resultData) {
+  //          row.time = row.time.split("T")[0];
+  //        }
+  //        const ohlcData = resultData.map((row: OHLCVData) => {
+  //          const newRow = { ...row };
+  //          delete newRow.volume;
+  //          let remaining = ["open", "low", "high", "close"];
+  //          for (const key of remaining) {
+  //            newRow[key] = Number(newRow[key]);
+  //          }
+  //          return newRow;
+  //        });
+  //        const volumeData = resultData.map((row: OHLCVData) => {
+  //          let volumeBarColor: string;
+  //          if (row.open < row.close) {
+  //            volumeBarColor = "#26a69a";
+  //          } else {
+  //            volumeBarColor = "#ef5350";
+  //          }
+  //          const newRow = {
+  //            time: row.time,
+  //            value: Number(row.volume),
+  //            color: volumeBarColor,
+  //          };
+  //          return newRow;
+  //        });
+  //
+  //        setPriceData(ohlcData);
+  //        setVolumeData(volumeData);
+  //        setError(false);
+  //        setLoading(false);
+  //      } catch (e) {
+  //        setError(true);
+  //        setLoading(false);
+  //        console.log(
+  //          `Error fetching stock data from ${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest\n\n${e}`,
+  //        );
+  //      }
+  //    };
+  //    fetchStockData();
+  //  }, [ticker.symbol]);
 
   return (
     <>

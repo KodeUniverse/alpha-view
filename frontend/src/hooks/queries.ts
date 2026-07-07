@@ -11,8 +11,9 @@ export function useBarsForTicker(
   start: Date,
   end: Date,
 ): ProviderQueryResponse<OHLCVData[]> {
-  return useProviderQuery([ticker.symbol, freq, start, end], (provider) =>
-    provider.getBarsForTicker(ticker, freq, start, end),
+  return useProviderQuery(
+    [ticker.symbol, freq, start.getTime(), end.getTime()],
+    (provider) => provider.getBarsForTicker(ticker, freq, start, end),
   );
 }
 
@@ -22,7 +23,14 @@ export function useBars(
   start: Date,
   end: Date,
 ): ProviderQueryResponse<Record<string, OHLCVData[]>> {
-  return useProviderQuery([tickers, freq, start, end], (provider) =>
-    provider.getBars(tickers, freq, start, end),
+  // think about useMemo'ing this tickers array
+  return useProviderQuery(
+    [
+      tickers.map((t) => t.symbol).join(","),
+      freq,
+      start.getTime(),
+      end.getTime(),
+    ],
+    (provider) => provider.getBars(tickers, freq, start, end),
   );
 }
