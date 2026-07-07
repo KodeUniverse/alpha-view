@@ -39,10 +39,10 @@ function WatchListItem({ ticker }: WatchListItemProps) {
         }
 
         let data = await res.json();
-        data = data.map((row: OHLCVData) => {
-          const { close: value, time } = row;
-          return { time: row.time.split("T")[0], value: Number(value) };
-        });
+        data = data.map((row: { time: string; close: number }) => ({
+          time: new Date(row.time),
+          value: row.close,
+        }));
         data = data.slice(-5);
         setStockData(data);
       } catch (error) {

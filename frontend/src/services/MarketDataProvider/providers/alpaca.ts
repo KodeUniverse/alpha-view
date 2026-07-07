@@ -18,7 +18,7 @@ interface AlpacaBarMessage {
   v: number;
   vw: number;
   n: number;
-  t: string; // need to start using Date objects.
+  t: string;
 }
 
 interface AlpacaAsset {
@@ -103,7 +103,7 @@ export class AlpacaProvider implements MarketDataProvider {
               high: data.h,
               low: data.l,
               volume: data.v,
-              time: data.t,
+              time: new Date(data.t),
             };
             onTick(transformData);
           }
@@ -227,7 +227,7 @@ export class AlpacaProvider implements MarketDataProvider {
             high: bar.h,
             close: bar.c,
             volume: bar.v,
-            time: bar.t,
+            time: new Date(bar.t),
           };
         });
         // update bars for ticker symbol key, without overwriting if key exists.

@@ -7,6 +7,7 @@ import {
   ChartOptions,
   DeepPartial,
   ISeriesApi,
+  UTCTimestamp,
 } from "lightweight-charts";
 import { OHLCData, VolumeData, PriceData } from "@shared/types";
 import { useEffect, useRef } from "react";
@@ -205,12 +206,19 @@ export default function StockChart({
     }
   }, [priceData, volumeData, chartType, timeScale, computedColorScheme]);
 
+  const toChartTime = (date: Date) =>
+    Math.floor(date.getTime() / 1000) as UTCTimestamp;
+
   useEffect(() => {
     try {
       if (!priceData || !priceSeriesRef.current) return;
-      priceSeriesRef.current.setData(priceData);
+      priceSeriesRef.current.setData(
+        priceData.map((d) => ({ ...d, time: toChartTime(d.time) })),
+      );
       if (volumeData && volumeSeriesRef.current) {
-        volumeSeriesRef.current.setData(volumeData);
+        volumeSeriesRef.current.setData(
+          volumeData.map((d) => ({ ...d, time: toChartTime(d.time) })),
+        );
       }
     } catch (error) {
       console.log(String(error));

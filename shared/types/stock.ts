@@ -1,5 +1,5 @@
 export interface OHLCVData {
-  time: string;
+  time: Date;
   open: number;
   high: number;
   low: number;
@@ -8,7 +8,7 @@ export interface OHLCVData {
 }
 
 export interface OHLCData {
-  time: string;
+  time: Date;
   open: number;
   high: number;
   low: number;
@@ -16,13 +16,13 @@ export interface OHLCData {
 }
 
 export interface PriceData {
-  value: string;
-  time: string;
+  value: number;
+  time: Date;
 }
 
 export interface VolumeData {
   value: number;
-  time: string;
+  time: Date;
   color: string;
 }
 export interface Ticker {

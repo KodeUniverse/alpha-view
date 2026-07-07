@@ -22,7 +22,7 @@ export default class FTScraper {
   }
 
   async scrapeArticles(): Promise<{
-    timestamp: string;
+    timestamp: Date;
     data: ScrapedArticle[];
   } | null> {
     try {
@@ -38,13 +38,13 @@ export default class FTScraper {
       const articleItems = $("item");
       const lastBuildDate = new Date(
         $("channel > lastBuildDate").text(),
-      ).toISOString();
+      );
 
       articleItems.each((index, item) => {
         const article = {
           title: $(item).find("title").text(),
           descr: $(item).find("description").text(),
-          date: new Date($(item).find("pubDate").text()).toISOString(),
+          date: new Date($(item).find("pubDate").text()),
           url: $(item).find("link").text(),
         };
         articles.push(article);
@@ -61,7 +61,7 @@ export default class FTScraper {
     }
   }
 
-  async saveToDB(data: ScrapedArticle[], timestamp: string) {
+  async saveToDB(data: ScrapedArticle[], timestamp: Date) {
     try {
       await alphaDB.query("BEGIN");
       for (const article of Object.values(data)) {
