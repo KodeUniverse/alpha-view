@@ -157,7 +157,7 @@ export class AlpacaProvider implements MarketDataProvider {
     freq: Frequency,
     start: Date,
     end: Date,
-  ): Promise<OHLCVData[]> {
+  ): Promise<Record<string, OHLCVData[]>> {
     const apiKey = import.meta.env.ALPACA_API_KEY;
     const apiSecret = import.meta.env.ALPACA_API_SECRET;
 
@@ -207,19 +207,21 @@ export class AlpacaProvider implements MarketDataProvider {
     // TODO: finish this logic below
     const symbolBars: Record<string, OHLCVData[]> = {};
     for (const res of responses) {
-      const bars: OHLCVData[] = [];
       for (const symbol of Object.keys(res.bars)) {
-        res.bars[symbol].map((bar) => {
-          bars.push({
+        const bars: OHLCVData[] = res.bars[symbol].map((bar) => {
+          return {
             open: bar.o,
             low: bar.l,
             high: bar.h,
             close: bar.c,
             volume: bar.v,
             time: bar.t,
-          });
+          };
         });
+        // update bars for ticker symbol key, without overwriting if key exists.
+        symbolBars[symbol] = (symbolBars[symbol] ?? []).concat(bars);
       }
     }
+    return symbolBars;
   }
 }

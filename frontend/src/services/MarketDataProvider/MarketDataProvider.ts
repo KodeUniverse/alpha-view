@@ -12,5 +12,5 @@ export default interface MarketDataProvider {
     freq: Frequency,
     start: Date,
     end: Date,
-  ) => Promise<OHLCVData[]>;
+  ) => Promise<Record<string, OHLCVData[]>>;
 }
