@@ -60,7 +60,7 @@ interface AlpacaHistBarsResponse {
 export class AlpacaProvider implements MarketDataProvider {
   private socket?: WebSocket;
 
-  startLiveTickerFeed(ticker: Ticker, onTick: (data: OHLCVData) => void) {
+  startLiveTickerFeed(tickers: Ticker[], onTick: (data: OHLCVData) => void) {
     this.stopLiveTickerFeed();
 
     const version = "v2";
@@ -91,10 +91,14 @@ export class AlpacaProvider implements MarketDataProvider {
         const messages = JSON.parse(msg.data);
         // check for authentication reply message
         for (const data of messages as AlpacaMessage[]) {
+          console.log(`Type of Alpaca WebSocket message recieved: ${data.T}`);
           if (data.T === "success" && data.msg === "authenticated") {
             console.log("Alpaca WebSocket Authenticated.");
             this.socket!.send(
-              JSON.stringify({ action: "subscribe", bars: [ticker.symbol] }),
+              JSON.stringify({
+                action: "subscribe",
+                bars: tickers.map((ticker) => ticker.symbol),
+              }),
             );
           } else if (data.T === "b") {
             const transformData: OHLCVData = {
@@ -104,14 +108,17 @@ export class AlpacaProvider implements MarketDataProvider {
               low: data.l,
               volume: data.v,
               time: new Date(data.t),
+              symbol: data.S,
             };
             onTick(transformData);
+          } else if (data.T === "error") {
+            throw new Error(
+              `Alpaca WebSocket returned an error: ${JSON.stringify(data)}`,
+            );
           }
         }
       } catch (error) {
-        console.log(
-          `Malformed message from Alpaca WebSocket: ${msg.data}\nError:${error}`,
-        );
+        console.log(`Malformed message from Alpaca WebSocket:\n${error}`);
       }
     });
   }

@@ -5,6 +5,7 @@ export interface OHLCVData {
   low: number;
   close: number;
   volume: number;
+  symbol?: string;
 }
 
 export interface OHLCData {

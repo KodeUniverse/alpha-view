@@ -2,7 +2,7 @@ import { Frequency, OHLCVData, Ticker } from "@shared/types";
 
 export default interface MarketDataProvider {
   startLiveTickerFeed: (
-    ticker: Ticker,
+    tickers: Ticker[],
     onTick: (data: unknown) => void,
   ) => void;
   stopLiveTickerFeed: () => void;

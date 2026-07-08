@@ -11,6 +11,7 @@ import {
 import { OHLCData, Ticker, VolumeData, Frequency } from "@shared/types";
 import MetricsCard from "./MetricsCard";
 import { useBarsForTicker } from "@/hooks/queries";
+import { useLiveTickerFeed } from "@/hooks/useLiveTickerFeed";
 import { useState, useMemo } from "react";
 
 type ChartRange = "1d" | "5d" | "3m" | "6m" | "1y" | "3y" | "Max";
@@ -64,6 +65,10 @@ function ChartDisplayOptionsWidget({
 export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   const [frequency, setFrequency] = useState<Frequency>("daily");
   const [range, setRange] = useState<ChartRange>("3m");
+
+  console.log(`Current ticker prop: ${ticker.symbol}`);
+  const tick = useLiveTickerFeed([ticker]);
+  console.log(`Live Ticker Data: ${JSON.stringify(tick)}`);
 
   const handleFreqChange = (newFreq: string) => {
     setFrequency(newFreq as Frequency);
