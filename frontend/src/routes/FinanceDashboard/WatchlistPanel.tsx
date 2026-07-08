@@ -1,7 +1,8 @@
 import { Card, Text, Group, Box, Stack, Divider } from "@mantine/core";
 import StockChart from "@components/StockChart.jsx";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { OHLCVData, PriceData, Ticker } from "@shared/types";
+import { useBarsForTicker } from "@/hooks/queries";
 
 interface WatchListCardProps {
   cardStyles?: React.CSSProperties;
@@ -26,31 +27,44 @@ interface WatchListItemProps {
   ticker: Ticker;
 }
 function WatchListItem({ ticker }: WatchListItemProps) {
-  const [stockData, setStockData] = useState<PriceData[]>([]);
-
-  useEffect(() => {
-    const fetchStockData = async () => {
-      try {
-        const res = await fetch(
-          `${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest`,
-        );
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: Could not fetch stock data.`);
-        }
-
-        let data = await res.json();
-        data = data.map((row: OHLCVData) => {
-          const { close: value, time } = row;
-          return { time: row.time.split("T")[0], value: Number(value) };
-        });
-        data = data.slice(-5);
-        setStockData(data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchStockData();
+  const { start, end } = useMemo(() => {
+    const end = new Date();
+    const start = new Date(end.getTime() - 1000 * 60 * 60 * 24);
+    return { end, start };
   }, []);
+
+  //TODO: consider moving this to one fetch in WatchListCard for performance.
+  // Also consider creating separate hook for fetching just price rather than OHLCV.
+
+  const response = useBarsForTicker(ticker, "intraday", start, end);
+  const priceData: PriceData[] = response.data
+    ? response.data.map((bar) => {
+        return { value: bar.close, time: bar.time };
+      })
+    : null;
+  //  useEffect(() => {
+  //    const fetchStockData = async () => {
+  //      try {
+  //        const res = await fetch(
+  //          `${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest`,
+  //        );
+  //        if (!res.ok) {
+  //          throw new Error(`HTTP ${res.status}: Could not fetch stock data.`);
+  //        }
+  //
+  //        let data = await res.json();
+  //        data = data.map((row: { time: string; close: number }) => ({
+  //          time: new Date(row.time),
+  //          value: row.close,
+  //        }));
+  //        data = data.slice(-5);
+  //        setStockData(data);
+  //      } catch (error) {
+  //        console.log(error);
+  //      }
+  //    };
+  //    fetchStockData();
+  //  }, []);
 
   return (
     <Card style={{ padding: 0 }}>
@@ -66,7 +80,7 @@ function WatchListItem({ ticker }: WatchListItemProps) {
       >
         <Text fw={700}>{ticker.symbol}</Text>
         <StockChart
-          priceData={stockData}
+          priceData={priceData}
           chartType="area"
           containerStyles={{ width: 50, height: 35 }}
           showHorizAxis={false}

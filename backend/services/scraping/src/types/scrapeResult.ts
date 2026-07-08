@@ -1,6 +1,6 @@
 export interface ScrapedArticle {
   title: string;
   descr: string;
-  date: string;
+  date: Date;
   url: string;
 }

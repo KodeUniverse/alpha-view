@@ -1,14 +1,15 @@
 export interface OHLCVData {
-  time: string;
+  time: Date;
   open: number;
   high: number;
   low: number;
   close: number;
   volume: number;
+  symbol?: string;
 }
 
 export interface OHLCData {
-  time: string;
+  time: Date;
   open: number;
   high: number;
   low: number;
@@ -16,15 +17,19 @@ export interface OHLCData {
 }
 
 export interface PriceData {
-  value: string;
-  time: string;
+  value: number;
+  time: Date;
 }
 
 export interface VolumeData {
-  value: string;
-  time: string;
+  value: number;
+  time: Date;
   color: string;
 }
 export interface Ticker {
   symbol: string;
+  name?: string;
+  exchange?: string;
 }
+
+export type Frequency = "intraday" | "daily" | "weekly" | "monthly";

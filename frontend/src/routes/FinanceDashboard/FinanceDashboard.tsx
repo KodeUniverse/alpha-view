@@ -9,10 +9,13 @@ import { Ticker } from "@shared/types";
 import { Group, Stack } from "@mantine/core";
 
 function FinanceDashboard() {
-  const [ticker, setTicker] = useState<Ticker>({ symbol: "AAPL" });
+  const [ticker, setTicker] = useState<Ticker>({
+    symbol: "AAPL",
+    name: "Apple Inc.",
+  });
 
   function handleTickerInput(newTicker: Ticker | null) {
-    setTicker(newTicker ?? { symbol: "" });
+    setTicker(newTicker ?? { symbol: "", name: "" });
   }
 
   return (

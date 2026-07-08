@@ -1,86 +1,155 @@
 import StockChart from "@components/StockChart.tsx";
-import { useState, useEffect } from "react";
-import { Card, Text, Group, Box, Stack } from "@mantine/core";
-import { OHLCVData, Ticker, VolumeData } from "@shared/types";
+import {
+  Card,
+  Text,
+  Group,
+  Box,
+  Stack,
+  SegmentedControl,
+  Divider,
+} from "@mantine/core";
+import { OHLCData, Ticker, VolumeData, Frequency } from "@shared/types";
 import MetricsCard from "./MetricsCard";
+import { useBarsForTicker } from "@/hooks/queries";
+import { useLiveTickerFeed } from "@/hooks/useLiveTickerFeed";
+import { useState, useMemo } from "react";
+
+type ChartRange = "1d" | "5d" | "3m" | "6m" | "1y" | "3y" | "Max";
 
 interface ChartAreaProps {
   ticker: Ticker;
   cardStyles?: React.CSSProperties;
 }
+
+interface ChartDisplayOptionsWidgetProps {
+  onFreqChange: (value: string) => void;
+  onRangeChange: (value: string) => void;
+  frequency: Frequency;
+  range: ChartRange;
+}
+
+function ChartDisplayOptionsWidget({
+  onFreqChange,
+  onRangeChange,
+  frequency,
+  range,
+}: ChartDisplayOptionsWidgetProps) {
+  return (
+    <>
+      <Stack style={{ gap: 5 }}>
+        <Group style={{ display: "flex", justifyContent: "center" }}>
+          <Text style={{ marginRight: "auto" }}>Frequency</Text>
+          <SegmentedControl
+            data={["intraday", "daily", "weekly", "monthly"]}
+            withItemsBorders={false}
+            size="sm"
+            onChange={onFreqChange}
+            value={frequency}
+          />
+        </Group>
+        <Group style={{ display: "flex", justifyContent: "center" }}>
+          <Text style={{ marginRight: "auto" }}>Data History</Text>
+          <SegmentedControl
+            data={["1d", "5d", "3m", "6m", "1y", "3y", "Max"]}
+            withItemsBorders={false}
+            size="sm"
+            onChange={onRangeChange}
+            value={range}
+          />
+        </Group>
+      </Stack>
+    </>
+  );
+}
+
 export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
-  const [priceData, setPriceData] = useState(null);
-  const [volumeData, setVolumeData] = useState(null);
-  const [isError, setError] = useState(false);
-  const [isLoading, setLoading] = useState(false);
+  const [frequency, setFrequency] = useState<Frequency>("daily");
+  const [range, setRange] = useState<ChartRange>("3m");
 
-  useEffect(() => {
-    const fetchStockData = async () => {
-      if (!ticker.symbol) {
-        setLoading(false);
-        setError(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        const res = await fetch(
-          `${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest`,
-        );
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: Error fetching stock data`);
+  console.log(`Current ticker prop: ${ticker.symbol}`);
+  const tick = useLiveTickerFeed([ticker]);
+  console.log(`Live Ticker Data: ${JSON.stringify(tick)}`);
+
+  const handleFreqChange = (newFreq: string) => {
+    setFrequency(newFreq as Frequency);
+  };
+  const handleRangeChange = (newRange: string) => {
+    setRange(newRange as ChartRange);
+  };
+
+  const { start, end } = useMemo(() => {
+    const end = new Date();
+    let start: Date;
+
+    switch (range) {
+      case "1d":
+        start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case "5d":
+        start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 5);
+        break;
+      case "3m":
+        start = new Date(end.getFullYear(), end.getMonth() - 3, end.getDate());
+        break;
+      case "6m":
+        start = new Date(end.getFullYear(), end.getMonth() - 6, end.getDate());
+        break;
+      case "1y":
+        start = new Date(end.getFullYear() - 1, end.getMonth(), end.getDate());
+        break;
+      case "3y":
+        start = new Date(end.getFullYear() - 3, end.getMonth(), end.getDate());
+        break;
+      case "Max":
+        start = new Date(end.getFullYear() - 5, end.getMonth(), end.getDate());
+        break;
+    }
+    return { start, end };
+  }, [range]);
+
+  const { isLoading, isError, data, error } = useBarsForTicker(
+    ticker,
+    frequency,
+    start,
+    end,
+  );
+
+  const priceData: OHLCData[] = data
+    ? data.map((bar) => {
+        const { volume, ...transformed } = bar;
+        return transformed;
+      })
+    : null;
+  const volumeData: VolumeData[] = data
+    ? data.map((bar) => {
+        let volumeBarColor: string;
+        if (bar.open < bar.close) {
+          volumeBarColor = "#26a69a";
+        } else {
+          volumeBarColor = "#ef5350";
         }
-
-        const resultData = await res.json();
-
-        for (const row of resultData) {
-          row.time = row.time.split("T")[0];
-        }
-        const ohlcData = resultData.map((row: OHLCVData) => {
-          const newRow = { ...row };
-          delete newRow.volume;
-          let remaining = ["open", "low", "high", "close"];
-          for (const key of remaining) {
-            newRow[key] = Number(newRow[key]);
-          }
-          return newRow;
-        });
-        const volumeData = resultData.map((row: OHLCVData) => {
-          let volumeBarColor: string;
-          if (row.open < row.close) {
-            volumeBarColor = "#26a69a";
-          } else {
-            volumeBarColor = "#ef5350";
-          }
-          const newRow = {
-            time: row.time,
-            value: Number(row.volume),
-            color: volumeBarColor,
-          };
-          return newRow;
-        });
-
-        setPriceData(ohlcData);
-        setVolumeData(volumeData);
-        setError(false);
-        setLoading(false);
-      } catch (e) {
-        setError(true);
-        setLoading(false);
-        console.log(
-          `Error fetching stock data from ${import.meta.env.API_URL}/symbol/hist-ts/${ticker.symbol}/latest\n\n${e}`,
-        );
-      }
-    };
-    fetchStockData();
-  }, [ticker]);
+        const newRow = {
+          time: bar.time,
+          value: Number(bar.volume),
+          color: volumeBarColor,
+        };
+        return newRow;
+      })
+    : null;
 
   return (
     <>
       <Card style={cardStyles}>
         <Group p="xs" ml="md">
-          <Text size="36px" fw={700}>
+          <Text size="36px" fw={700} style={{ marginRight: "auto" }}>
             {ticker.symbol}
           </Text>
+          <ChartDisplayOptionsWidget
+            onFreqChange={handleFreqChange}
+            onRangeChange={handleRangeChange}
+            frequency={frequency}
+            range={range}
+          />
         </Group>
         <Box style={{ height: "100%" }}>
           {!ticker.symbol && <Text>Please enter a ticker.</Text>}
@@ -92,8 +161,9 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
                 <StockChart
                   priceData={priceData}
                   volumeData={volumeData}
+                  frequency={frequency}
                   chartType="candle"
-                  timeScale={false}
+                  timeScale={true}
                   containerStyles={{
                     width: "100%",
                     minHeight: 0,

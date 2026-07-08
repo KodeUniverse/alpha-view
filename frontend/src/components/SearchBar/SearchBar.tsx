@@ -1,6 +1,7 @@
-import { Select, Loader } from "@mantine/core";
+import { Select, Loader, ComboboxData } from "@mantine/core";
 import { Ticker } from "@shared/types";
-import { useEffect, useState } from "react";
+import { useSymbolList } from "@/hooks/queries";
+import { useMemo } from "react";
 
 function SearchBar({
   onTickerSelect,
@@ -11,38 +12,14 @@ function SearchBar({
   value: Ticker | null;
   styles?: React.CSSProperties;
 }) {
-  const [symbols, setSymbols] = useState<Ticker[]>([]);
-  const [isError, setError] = useState(false);
-  const [isLoading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchSymbols = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(
-          `${import.meta.env.API_URL}/symbol/list/latest`,
-        );
-
-        if (!res.ok)
-          throw new Error(`HTTP ${res.status}: Failed to fetch symbol list`);
-
-        const symbolJSON = await res.json();
-        const symbolList: Ticker[] = [];
-        for (const rowObj of symbolJSON) {
-          symbolList.push({ symbol: rowObj.symbol });
-        }
-        setSymbols(symbolList);
-      } catch (error) {
-        console.log(error);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSymbols();
-  }, []);
-
-  const data = symbols.map((t) => ({ value: t.symbol, label: t.symbol }));
+  const { data: symbols, isLoading, isError, error } = useSymbolList();
+  if (isError) {
+    console.log(error);
+  }
+  let data: ComboboxData;
+  if (symbols != null) {
+    data = symbols.map((t) => ({ value: t.symbol, label: t.symbol }));
+  }
 
   return (
     <>
@@ -54,10 +31,11 @@ function SearchBar({
           data={data}
           value={value?.symbol || null}
           onChange={(val) => {
-            onTickerSelect(val ? { symbol: val } : null);
+            onTickerSelect(val ? { symbol: val, name: val } : null);
           }}
           searchable
           clearable
+          limit={100}
           style={{ width: 130, ...styles }}
           styles={{
             input: { borderRadius: 5 },
