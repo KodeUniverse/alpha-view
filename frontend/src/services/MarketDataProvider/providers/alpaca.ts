@@ -84,7 +84,7 @@ export class AlpacaProvider implements MarketDataProvider {
       console.log("Alpaca WebSocket disconnected.");
     });
     this.socket.addEventListener("error", (error) => {
-      console.log(`Alpaca WebSocket Error: ${error}`);
+      console.log(`Alpaca WebSocket Error: ${error}`); // TODO: this error object is an Event instance, so doesnt log correctly.
     });
     this.socket.addEventListener("message", (msg) => {
       try {
@@ -223,7 +223,6 @@ export class AlpacaProvider implements MarketDataProvider {
         `Hit max page limit (${MAX_PAGES}) fetching bars for ${tickers.map((ticker) => ticker.symbol).toString()}`,
       );
     }
-    // TODO: finish this logic below
     const symbolBars: Record<string, OHLCVData[]> = {};
     for (const res of responses) {
       for (const symbol of Object.keys(res.bars)) {
