@@ -8,13 +8,17 @@ import {
   DeepPartial,
   ISeriesApi,
   UTCTimestamp,
+  IChartApi,
+  BusinessDay,
+  TickMarkType,
 } from "lightweight-charts";
-import { OHLCData, VolumeData, PriceData } from "@shared/types";
-import { useEffect, useRef } from "react";
+import { OHLCData, VolumeData, PriceData, Frequency } from "@shared/types";
+import { useCallback, useEffect, useRef } from "react";
 import { useComputedColorScheme } from "@mantine/core";
 
 interface BaseChartProps {
   volumeData?: VolumeData[] | null;
+  frequency?: Frequency;
   containerStyles?: React.CSSProperties;
   chartOptionOverride?: DeepPartial<ChartOptions>;
   timeScale?: boolean;
@@ -36,21 +40,37 @@ interface AreaChartProps extends BaseChartProps {
 
 type StockChartProps = CandleChartProps | AreaChartProps;
 
-export default function StockChart({
-  priceData,
-  chartType,
-  volumeData = null,
-  containerStyles = { width: "100%", height: "100%" },
-  chartOptionOverride = null,
-  timeScale = true,
-  interactive = true,
-  showHorizAxis = true,
-  showVertAxis = true,
-  showGrid = true,
-}: StockChartProps) {
+export default function StockChart(props: StockChartProps) {
+  const {
+    priceData,
+    chartType,
+    frequency,
+    volumeData = null,
+    containerStyles = { width: "100%", height: "100%" },
+    chartOptionOverride = null,
+    timeScale = true,
+    interactive = true,
+    showHorizAxis = true,
+    showVertAxis = true,
+    showGrid = true,
+  } = props;
+
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
   const priceSeriesRef = useRef<ISeriesApi<"Candlestick" | "Area">>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram">>(null);
+
+  const dateTickFormatter = useCallback(
+    (time: UTCTimestamp | BusinessDay) => {
+      if (frequency !== "intraday" || typeof time !== "number") return null; // will do nothing, goes with Lightweight Charts default behavior.
+      // for intraday frequency, custom format date axis with times.
+      const d = new Date(time * 1000);
+      const hh = d.getHours().toString().padStart(2, "0");
+      const mm = d.getMinutes().toString().padStart(2, "0");
+      return `${hh}:${mm}`;
+    },
+    [frequency],
+  );
 
   const computedColorScheme = useComputedColorScheme();
 
@@ -134,6 +154,8 @@ export default function StockChart({
     try {
       if (!chartContainerRef.current) return;
       const chart = createChart(chartContainerRef.current, chartOptions);
+      chartRef.current = chart;
+
       let priceSeries: ISeriesApi<"Candlestick" | "Area">;
 
       switch (chartType) {
@@ -225,6 +247,18 @@ export default function StockChart({
     }
   }, [priceData, volumeData, computedColorScheme]);
 
+  useEffect(() => {
+    if (chartRef.current) {
+      chartRef.current.applyOptions({
+        timeScale: {
+          tickMarkFormatter: dateTickFormatter,
+        },
+      });
+    }
+    return () => {
+      chartRef.current = null;
+    };
+  }, [dateTickFormatter]);
   return (
     <div
       className="chart-container"

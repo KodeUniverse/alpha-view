@@ -156,6 +156,7 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
                 <StockChart
                   priceData={priceData}
                   volumeData={volumeData}
+                  frequency={frequency}
                   chartType="candle"
                   timeScale={true}
                   containerStyles={{
