@@ -1,25 +1,38 @@
 import { useContext, createContext, useRef, ReactNode } from "react";
-import MarketDataProvider from "./MarketDataProvider";
 import AlpacaProvider from "./providers";
-
-function createMarketDataProvider(): MarketDataProvider {
+import {
+  MarketDataProvider,
+  MarketDataProviderName,
+} from "./MarketDataProvider";
+function createMarketDataProvider(
+  providerName: MarketDataProviderName,
+): MarketDataProvider {
   let provider: MarketDataProvider;
-  switch (import.meta.env.DATA_PROVIDER) {
+  switch (providerName) {
     case "alpaca":
       provider = new AlpacaProvider();
       break;
+    case "finnhub":
+      provider = new FinnhubProvider();
+      break;
     default:
-      throw new Error("DATA_PROVIDER env variable not set.");
+      throw new Error(`providerName ${providerName} does not exist.`);
   }
   return provider;
 }
 
 const MarketDataContext = createContext<MarketDataProvider | null>(null);
 
-export function MarketDataProviderRoot({ children }: { children: ReactNode }) {
+export function MarketDataProviderRoot({
+  providerName,
+  children,
+}: {
+  providerName: MarketDataProviderName;
+  children: ReactNode;
+}) {
   const provider = useRef<MarketDataProvider>(null);
   if (!provider.current) {
-    provider.current = createMarketDataProvider();
+    provider.current = createMarketDataProvider(providerName);
   }
   return (
     <MarketDataContext.Provider value={provider.current}>

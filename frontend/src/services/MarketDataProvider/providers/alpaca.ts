@@ -1,4 +1,4 @@
-import MarketDataProvider from "../MarketDataProvider.ts";
+import { MarketDataProvider } from "../MarketDataProvider.ts";
 import { Ticker, OHLCVData, Frequency } from "@shared/types";
 
 type AlpacaMessage = AlpacaAuthMessage | AlpacaBarMessage;
@@ -59,6 +59,8 @@ interface AlpacaHistBarsResponse {
 
 export class AlpacaProvider implements MarketDataProvider {
   private socket?: WebSocket;
+  private readonly apiKey: string = import.meta.env.ALPACA_API_KEY;
+  private readonly apiSecret: string = import.meta.env.ALPACA_API_SECRET;
 
   startLiveTickerFeed(tickers: Ticker[], onTick: (data: OHLCVData) => void) {
     this.stopLiveTickerFeed();
@@ -127,36 +129,37 @@ export class AlpacaProvider implements MarketDataProvider {
     this.socket = undefined;
   }
   async getSymbolList() {
-    const apiKey = import.meta.env.ALPACA_API_KEY;
-    const apiSecret = import.meta.env.ALPACA_API_SECRET;
-
-    if (!apiKey || !apiSecret)
+    if (!this.apiKey || !this.apiSecret)
       throw new Error("Missing Alpaca API secrets in environment.");
 
     const url = new URL("https://paper-api.alpaca.markets/v2/assets");
     url.searchParams.set("status", "active");
     url.searchParams.set("asset_class", "us_equity");
 
-    const res = await fetch(url, {
-      headers: {
-        "APCA-API-KEY-ID": apiKey,
-        "APCA-API-SECRET-KEY": apiSecret,
-      },
-    });
-
-    if (res.ok) {
-      const symbolData = await res.json();
-      const tickerList = symbolData.map((x: AlpacaAsset) => {
-        const ticker: Ticker = {
-          symbol: x.symbol,
-          name: x.name,
-          exchange: x.exchange,
-        };
-        return ticker;
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "APCA-API-KEY-ID": this.apiKey,
+          "APCA-API-SECRET-KEY": this.apiSecret,
+        },
       });
-      return tickerList;
-    } else {
-      throw new Error(`HTTP ${res.status}: Failed to fetch symbol list.`);
+
+      if (res.ok) {
+        const symbolData = await res.json();
+        const tickerList = symbolData.map((x: AlpacaAsset) => {
+          const ticker: Ticker = {
+            symbol: x.symbol,
+            name: x.name,
+            exchange: x.exchange,
+          };
+          return ticker;
+        });
+        return tickerList;
+      } else {
+        throw new Error(`HTTP ${res.status}: Failed to fetch symbol list.`);
+      }
+    } catch (error) {
+      console.log(error);
     }
   }
   async getBars(
@@ -165,10 +168,7 @@ export class AlpacaProvider implements MarketDataProvider {
     start: Date,
     end: Date,
   ): Promise<Record<string, OHLCVData[]>> {
-    const apiKey = import.meta.env.ALPACA_API_KEY;
-    const apiSecret = import.meta.env.ALPACA_API_SECRET;
-
-    if (!apiKey || !apiSecret)
+    if (!this.apiKey || !this.apiSecret)
       throw new Error("Missing Alpaca API secrets in environment.");
     const url = new URL("https://data.alpaca.markets/v2/stocks/bars");
 
@@ -203,20 +203,25 @@ export class AlpacaProvider implements MarketDataProvider {
       if (next_page_token) {
         url.searchParams.set("page_token", next_page_token);
       }
-      const res = await fetch(url, {
-        headers: {
-          "APCA-API-KEY-ID": apiKey,
-          "APCA-API-SECRET-KEY": apiSecret,
-        },
-      });
-      if (!res.ok) {
-        throw new Error(
-          `Failed to get stock bars from Alpaca for symbols ${tickers.toString()}`,
-        );
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            "APCA-API-KEY-ID": this.apiKey,
+            "APCA-API-SECRET-KEY": this.apiSecret,
+          },
+        });
+        if (!res.ok) {
+          throw new Error(
+            `Failed to get stock bars from Alpaca for symbols ${tickers.toString()}`,
+          );
+        }
+        const data: AlpacaHistBarsResponse = await res.json();
+        responses.push(data);
+        next_page_token = data.next_page_token ?? null;
+      } catch (error) {
+        console.log(error);
       }
-      const data: AlpacaHistBarsResponse = await res.json();
-      responses.push(data);
-      next_page_token = data.next_page_token ?? null;
     }
     if (pageCount >= MAX_PAGES) {
       console.warn(
