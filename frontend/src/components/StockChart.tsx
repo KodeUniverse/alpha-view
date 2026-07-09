@@ -271,7 +271,7 @@ export default function StockChart(props: StockChartProps) {
     } catch (error) {
       console.log(String(error));
     }
-  }, [priceData, volumeData]);
+  }, [priceData, volumeData, computedColors]);
 
   // updates the chart with live bars
   useEffect(() => {

@@ -37,8 +37,24 @@ function ChartDisplayOptionsWidget({
   return (
     <>
       <Stack style={{ gap: 5 }}>
-        <Group style={{ display: "flex", justifyContent: "center" }}>
-          <Text style={{ marginRight: "auto" }}>Frequency</Text>
+        <Group
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            border: "1px solid",
+            borderColor: "var(--color-background-secondary)",
+            borderRadius: 5,
+            padding: 5,
+          }}
+        >
+          <Text
+            style={{
+              marginRight: "auto",
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            Frequency
+          </Text>
           <SegmentedControl
             data={["intraday", "daily", "weekly", "monthly"]}
             withItemsBorders={false}
@@ -48,7 +64,15 @@ function ChartDisplayOptionsWidget({
           />
         </Group>
         <Group style={{ display: "flex", justifyContent: "center" }}>
-          <Text style={{ marginRight: "auto" }}>Data History</Text>
+          <Text
+            style={{
+              marginRight: "auto",
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            Data History
+          </Text>
+
           <SegmentedControl
             data={["1d", "5d", "3m", "6m", "1y", "3y", "Max"]}
             withItemsBorders={false}
@@ -120,12 +144,6 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
     start,
     end,
   );
-
-  // useEffect(() => {
-  //   if (!priceData || !volumeData) return;
-
-  //   priceData.index
-  // }, [JSON.stringify(tick)]);
   const priceData: OHLCData[] | null = data
     ? data.map((bar) => {
         const { volume, ...transformed } = bar;
