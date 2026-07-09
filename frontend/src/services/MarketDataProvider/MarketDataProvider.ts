@@ -3,7 +3,7 @@ import { Frequency, NewsCategory, OHLCVData, Ticker } from "@shared/types";
 interface MarketDataProvider {
   startLiveTickerFeed?: (
     tickers: Ticker[],
-    onTick: (data: unknown) => void,
+    onTick: (data: OHLCVData) => void,
   ) => void;
   stopLiveTickerFeed?: () => void;
   getSymbolList?: () => Promise<Ticker[]>;
@@ -19,6 +19,7 @@ interface MarketDataProvider {
     start: Date,
     end: Date,
   ) => Promise<OHLCVData[]>;
+  // TODO: type these unknowns. transform data inside fetch before returning
   getBasicFinancials?: (ticker: Ticker) => Promise<unknown>;
   getMarketNews?: (category: NewsCategory) => Promise<unknown>;
 }

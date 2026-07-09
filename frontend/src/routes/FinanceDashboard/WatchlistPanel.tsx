@@ -28,8 +28,21 @@ interface WatchListItemProps {
 }
 function WatchListItem({ ticker }: WatchListItemProps) {
   const { start, end } = useMemo(() => {
-    const end = new Date();
-    const start = new Date(end.getTime() - 1000 * 60 * 60 * 24);
+    const today = new Date();
+    const start = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      9,
+      30,
+    );
+    const end = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      16,
+      0,
+    );
     return { end, start };
   }, []);
 

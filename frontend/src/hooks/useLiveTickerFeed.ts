@@ -7,7 +7,7 @@ export function useLiveTickerFeed(tickers: Ticker[]): OHLCVData {
   // multiple uses of this hook will kill any other use of itself.
   // This means only one feed can be active per MarketDataProvider.
   const provider = useAlpacaDataProvider();
-  const [currTick, setCurrTick] = useState(null);
+  const [currTick, setCurrTick] = useState<OHLCVData | null>(null);
 
   useEffect(() => {
     provider.startLiveTickerFeed(tickers, (data) => {
