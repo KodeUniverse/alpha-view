@@ -4,7 +4,10 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import FinanceDashboard from "@routes/FinanceDashboard/FinanceDashboard.tsx";
 import LoginPage from "@routes/LoginPage.tsx";
 import { socket } from "@services/socket.ts";
-import { MarketDataProviderRoot } from "@services/MarketDataProvider/MarketDataContext";
+import {
+  AlpacaDataContextProvider,
+  FinnhubDataContextProvider,
+} from "@services/MarketDataProvider/MarketDataContext";
 
 function App() {
   const [isConnected, setConnected] = useState(socket.connected);
@@ -29,17 +32,19 @@ function App() {
   }, []);
 
   return (
-    <MarketDataProviderRoot>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<FinanceDashboard />} />
-          <Route
-            path="/login"
-            element={<LoginPage styles={{ width: 500 }} />}
-          />
-        </Routes>
-      </BrowserRouter>
-    </MarketDataProviderRoot>
+    <FinnhubDataContextProvider>
+      <AlpacaDataContextProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<FinanceDashboard />} />
+            <Route
+              path="/login"
+              element={<LoginPage styles={{ width: 500 }} />}
+            />
+          </Routes>
+        </BrowserRouter>
+      </AlpacaDataContextProvider>
+    </FinnhubDataContextProvider>
   );
 }
 export default App;

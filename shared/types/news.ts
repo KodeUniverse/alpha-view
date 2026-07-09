@@ -6,3 +6,12 @@ export interface NewsArticle {
   url: string;
   newssource: string;
 }
+
+export type NewsCategory =
+  | "general"
+  | "forex"
+  | "crypto"
+  | "merger"
+  | "technology"
+  | "business"
+  | "top news";

@@ -1,6 +1,4 @@
-import { Frequency, OHLCVData, Ticker } from "@shared/types";
-
-type MarketDataProviderName = "alpaca" | "finnhub";
+import { Frequency, NewsCategory, OHLCVData, Ticker } from "@shared/types";
 
 interface MarketDataProvider {
   startLiveTickerFeed?: (
@@ -22,6 +20,6 @@ interface MarketDataProvider {
     end: Date,
   ) => Promise<OHLCVData[]>;
   getBasicFinancials?: (ticker: Ticker) => Promise<unknown>;
-  getMarketNews?: (category: string) => Promise<unknown>;
+  getMarketNews?: (category: NewsCategory) => Promise<unknown>;
 }
-export type { MarketDataProviderName, MarketDataProvider };
+export type { MarketDataProvider };

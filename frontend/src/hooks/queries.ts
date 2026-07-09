@@ -1,8 +1,8 @@
 import { ProviderQueryResponse, useProviderQuery } from "./useProviderQuery";
-import { Frequency, Ticker, OHLCVData } from "@shared/types";
+import { Frequency, Ticker, OHLCVData, NewsCategory } from "@shared/types";
 
 export function useSymbolList(): ProviderQueryResponse<Ticker[]> {
-  return useProviderQuery([], (provider) => provider.getSymbolList());
+  return useProviderQuery([], (provider) => provider.getSymbolList(), "alpaca");
 }
 
 export function useBarsForTicker(
@@ -14,6 +14,7 @@ export function useBarsForTicker(
   return useProviderQuery(
     [ticker.symbol, freq, start.getTime(), end.getTime()],
     (provider) => provider.getBarsForTicker(ticker, freq, start, end),
+    "alpaca",
   );
 }
 
@@ -32,5 +33,26 @@ export function useBars(
       end.getTime(),
     ],
     (provider) => provider.getBars(tickers, freq, start, end),
+    "alpaca",
+  );
+}
+
+export function useMarketNews(
+  category: NewsCategory,
+): ProviderQueryResponse<unknown> {
+  return useProviderQuery(
+    [category],
+    (provider) => provider.getMarketNews(category),
+    "finnhub",
+  );
+}
+
+export function useBasicFinancials(
+  ticker: Ticker,
+): ProviderQueryResponse<unknown> {
+  return useProviderQuery(
+    [ticker.symbol],
+    (provider) => provider.getBasicFinancials(ticker),
+    "finnhub",
   );
 }

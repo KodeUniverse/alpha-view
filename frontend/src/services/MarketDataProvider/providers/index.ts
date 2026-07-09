@@ -1,1 +1,2 @@
-export { AlpacaProvider as default } from "./alpaca.ts";
+export { AlpacaProvider } from "./alpaca.ts";
+export { FinnhubProvider } from "./finnhub.ts";

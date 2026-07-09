@@ -22,7 +22,7 @@ interface FinnhubNewsResponse {
   url: string;
 }
 
-export default class FinnhubProvider implements MarketDataProvider {
+export class FinnhubProvider implements MarketDataProvider {
   private readonly apiKey: string = import.meta.env.FINNHUB_API_KEY;
   private readonly apiSecret: string = import.meta.env.FINNHUB_API_SECRET;
   private readonly apiURL: URL = new URL("https://finnhub.io/api/v1");
@@ -32,12 +32,9 @@ export default class FinnhubProvider implements MarketDataProvider {
   ): Promise<FinnhubNewsResponse> {
     const endpoint = new URL(this.apiURL + "/news");
     endpoint.searchParams.set("category", category);
+    endpoint.searchParams.set("token", this.apiKey);
     try {
-      const res = await fetch(endpoint, {
-        headers: {
-          "X-Finnhub-Token": this.apiKey,
-        },
-      });
+      const res = await fetch(endpoint);
       if (res.ok) {
         const data = await res.json();
         return data;

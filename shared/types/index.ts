@@ -6,4 +6,6 @@ export type {
   Ticker,
   Frequency,
 } from "./stock.js";
-export type { NewsArticle } from "./news.js";
+export type { NewsArticle, NewsCategory } from "./news.js";
+
+export type { MarketDataProviderName } from "./provider.ts";

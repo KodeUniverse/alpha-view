@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 import { socket } from "@services/socket.js";
 import { Card, Text, Group, Stack, Divider, Box } from "@mantine/core";
 import { NewsArticle } from "@shared/types";
+import { useMarketNews } from "@/hooks/queries";
 
 interface NewsFeedProps {
   length: number;
   cardStyles?: React.CSSProperties;
 }
 function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
+  const { data } = useMarketNews("general");
+
+  console.log(JSON.stringify(data));
   const [isLoaded, setLoaded] = useState(false);
   const [isLoading, setLoading] = useState(false);
   const [isError, setError] = useState(false);

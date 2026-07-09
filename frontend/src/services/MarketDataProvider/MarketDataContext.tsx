@@ -1,51 +1,59 @@
 import { useContext, createContext, useRef, ReactNode } from "react";
-import AlpacaProvider from "./providers";
-import {
-  MarketDataProvider,
-  MarketDataProviderName,
-} from "./MarketDataProvider";
-function createMarketDataProvider(
-  providerName: MarketDataProviderName,
-): MarketDataProvider {
-  let provider: MarketDataProvider;
-  switch (providerName) {
-    case "alpaca":
-      provider = new AlpacaProvider();
-      break;
-    case "finnhub":
-      provider = new FinnhubProvider();
-      break;
-    default:
-      throw new Error(`providerName ${providerName} does not exist.`);
-  }
-  return provider;
-}
+import { AlpacaProvider, FinnhubProvider } from "./providers";
+import { MarketDataProvider } from "./MarketDataProvider";
 
-const MarketDataContext = createContext<MarketDataProvider | null>(null);
+const AlpacaDataContext = createContext<MarketDataProvider | null>(null);
+const FinnhubDataContext = createContext<MarketDataProvider | null>(null);
 
-export function MarketDataProviderRoot({
-  providerName,
+export function AlpacaDataContextProvider({
   children,
 }: {
-  providerName: MarketDataProviderName;
   children: ReactNode;
 }) {
-  const provider = useRef<MarketDataProvider>(null);
-  if (!provider.current) {
-    provider.current = createMarketDataProvider(providerName);
-  }
+  const provider = useRef<MarketDataProvider | null>(null);
+
+  if (!provider.current) provider.current = new AlpacaProvider();
+
   return (
-    <MarketDataContext.Provider value={provider.current}>
+    <AlpacaDataContext.Provider value={provider.current}>
       {children}
-    </MarketDataContext.Provider>
+    </AlpacaDataContext.Provider>
   );
 }
 
-export function useMarketDataProvider() {
-  const ctx = useContext(MarketDataContext);
+export function FinnhubDataContextProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const provider = useRef<MarketDataProvider | null>(null);
+
+  if (!provider.current) provider.current = new FinnhubProvider();
+
+  return (
+    <FinnhubDataContext.Provider value={provider.current}>
+      {children}
+    </FinnhubDataContext.Provider>
+  );
+}
+
+export function useAlpacaDataProvider() {
+  const ctx = useContext(AlpacaDataContext);
+
   if (!ctx) {
     throw new Error(
-      "useMarketDataProvider() hook must be used within MarketDataProviderRoot.",
+      "useAlpacaDataProvider must be used inside AlpacaDataProvider context.",
+    );
+  }
+  return ctx;
+}
+
+export function useFinnhubDataProvider() {
+  const ctx = useContext(FinnhubDataContext);
+
+  if (!ctx) {
+    throw new Error(
+      "useFinnhubDataProvider must be used inside FinnhubDataProvider context",
     );
   }
   return ctx;
