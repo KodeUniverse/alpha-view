@@ -1,10 +1,12 @@
 export interface NewsArticle {
-  articleid: string;
+  id: number;
   headline: string;
-  descr: string;
-  pubdate: Date;
+  datetime: Date;
   url: string;
-  newssource: string;
+  source: string;
+  category?: NewsCategory;
+  image?: string;
+  summary?: string;
 }
 
 export type NewsCategory =

@@ -29,7 +29,7 @@ export function useProviderQuery<T>(
 
   const [isLoading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [queryData, setQueryData] = useState(null);
+  const [queryData, setQueryData] = useState<T | null>(null);
 
   useEffect(() => {
     let cancelled = false;

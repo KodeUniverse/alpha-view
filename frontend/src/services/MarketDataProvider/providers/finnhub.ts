@@ -1,5 +1,5 @@
 import { MarketDataProvider } from "../MarketDataProvider";
-import { Ticker } from "@shared/types";
+import { Ticker, NewsArticle } from "@shared/types";
 
 type FinnhubNewsCategory =
   | "general"
@@ -10,7 +10,7 @@ type FinnhubNewsCategory =
   | "business"
   | "top news";
 
-interface FinnhubNewsResponse {
+interface FinnhubNewsArticle {
   category: FinnhubNewsCategory;
   datetime: number; // unix timestamp
   headline: string;
@@ -27,17 +27,20 @@ export class FinnhubProvider implements MarketDataProvider {
   private readonly apiSecret: string = import.meta.env.FINNHUB_API_SECRET;
   private readonly apiURL: URL = new URL("https://finnhub.io/api/v1");
 
-  async getMarketNews(
-    category: FinnhubNewsCategory,
-  ): Promise<FinnhubNewsResponse> {
+  async getMarketNews(category: FinnhubNewsCategory): Promise<NewsArticle[]> {
     const endpoint = new URL(this.apiURL + "/news");
     endpoint.searchParams.set("category", category);
     endpoint.searchParams.set("token", this.apiKey);
     try {
       const res = await fetch(endpoint);
       if (res.ok) {
-        const data = await res.json();
-        return data;
+        const data: FinnhubNewsArticle[] = await res.json();
+
+        const transformed: NewsArticle[] = data.map((article) => {
+          return { ...article, datetime: new Date(article.datetime * 1000) };
+        });
+
+        return transformed;
       } else {
         throw new Error(
           `HTTP ${res.status}: Failed to fetch Finnhub market news.`,

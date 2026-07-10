@@ -1,5 +1,11 @@
 import { ProviderQueryResponse, useProviderQuery } from "./useProviderQuery";
-import { Frequency, Ticker, OHLCVData, NewsCategory } from "@shared/types";
+import {
+  Frequency,
+  Ticker,
+  OHLCVData,
+  NewsCategory,
+  NewsArticle,
+} from "@shared/types";
 
 export function useSymbolList(): ProviderQueryResponse<Ticker[]> {
   return useProviderQuery([], (provider) => provider.getSymbolList(), "alpaca");
@@ -39,7 +45,7 @@ export function useBars(
 
 export function useMarketNews(
   category: NewsCategory,
-): ProviderQueryResponse<unknown> {
+): ProviderQueryResponse<NewsArticle[]> {
   return useProviderQuery(
     [category],
     (provider) => provider.getMarketNews(category),
