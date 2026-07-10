@@ -32,4 +32,27 @@ export interface Ticker {
   exchange?: string;
 }
 
+export interface StockFinancials {
+  // TODO: finish adding and reviewing fields.
+  adtv10Day?: number;
+  yearHigh?: number;
+  yearLow?: number;
+  beta?: number;
+  evToFCFAnnual?: number;
+  evToFCFTTM?: number;
+  divYieldTTM?: number;
+  currentRatioAnnual?: number;
+  currentRatioQuarterly?: number;
+  enterpriseValue?: number;
+  epsAnnual?: number;
+  epsTTM?: number;
+  evToEBITDA?: number;
+  evToRevenue?: number;
+  forwardPE?: number;
+  forwardPEG?: number;
+  peAnnual?: number;
+  peTTM?: number;
+  pegTTM?: number;
+}
+
 export type Frequency = "intraday" | "daily" | "weekly" | "monthly";
