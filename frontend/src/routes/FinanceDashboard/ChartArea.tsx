@@ -90,7 +90,6 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   const [frequency, setFrequency] = useState<Frequency>("daily");
   const [range, setRange] = useState<ChartRange>("3m");
 
-  console.log(`Current ticker prop: ${ticker.symbol}`);
   const tick = useLiveTickerFeed([ticker]);
   console.log(`Live Ticker Data: ${JSON.stringify(tick)}`);
 

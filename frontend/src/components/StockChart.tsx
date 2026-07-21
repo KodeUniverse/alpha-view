@@ -10,10 +10,8 @@ import {
   UTCTimestamp,
   IChartApi,
   BusinessDay,
-  TickMarkType,
   CandlestickData,
   Time,
-  HistogramData,
 } from "lightweight-charts";
 import {
   OHLCData,
@@ -227,7 +225,7 @@ export default function StockChart(props: StockChartProps) {
     } catch (error) {
       console.log(String(error));
     }
-  }, [chartType, computedColorScheme, JSON.stringify(chartOptions)]);
+  }, [chartType, JSON.stringify(chartOptions)]);
 
   // sets chart data and applies color formatting
   useEffect(() => {
@@ -275,18 +273,59 @@ export default function StockChart(props: StockChartProps) {
 
   // updates the chart with live bars
   useEffect(() => {
-    if (!latestTick || !priceSeriesRef.current || !volumeSeriesRef.current)
+    if (
+      !latestTick ||
+      !priceSeriesRef.current ||
+      !volumeSeriesRef.current ||
+      !frequency
+    )
       return;
     const transformedBar: CandlestickData<Time> = {
       ...latestTick, // lightweight-charts will ignore unnecessary fields
       time: toChartTime(latestTick.time),
     };
-    priceSeriesRef.current.update(transformedBar);
+
+    // pin the update to latest bar rather than create new for non-intraday frequency
+    let pinnedTime: UTCTimestamp;
+    switch (frequency) {
+      case "intraday":
+        pinnedTime = toChartTime(latestTick.time);
+        break;
+      case "daily":
+        pinnedTime = toChartTime(
+          new Date(
+            latestTick.time.getFullYear(),
+            latestTick.time.getMonth(),
+            latestTick.time.getDate(),
+          ),
+        );
+        break;
+      case "weekly":
+        pinnedTime = toChartTime(
+          new Date(
+            latestTick.time.getFullYear(),
+            latestTick.time.getMonth(),
+            latestTick.time.getDate() - ((latestTick.time.getDay() + 6) % 7),
+          ),
+        );
+        break;
+      case "monthly":
+        pinnedTime = toChartTime(
+          new Date(
+            latestTick.time.getFullYear(),
+            latestTick.time.getMonth(),
+            1,
+          ),
+        );
+        break;
+    }
+
+    priceSeriesRef.current.update({ ...transformedBar, time: pinnedTime });
     volumeSeriesRef.current.update({
-      time: toChartTime(latestTick.time),
+      time: pinnedTime,
       value: latestTick.volume,
     });
-  }, [JSON.stringify(latestTick)]);
+  }, [JSON.stringify(latestTick), frequency]);
 
   // sets date scale based on frequency
   useEffect(() => {

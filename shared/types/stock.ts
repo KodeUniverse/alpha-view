@@ -32,7 +32,7 @@ export interface Ticker {
   exchange?: string;
 }
 
-export interface StockFinancials {
+export interface StockBasicFinancials {
   // TODO: finish adding and reviewing fields.
   adtv10Day?: number;
   yearHigh?: number;
@@ -53,6 +53,7 @@ export interface StockFinancials {
   peAnnual?: number;
   peTTM?: number;
   pegTTM?: number;
+  pb?: number; // price/book value
 }
 
 export type Frequency = "intraday" | "daily" | "weekly" | "monthly";
