@@ -11,6 +11,7 @@ import {
   IChartApi,
   BusinessDay,
   CandlestickData,
+  HistogramData,
   Time,
 } from "lightweight-charts";
 import {
@@ -19,13 +20,14 @@ import {
   PriceData,
   Frequency,
   OHLCVData,
+  LiveTickerFeedMessage,
 } from "@shared/types";
 import { useCallback, useEffect, useRef } from "react";
 import { useComputedColorScheme } from "@mantine/core";
 
 interface BaseChartProps {
   volumeData?: VolumeData[] | null;
-  latestTick?: OHLCVData;
+  latestTick?: LiveTickerFeedMessage;
   frequency?: Frequency;
   containerStyles?: React.CSSProperties;
   chartOptionOverride?: DeepPartial<ChartOptions>;
@@ -273,58 +275,50 @@ export default function StockChart(props: StockChartProps) {
 
   // updates the chart with live bars
   useEffect(() => {
-    if (
-      !latestTick ||
-      !priceSeriesRef.current ||
-      !volumeSeriesRef.current ||
-      !frequency
-    )
-      return;
-    const transformedBar: CandlestickData<Time> = {
-      ...latestTick, // lightweight-charts will ignore unnecessary fields
-      time: toChartTime(latestTick.time),
-    };
+    try {
+      if (
+        !latestTick ||
+        !priceSeriesRef.current ||
+        !volumeSeriesRef.current ||
+        !frequency
+      )
+        return;
 
-    // pin the update to latest bar rather than create new for non-intraday frequency
-    let pinnedTime: UTCTimestamp;
-    switch (frequency) {
-      case "intraday":
-        pinnedTime = toChartTime(latestTick.time);
-        break;
-      case "daily":
-        pinnedTime = toChartTime(
-          new Date(
-            latestTick.time.getFullYear(),
-            latestTick.time.getMonth(),
-            latestTick.time.getDate(),
-          ),
+      let transformedBar: CandlestickData<Time>;
+      let volumeBar: HistogramData<Time>;
+
+      if (frequency === "intraday") {
+        if (!latestTick.minuteBar) return;
+        transformedBar = {
+          ...latestTick.minuteBar, // lightweight-charts will ignore unnecessary fields
+          time: toChartTime(latestTick.minuteBar.time),
+        };
+        volumeBar = {
+          time: toChartTime(latestTick.minuteBar.time),
+          value: latestTick.minuteBar.volume,
+        };
+      } else if (frequency === "daily") {
+        if (!latestTick.dailyBar) return;
+        const pinnedDate = new Date(
+          latestTick.dailyBar.time.getFullYear(),
+          latestTick.dailyBar.time.getMonth(),
+          latestTick.dailyBar.time.getDate(),
         );
-        break;
-      case "weekly":
-        pinnedTime = toChartTime(
-          new Date(
-            latestTick.time.getFullYear(),
-            latestTick.time.getMonth(),
-            latestTick.time.getDate() - ((latestTick.time.getDay() + 6) % 7),
-          ),
-        );
-        break;
-      case "monthly":
-        pinnedTime = toChartTime(
-          new Date(
-            latestTick.time.getFullYear(),
-            latestTick.time.getMonth(),
-            1,
-          ),
-        );
-        break;
+        transformedBar = {
+          ...latestTick.dailyBar,
+          time: toChartTime(pinnedDate),
+        };
+        volumeBar = {
+          time: toChartTime(pinnedDate),
+          value: latestTick.dailyBar.volume,
+        };
+      }
+
+      priceSeriesRef.current.update(transformedBar);
+      volumeSeriesRef.current.update(volumeBar);
+    } catch (error) {
+      console.log(`Error updating chart series with live data:\n${error}`);
     }
-
-    priceSeriesRef.current.update({ ...transformedBar, time: pinnedTime });
-    volumeSeriesRef.current.update({
-      time: pinnedTime,
-      value: latestTick.volume,
-    });
   }, [JSON.stringify(latestTick), frequency]);
 
   // sets date scale based on frequency

@@ -6,6 +6,7 @@ export interface OHLCVData {
   close: number;
   volume: number;
   symbol?: string;
+  frequency?: Frequency;
 }
 
 export interface OHLCData {
@@ -30,6 +31,11 @@ export interface Ticker {
   symbol: string;
   name?: string;
   exchange?: string;
+}
+
+export interface LiveTickerFeedMessage {
+  dailyBar: OHLCVData | null;
+  minuteBar: OHLCVData | null;
 }
 
 export interface StockBasicFinancials {

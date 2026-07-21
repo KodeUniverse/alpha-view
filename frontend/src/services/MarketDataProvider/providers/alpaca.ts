@@ -9,7 +9,7 @@ interface AlpacaAuthMessage {
 }
 
 interface AlpacaBarMessage {
-  T: "b";
+  T: "b" | "d";
   S: string;
   o: number;
   h: number;
@@ -61,9 +61,12 @@ export class AlpacaProvider implements MarketDataProvider {
   private socket?: WebSocket;
   private readonly apiKey: string = import.meta.env.ALPACA_API_KEY;
   private readonly apiSecret: string = import.meta.env.ALPACA_API_SECRET;
+  private intentionalClose: boolean = false;
 
   startLiveTickerFeed(tickers: Ticker[], onTick: (data: OHLCVData) => void) {
     this.stopLiveTickerFeed();
+
+    this.intentionalClose = false;
 
     const version = "v2";
     const feed = "iex";
@@ -83,48 +86,59 @@ export class AlpacaProvider implements MarketDataProvider {
       );
     });
     this.socket.addEventListener("close", (event) => {
-      console.log("Alpaca WebSocket disconnected.");
+      if (this.intentionalClose) return;
+      console.log(
+        "Alpaca WebSocket disconnected, reconnecting in 2 seconds...",
+      );
+      setTimeout(() => this.startLiveTickerFeed(tickers, onTick), 2000);
     });
     this.socket.addEventListener("error", (error) => {
-      console.log(`Alpaca WebSocket Error: ${error}`); // TODO: this error object is an Event instance, so doesnt log correctly.
+      console.error(`Alpaca WebSocket Error: ${error}`); // TODO: this error object is an Event instance, so doesnt log correctly.
     });
     this.socket.addEventListener("message", (msg) => {
+      let messages: AlpacaMessage[];
       try {
-        const messages = JSON.parse(msg.data);
-        // check for authentication reply message
-        for (const data of messages as AlpacaMessage[]) {
-          console.log(`Type of Alpaca WebSocket message recieved: ${data.T}`);
-          if (data.T === "success" && data.msg === "authenticated") {
-            console.log("Alpaca WebSocket Authenticated.");
-            this.socket!.send(
-              JSON.stringify({
-                action: "subscribe",
-                bars: tickers.map((ticker) => ticker.symbol),
-              }),
-            );
-          } else if (data.T === "b") {
-            const transformData: OHLCVData = {
-              open: data.o,
-              close: data.c,
-              high: data.h,
-              low: data.l,
-              volume: data.v,
-              time: new Date(data.t),
-              symbol: data.S,
-            };
-            onTick(transformData);
-          } else if (data.T === "error") {
-            throw new Error(
-              `Alpaca WebSocket returned an error: ${JSON.stringify(data)}`,
-            );
-          }
-        }
+        messages = JSON.parse(msg.data);
       } catch (error) {
-        console.log(`Malformed message from Alpaca WebSocket:\n${error}`);
+        console.error(`Malformed message from Alpaca WebSocket: ${msg.data}`);
+        return;
+      }
+      // check for authentication reply message
+      for (const data of messages as AlpacaMessage[]) {
+        console.log(`Type of Alpaca WebSocket message recieved: ${data.T}`);
+        if (data.T === "success" && data.msg === "authenticated") {
+          console.log("Alpaca WebSocket Authenticated.");
+          this.socket!.send(
+            JSON.stringify({
+              action: "subscribe",
+              bars: tickers.map((ticker) => ticker.symbol),
+              dailyBars: tickers.map((ticker) => ticker.symbol),
+            }),
+          );
+        } else if (data.T === "b" || data.T === "d") {
+          const transformData: OHLCVData = {
+            open: data.o,
+            close: data.c,
+            high: data.h,
+            low: data.l,
+            volume: data.v,
+            time: new Date(data.t),
+            symbol: data.S,
+            frequency: data.T === "b" ? "intraday" : "daily",
+          };
+          onTick(transformData);
+        } else if (data.T === "error") {
+          console.error(
+            `Alpaca WebSocket returned an error: ${JSON.stringify(data)}`,
+          );
+          this.intentionalClose = true;
+          this.socket?.close();
+        }
       }
     });
   }
   stopLiveTickerFeed() {
+    this.intentionalClose = true;
     this.socket?.close();
     this.socket = undefined;
   }
