@@ -1,5 +1,5 @@
-/* DEFAULT THEME (DARK) */
-:root {
+/* Theme definitions */
+[data-mantine-color-scheme="dark"] {
   /* Colors */
   --color-background-primary: #0a0a0a;
   --color-background-secondary: #1a1a1a;
@@ -38,6 +38,30 @@
   --color-highlighted: rgba(225, 32, 102, 0.5);
 
   --color-chart-grid: rgba(45, 82, 82, 0.3);
+}
+
+/* Testing Theme */
+[data-mantine-color-scheme="test"] {
+  --color-background-primary: #0aaa0a;
+  --color-background-secondary: #1a1a1a;
+  --color-background-tertiary: #252525;
+  --color-border-primary: #2d5252;
+
+  --color-text-primary: #eef2f6;
+  --color-text-secondary: #b9cbdf;
+
+  --color-border: #52402d;
+  --color-shadow: rgba(0, 0, 0, 0.1);
+  --color-highlighted: rgba(225, 32, 102, 0.5);
+
+  --color-chart-grid: rgba(45, 82, 82, 0.3);
+
+  /* Fonts */
+  --font-family: "Comic Sans MS", "Segoe UI", sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
 }
 
 /* Mantine theme overrides */

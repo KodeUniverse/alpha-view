@@ -1,30 +1,49 @@
 import pyramidGif from "@assets/pyramid-transparent.gif";
 import alphaLogo from "@assets/alpha-view-logo.png";
-import { Group, Button, ActionIcon } from "@mantine/core";
+import {
+  Group,
+  Button,
+  ActionIcon,
+  Menu,
+  MantineColorScheme,
+} from "@mantine/core";
 import { Link } from "react-router-dom";
 import { ReactNode } from "react";
 import { useMantineColorScheme, useComputedColorScheme } from "@mantine/core";
-import { IconSun, IconMoon } from "@tabler/icons-react";
+import { IconBrush } from "@tabler/icons-react";
 
-function ThemeToggle() {
+function ThemeSelector() {
   const { setColorScheme } = useMantineColorScheme();
   const computedColorScheme = useComputedColorScheme();
 
+  const themes = ["dark", "light", "test"];
+  const themeSelectHandler = (themeName: string) => {
+    console.log(`Setting theme to ${themeName}`);
+    return () => {
+      setColorScheme(themeName as MantineColorScheme);
+    };
+  };
+
   return (
-    <ActionIcon
-      onClick={() =>
-        setColorScheme(computedColorScheme === "dark" ? "light" : "dark")
-      }
-      variant="default"
-      size="lg"
-      aria-label="Toggle color scheme"
-    >
-      {computedColorScheme === "dark" ? (
-        <IconSun size={18} />
-      ) : (
-        <IconMoon size={18} />
-      )}
-    </ActionIcon>
+    <Menu shadow="md">
+      <Menu.Target>
+        <ActionIcon
+          variant="default"
+          size="xl"
+          aria-label="Toggle color scheme"
+        >
+          <IconBrush />
+        </ActionIcon>
+      </Menu.Target>
+      <Menu.Dropdown>
+        <Menu.Label>Themes</Menu.Label>
+        {themes.map((themeName: string, key: number) => (
+          <Menu.Item key={key} onClick={themeSelectHandler(themeName)}>
+            {themeName}
+          </Menu.Item>
+        ))}
+      </Menu.Dropdown>
+    </Menu>
   );
 }
 
@@ -56,7 +75,7 @@ function Navbar({ children }: { children: ReactNode }) {
         >
           Login | Create Account
         </Button>
-        <ThemeToggle />
+        <ThemeSelector />
       </Group>
     </Group>
   );
