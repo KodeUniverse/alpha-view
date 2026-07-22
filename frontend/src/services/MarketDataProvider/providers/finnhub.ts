@@ -28,41 +28,42 @@ interface FinnhubMetricResponse {
     "10DayAverageTradingVolume"?: number;
     "52WeekHigh"?: number;
     "52WeekLow"?: number;
-    BasicEPS?: number;
-    Beta?: number;
-    BookValue?: number;
-    CurrentRatio?: number;
-    DilutedEpsTTM?: number;
-    DividendPerShare?: number;
-    DividendYield?: number;
-    EnterpriseValue?: number;
-    EvToEbitda?: number;
-    EvToRevenue?: number;
-    ForwardEps?: number;
-    FreeCashFlow?: number;
-    GrossMargin?: number;
-    InterestCoverage?: number;
-    LongTermDebtToEquity?: number;
-    NetIncomeGrowth?: number;
-    NetProfitMargin?: number;
-    OperatingCashFlow?: number;
-    OperatingMargin?: number;
-    OutstandingShares?: number;
-    PayoutRatio?: number;
-    PeRatio?: number;
-    PeRatioTTM?: number;
-    PriceToBook?: number;
-    PriceToSalesTTM?: number;
-    QuickRatio?: number;
-    ROA?: number;
-    ROE?: number;
-    ROIC?: number;
-    RevenueGrowth?: number;
-    RevenuePerShare?: number;
-    TotalCash?: number;
-    TotalDebt?: number;
-    TotalDebtToEquity?: number;
-    TrailingEps?: number;
+    beta?: number;
+    bookValuePerShareAnnual?: number;
+    cashFlowPerShareAnnual?: number;
+    currentDividendYieldTTM?: number;
+    currentRatioAnnual?: number;
+    currentRatioQuarterly?: number;
+    dividendPerShareAnnual?: number;
+    dividendYieldIndicatedAnnual?: number;
+    enterpriseValue?: number;
+    epsAnnual?: number;
+    epsGrowthTTMYoy?: number;
+    epsTTM?: number;
+    evEbitdaTTM?: number;
+    evRevenueTTM?: number;
+    forwardPE?: number;
+    forwardPEG?: number;
+    grossMarginAnnual?: number;
+    "longTermDebt/equityAnnual"?: number;
+    marketCapitalization?: number;
+    netInterestCoverageAnnual?: number;
+    netProfitMarginAnnual?: number;
+    operatingMarginAnnual?: number;
+    payoutRatioAnnual?: number;
+    pb?: number;
+    peAnnual?: number;
+    peTTM?: number;
+    pegTTM?: number;
+    psTTM?: number;
+    quickRatioAnnual?: number;
+    quickRatioQuarterly?: number;
+    revenueGrowthTTMYoy?: number;
+    revenuePerShareAnnual?: number;
+    roaRfy?: number;
+    roiAnnual?: number;
+    roeRfy?: number;
+    "totalDebt/totalEquityAnnual"?: number;
   };
 }
 
@@ -100,6 +101,7 @@ export class FinnhubProvider implements MarketDataProvider {
   ): Promise<StockBasicFinancials | undefined> {
     const endpoint = new URL(this.apiURL + "/stock/metric");
 
+    endpoint.searchParams.set("token", this.apiKey);
     endpoint.searchParams.set("symbol", ticker.symbol);
     endpoint.searchParams.set("metric", "all");
 
@@ -125,58 +127,57 @@ export class FinnhubProvider implements MarketDataProvider {
   ): StockBasicFinancials {
     return {
       // Valuation
-      peTTM: m.PeRatioTTM,
-      peAnnual: m.PeRatio,
-      pb: m.PriceToBook,
-      priceToSalesTTM: m.PriceToSalesTTM,
-      evToEBITDA: m.EvToEbitda,
-      evToRevenue: m.EvToRevenue,
-      enterpriseValue: m.EnterpriseValue,
+      peTTM: m.peTTM,
+      peAnnual: m.peAnnual,
+      forwardPE: m.forwardPE,
+      pb: m.pb,
+      priceToSalesTTM: m.psTTM,
+      pegTTM: m.pegTTM,
+      evToEBITDA: m.evEbitdaTTM,
+      evToRevenue: m.evRevenueTTM,
+      enterpriseValue: m.enterpriseValue,
 
       // Earnings
-      epsTTM: m.TrailingEps,
-      epsAnnual: m.BasicEPS,
-      forwardEps: m.ForwardEps,
+      epsTTM: m.epsTTM,
+      epsAnnual: m.epsAnnual,
+      // forwardEps: not available in Finnhub metric response
 
       // Profitability
-      roe: m.ROE,
-      roa: m.ROA,
-      roic: m.ROIC,
-      netProfitMargin: m.NetProfitMargin,
-      grossMargin: m.GrossMargin,
-      operatingMargin: m.OperatingMargin,
+      roe: m.roeRfy,
+      roa: m.roaRfy,
+      roic: m.roiAnnual,
+      netProfitMargin: m.netProfitMarginAnnual,
+      grossMargin: m.grossMarginAnnual,
+      operatingMargin: m.operatingMarginAnnual,
 
       // Growth
-      revenueGrowth: m.RevenueGrowth,
-      epsGrowth: m.NetIncomeGrowth,
+      revenueGrowth: m.revenueGrowthTTMYoy,
+      epsGrowth: m.epsGrowthTTMYoy,
 
       // Cash Flow
-      freeCashFlow: m.FreeCashFlow,
-      operatingCashFlow: m.OperatingCashFlow,
+      // freeCashFlow: only per-share values available (cashFlowPerShareAnnual, pfcfShareAnnual)
+      // operatingCashFlow: only per-share values available
 
       // Financial Health
-      debtToEquity: m.TotalDebtToEquity,
-      totalDebt: m.TotalDebt,
-      totalCash: m.TotalCash,
-      netDebt:
-        m.TotalDebt != null && m.TotalCash != null
-          ? m.TotalDebt - m.TotalCash
-          : undefined,
-      currentRatio: m.CurrentRatio,
-      quickRatio: m.QuickRatio,
-      interestCoverage: m.InterestCoverage,
+      debtToEquity: m["totalDebt/totalEquityAnnual"],
+      // totalDebt: not available in metric response
+      // totalCash: not available in metric response
+      // netDebt: requires totalDebt and totalCash
+      currentRatio: m.currentRatioAnnual,
+      quickRatio: m.quickRatioAnnual,
+      interestCoverage: m.netInterestCoverageAnnual,
 
       // Per Share
-      bookValue: m.BookValue,
-      revenuePerShare: m.RevenuePerShare,
-      dividendPerShare: m.DividendPerShare,
+      bookValue: m.bookValuePerShareAnnual,
+      revenuePerShare: m.revenuePerShareAnnual,
+      dividendPerShare: m.dividendPerShareAnnual,
 
       // Dividends
-      divYieldTTM: m.DividendYield,
-      payoutRatio: m.PayoutRatio,
+      divYieldTTM: m.currentDividendYieldTTM,
+      payoutRatio: m.payoutRatioAnnual,
 
       // Market
-      sharesOutstanding: m.OutstandingShares,
+      marketCap: m.marketCapitalization,
       yearHigh: m["52WeekHigh"],
       yearLow: m["52WeekLow"],
 
@@ -184,7 +185,7 @@ export class FinnhubProvider implements MarketDataProvider {
       adtv10Day: m["10DayAverageTradingVolume"],
 
       // Risk
-      beta: m.Beta,
+      beta: m.beta,
     };
   }
 }

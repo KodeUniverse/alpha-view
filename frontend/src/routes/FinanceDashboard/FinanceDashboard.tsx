@@ -38,7 +38,11 @@ function FinanceDashboard() {
               height: "100%",
             }}
           />
-          <MetricsCard columns={6} styles={{ overflow: "visible" }} />
+          <MetricsCard
+            ticker={ticker}
+            columns={6}
+            styles={{ overflow: "visible" }}
+          />
         </Stack>
         <WatchlistCard cardStyles={{ width: "15%", height: "100%" }} />
       </Group>

@@ -62,6 +62,7 @@ export class AlpacaProvider implements MarketDataProvider {
   private readonly apiKey: string = import.meta.env.ALPACA_API_KEY;
   private readonly apiSecret: string = import.meta.env.ALPACA_API_SECRET;
   private intentionalClose: boolean = false;
+  private reconnectTimeout: ReturnType<typeof setTimeout>;
 
   startLiveTickerFeed(tickers: Ticker[], onTick: (data: OHLCVData) => void) {
     this.stopLiveTickerFeed();
@@ -86,11 +87,15 @@ export class AlpacaProvider implements MarketDataProvider {
       );
     });
     this.socket.addEventListener("close", (event) => {
+      if (event.target !== this.socket) return; // to avoid firing on stale sockets. socket.close() is async
       if (this.intentionalClose) return;
       console.log(
         "Alpaca WebSocket disconnected, reconnecting in 2 seconds...",
       );
-      setTimeout(() => this.startLiveTickerFeed(tickers, onTick), 2000);
+      this.reconnectTimeout = setTimeout(
+        () => this.startLiveTickerFeed(tickers, onTick),
+        2000,
+      );
     });
     this.socket.addEventListener("error", (error) => {
       console.error(`Alpaca WebSocket Error: ${error}`); // TODO: this error object is an Event instance, so doesnt log correctly.
@@ -139,6 +144,7 @@ export class AlpacaProvider implements MarketDataProvider {
   }
   stopLiveTickerFeed() {
     this.intentionalClose = true;
+    clearTimeout(this.reconnectTimeout);
     this.socket?.close();
     this.socket = undefined;
   }

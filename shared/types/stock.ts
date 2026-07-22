@@ -53,7 +53,7 @@ export interface StockBasicFinancials {
   // Earnings
   epsTTM?: number;
   epsAnnual?: number;
-  forwardEps?: number;
+  forwardEps?: number; // not available in Finnhub metric response
 
   // Profitability
   roe?: number;
@@ -68,14 +68,14 @@ export interface StockBasicFinancials {
   epsGrowth?: number;
 
   // Cash Flow
-  freeCashFlow?: number;
-  operatingCashFlow?: number;
+  freeCashFlow?: number; // Finnhub only provides per-share values
+  operatingCashFlow?: number; // Finnhub only provides per-share values
 
   // Financial Health
   debtToEquity?: number;
-  totalDebt?: number;
-  totalCash?: number;
-  netDebt?: number;
+  totalDebt?: number; // not available in Finnhub metric response
+  totalCash?: number; // not available in Finnhub metric response
+  netDebt?: number; // requires totalDebt and totalCash
   currentRatio?: number;
   quickRatio?: number;
   interestCoverage?: number;
@@ -91,7 +91,7 @@ export interface StockBasicFinancials {
 
   // Market
   marketCap?: number;
-  sharesOutstanding?: number;
+  sharesOutstanding?: number; // not available in Finnhub metric response
   yearHigh?: number;
   yearLow?: number;
 
