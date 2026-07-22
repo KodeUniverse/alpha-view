@@ -10,7 +10,7 @@ interface WatchListCardProps {
 
 function WatchListCard({ cardStyles }: WatchListCardProps) {
   return (
-    <Card style={{ ...cardStyles }}>
+    <Card style={cardStyles}>
       <Text fw={700} size="lg" mb={10}>
         Watchlist
       </Text>
