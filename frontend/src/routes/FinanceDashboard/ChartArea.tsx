@@ -12,7 +12,7 @@ import { OHLCData, Ticker, VolumeData, Frequency } from "@shared/types";
 import MetricsCard from "./MetricsCard";
 import { useBarsForTicker } from "@/hooks/queries";
 import { useLiveTickerFeed } from "@/hooks/useLiveTickerFeed";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 type ChartRange = "1d" | "5d" | "3m" | "6m" | "1y" | "3y" | "Max";
 
@@ -37,8 +37,24 @@ function ChartDisplayOptionsWidget({
   return (
     <>
       <Stack style={{ gap: 5 }}>
-        <Group style={{ display: "flex", justifyContent: "center" }}>
-          <Text style={{ marginRight: "auto" }}>Frequency</Text>
+        <Group
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            border: "1px solid",
+            borderColor: "var(--color-background-secondary)",
+            borderRadius: 5,
+            padding: 5,
+          }}
+        >
+          <Text
+            style={{
+              marginRight: "auto",
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            Frequency
+          </Text>
           <SegmentedControl
             data={["intraday", "daily", "weekly", "monthly"]}
             withItemsBorders={false}
@@ -48,7 +64,15 @@ function ChartDisplayOptionsWidget({
           />
         </Group>
         <Group style={{ display: "flex", justifyContent: "center" }}>
-          <Text style={{ marginRight: "auto" }}>Data History</Text>
+          <Text
+            style={{
+              marginRight: "auto",
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            Data History
+          </Text>
+
           <SegmentedControl
             data={["1d", "5d", "3m", "6m", "1y", "3y", "Max"]}
             withItemsBorders={false}
@@ -66,24 +90,30 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   const [frequency, setFrequency] = useState<Frequency>("daily");
   const [range, setRange] = useState<ChartRange>("3m");
 
-  console.log(`Current ticker prop: ${ticker.symbol}`);
   const tick = useLiveTickerFeed([ticker]);
   console.log(`Live Ticker Data: ${JSON.stringify(tick)}`);
 
-  const handleFreqChange = (newFreq: string) => {
-    setFrequency(newFreq as Frequency);
-  };
-  const handleRangeChange = (newRange: string) => {
-    setRange(newRange as ChartRange);
-  };
-
   const { start, end } = useMemo(() => {
-    const end = new Date();
+    let end = new Date();
     let start: Date;
 
     switch (range) {
       case "1d":
-        start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
+        // set range to US market hours on current day
+        start = new Date(
+          end.getFullYear(),
+          end.getMonth(),
+          end.getDate(),
+          9,
+          30,
+        );
+        end = new Date(
+          start.getFullYear(),
+          start.getMonth(),
+          start.getDate(),
+          16,
+          0,
+        );
         break;
       case "5d":
         start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 5);
@@ -113,14 +143,13 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
     start,
     end,
   );
-
-  const priceData: OHLCData[] = data
+  const priceData: OHLCData[] | null = data
     ? data.map((bar) => {
         const { volume, ...transformed } = bar;
         return transformed;
       })
     : null;
-  const volumeData: VolumeData[] = data
+  const volumeData: VolumeData[] | null = data
     ? data.map((bar) => {
         let volumeBarColor: string;
         if (bar.open < bar.close) {
@@ -136,6 +165,13 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
         return newRow;
       })
     : null;
+
+  const handleFreqChange = (newFreq: Frequency) => {
+    setFrequency(newFreq);
+  };
+  const handleRangeChange = (newRange: ChartRange) => {
+    setRange(newRange);
+  };
 
   return (
     <>
@@ -161,6 +197,7 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
                 <StockChart
                   priceData={priceData}
                   volumeData={volumeData}
+                  latestTick={tick}
                   frequency={frequency}
                   chartType="candle"
                   timeScale={true}
@@ -172,7 +209,6 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
                   }}
                 />
               </Card>
-              <MetricsCard columns={6} styles={{ overflow: "visible" }} />
             </Stack>
           )}
         </Box>

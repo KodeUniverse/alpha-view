@@ -1,22 +1,34 @@
-import { Frequency, OHLCVData, Ticker } from "@shared/types";
+import {
+  Frequency,
+  NewsArticle,
+  NewsCategory,
+  OHLCVData,
+  StockBasicFinancials,
+  Ticker,
+} from "@shared/types";
 
-export default interface MarketDataProvider {
-  startLiveTickerFeed: (
+interface MarketDataProvider {
+  startLiveTickerFeed?: (
     tickers: Ticker[],
-    onTick: (data: unknown) => void,
+    onTick: (data: OHLCVData) => void,
   ) => void;
-  stopLiveTickerFeed: () => void;
-  getSymbolList: () => Promise<Ticker[]>;
-  getBars: (
+  stopLiveTickerFeed?: () => void;
+  getSymbolList?: () => Promise<Ticker[]>;
+  getBars?: (
     tickers: Ticker[],
     freq: Frequency,
     start: Date,
     end: Date,
   ) => Promise<Record<string, OHLCVData[]>>;
-  getBarsForTicker: (
+  getBarsForTicker?: (
     ticker: Ticker,
     freq: Frequency,
     start: Date,
     end: Date,
   ) => Promise<OHLCVData[]>;
+  getBasicFinancials?: (
+    ticker: Ticker,
+  ) => Promise<StockBasicFinancials | undefined>;
+  getMarketNews?: (category: NewsCategory) => Promise<NewsArticle[]>;
 }
+export type { MarketDataProvider };

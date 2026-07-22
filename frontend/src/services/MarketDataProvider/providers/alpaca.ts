@@ -1,4 +1,4 @@
-import MarketDataProvider from "../MarketDataProvider.ts";
+import { MarketDataProvider } from "../MarketDataProvider.ts";
 import { Ticker, OHLCVData, Frequency } from "@shared/types";
 
 type AlpacaMessage = AlpacaAuthMessage | AlpacaBarMessage;
@@ -9,7 +9,7 @@ interface AlpacaAuthMessage {
 }
 
 interface AlpacaBarMessage {
-  T: "b";
+  T: "b" | "d";
   S: string;
   o: number;
   h: number;
@@ -59,9 +59,15 @@ interface AlpacaHistBarsResponse {
 
 export class AlpacaProvider implements MarketDataProvider {
   private socket?: WebSocket;
+  private readonly apiKey: string = import.meta.env.ALPACA_API_KEY;
+  private readonly apiSecret: string = import.meta.env.ALPACA_API_SECRET;
+  private intentionalClose: boolean = false;
+  private reconnectTimeout: ReturnType<typeof setTimeout>;
 
   startLiveTickerFeed(tickers: Ticker[], onTick: (data: OHLCVData) => void) {
     this.stopLiveTickerFeed();
+
+    this.intentionalClose = false;
 
     const version = "v2";
     const feed = "iex";
@@ -81,82 +87,99 @@ export class AlpacaProvider implements MarketDataProvider {
       );
     });
     this.socket.addEventListener("close", (event) => {
-      console.log("Alpaca WebSocket disconnected.");
+      if (event.target !== this.socket) return; // to avoid firing on stale sockets. socket.close() is async
+      if (this.intentionalClose) return;
+      console.log(
+        "Alpaca WebSocket disconnected, reconnecting in 2 seconds...",
+      );
+      this.reconnectTimeout = setTimeout(
+        () => this.startLiveTickerFeed(tickers, onTick),
+        2000,
+      );
     });
     this.socket.addEventListener("error", (error) => {
-      console.log(`Alpaca WebSocket Error: ${error}`); // TODO: this error object is an Event instance, so doesnt log correctly.
+      console.error(`Alpaca WebSocket Error: ${error}`); // TODO: this error object is an Event instance, so doesnt log correctly.
     });
     this.socket.addEventListener("message", (msg) => {
+      let messages: AlpacaMessage[];
       try {
-        const messages = JSON.parse(msg.data);
-        // check for authentication reply message
-        for (const data of messages as AlpacaMessage[]) {
-          console.log(`Type of Alpaca WebSocket message recieved: ${data.T}`);
-          if (data.T === "success" && data.msg === "authenticated") {
-            console.log("Alpaca WebSocket Authenticated.");
-            this.socket!.send(
-              JSON.stringify({
-                action: "subscribe",
-                bars: tickers.map((ticker) => ticker.symbol),
-              }),
-            );
-          } else if (data.T === "b") {
-            const transformData: OHLCVData = {
-              open: data.o,
-              close: data.c,
-              high: data.h,
-              low: data.l,
-              volume: data.v,
-              time: new Date(data.t),
-              symbol: data.S,
-            };
-            onTick(transformData);
-          } else if (data.T === "error") {
-            throw new Error(
-              `Alpaca WebSocket returned an error: ${JSON.stringify(data)}`,
-            );
-          }
-        }
+        messages = JSON.parse(msg.data);
       } catch (error) {
-        console.log(`Malformed message from Alpaca WebSocket:\n${error}`);
+        console.error(`Malformed message from Alpaca WebSocket: ${msg.data}`);
+        return;
+      }
+      // check for authentication reply message
+      for (const data of messages as AlpacaMessage[]) {
+        console.log(`Type of Alpaca WebSocket message recieved: ${data.T}`);
+        if (data.T === "success" && data.msg === "authenticated") {
+          console.log("Alpaca WebSocket Authenticated.");
+          this.socket!.send(
+            JSON.stringify({
+              action: "subscribe",
+              bars: tickers.map((ticker) => ticker.symbol),
+              dailyBars: tickers.map((ticker) => ticker.symbol),
+            }),
+          );
+        } else if (data.T === "b" || data.T === "d") {
+          const transformData: OHLCVData = {
+            open: data.o,
+            close: data.c,
+            high: data.h,
+            low: data.l,
+            volume: data.v,
+            time: new Date(data.t),
+            symbol: data.S,
+            frequency: data.T === "b" ? "intraday" : "daily",
+          };
+          onTick(transformData);
+        } else if (data.T === "error") {
+          console.error(
+            `Alpaca WebSocket returned an error: ${JSON.stringify(data)}`,
+          );
+          this.intentionalClose = true;
+          this.socket?.close();
+        }
       }
     });
   }
   stopLiveTickerFeed() {
+    this.intentionalClose = true;
+    clearTimeout(this.reconnectTimeout);
     this.socket?.close();
     this.socket = undefined;
   }
   async getSymbolList() {
-    const apiKey = import.meta.env.ALPACA_API_KEY;
-    const apiSecret = import.meta.env.ALPACA_API_SECRET;
-
-    if (!apiKey || !apiSecret)
+    if (!this.apiKey || !this.apiSecret)
       throw new Error("Missing Alpaca API secrets in environment.");
 
     const url = new URL("https://paper-api.alpaca.markets/v2/assets");
     url.searchParams.set("status", "active");
     url.searchParams.set("asset_class", "us_equity");
 
-    const res = await fetch(url, {
-      headers: {
-        "APCA-API-KEY-ID": apiKey,
-        "APCA-API-SECRET-KEY": apiSecret,
-      },
-    });
-
-    if (res.ok) {
-      const symbolData = await res.json();
-      const tickerList = symbolData.map((x: AlpacaAsset) => {
-        const ticker: Ticker = {
-          symbol: x.symbol,
-          name: x.name,
-          exchange: x.exchange,
-        };
-        return ticker;
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "APCA-API-KEY-ID": this.apiKey,
+          "APCA-API-SECRET-KEY": this.apiSecret,
+        },
       });
-      return tickerList;
-    } else {
-      throw new Error(`HTTP ${res.status}: Failed to fetch symbol list.`);
+
+      if (res.ok) {
+        const symbolData = await res.json();
+        const tickerList = symbolData.map((x: AlpacaAsset) => {
+          const ticker: Ticker = {
+            symbol: x.symbol,
+            name: x.name,
+            exchange: x.exchange,
+          };
+          return ticker;
+        });
+        return tickerList;
+      } else {
+        throw new Error(`HTTP ${res.status}: Failed to fetch symbol list.`);
+      }
+    } catch (error) {
+      console.log(error);
     }
   }
   async getBars(
@@ -165,10 +188,7 @@ export class AlpacaProvider implements MarketDataProvider {
     start: Date,
     end: Date,
   ): Promise<Record<string, OHLCVData[]>> {
-    const apiKey = import.meta.env.ALPACA_API_KEY;
-    const apiSecret = import.meta.env.ALPACA_API_SECRET;
-
-    if (!apiKey || !apiSecret)
+    if (!this.apiKey || !this.apiSecret)
       throw new Error("Missing Alpaca API secrets in environment.");
     const url = new URL("https://data.alpaca.markets/v2/stocks/bars");
 
@@ -203,20 +223,25 @@ export class AlpacaProvider implements MarketDataProvider {
       if (next_page_token) {
         url.searchParams.set("page_token", next_page_token);
       }
-      const res = await fetch(url, {
-        headers: {
-          "APCA-API-KEY-ID": apiKey,
-          "APCA-API-SECRET-KEY": apiSecret,
-        },
-      });
-      if (!res.ok) {
-        throw new Error(
-          `Failed to get stock bars from Alpaca for symbols ${tickers.toString()}`,
-        );
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            "APCA-API-KEY-ID": this.apiKey,
+            "APCA-API-SECRET-KEY": this.apiSecret,
+          },
+        });
+        if (!res.ok) {
+          throw new Error(
+            `Failed to get stock bars from Alpaca for symbols ${tickers.toString()}`,
+          );
+        }
+        const data: AlpacaHistBarsResponse = await res.json();
+        responses.push(data);
+        next_page_token = data.next_page_token ?? null;
+      } catch (error) {
+        console.log(error);
       }
-      const data: AlpacaHistBarsResponse = await res.json();
-      responses.push(data);
-      next_page_token = data.next_page_token ?? null;
     }
     if (pageCount >= MAX_PAGES) {
       console.warn(

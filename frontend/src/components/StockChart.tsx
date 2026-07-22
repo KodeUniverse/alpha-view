@@ -10,14 +10,24 @@ import {
   UTCTimestamp,
   IChartApi,
   BusinessDay,
-  TickMarkType,
+  CandlestickData,
+  HistogramData,
+  Time,
 } from "lightweight-charts";
-import { OHLCData, VolumeData, PriceData, Frequency } from "@shared/types";
+import {
+  OHLCData,
+  VolumeData,
+  PriceData,
+  Frequency,
+  OHLCVData,
+  LiveTickerFeedMessage,
+} from "@shared/types";
 import { useCallback, useEffect, useRef } from "react";
 import { useComputedColorScheme } from "@mantine/core";
 
 interface BaseChartProps {
   volumeData?: VolumeData[] | null;
+  latestTick?: LiveTickerFeedMessage;
   frequency?: Frequency;
   containerStyles?: React.CSSProperties;
   chartOptionOverride?: DeepPartial<ChartOptions>;
@@ -40,10 +50,15 @@ interface AreaChartProps extends BaseChartProps {
 
 type StockChartProps = CandleChartProps | AreaChartProps;
 
+function toChartTime(date: Date): UTCTimestamp {
+  return Math.floor(date.getTime() / 1000) as UTCTimestamp;
+}
+
 export default function StockChart(props: StockChartProps) {
   const {
     priceData,
     chartType,
+    latestTick,
     frequency,
     volumeData = null,
     containerStyles = { width: "100%", height: "100%" },
@@ -160,28 +175,11 @@ export default function StockChart(props: StockChartProps) {
 
       switch (chartType) {
         case "candle": {
-          priceSeries = chart.addSeries(CandlestickSeries, {
-            upColor: "#26a69a",
-            downColor: "#ef5350",
-            borderVisible: true,
-            wickUpColor: "#26a69a",
-            wickDownColor: "#ef5350",
-          });
+          priceSeries = chart.addSeries(CandlestickSeries);
           break;
         }
         case "area": {
-          const hasData = priceData && priceData.length > 0;
-          const upChart = hasData
-            ? priceData[0].value <= priceData[priceData.length - 1].value
-            : true;
-          const areaChartColors = {
-            lineColor: upChart ? "#26a69a" : "#ef5350",
-            topColor: upChart ? "#26a69a" : "#ef5350",
-            bottomColor: upChart
-              ? "rgba(38, 166, 154, 0.28)"
-              : "rgba(239, 83, 80, 0.28)",
-          };
-          priceSeries = chart.addSeries(AreaSeries, areaChartColors);
+          priceSeries = chart.addSeries(AreaSeries);
           break;
         }
       }
@@ -221,19 +219,47 @@ export default function StockChart(props: StockChartProps) {
 
       return () => {
         chart.remove();
+        chartRef.current = null;
+        priceSeriesRef.current = null;
+        volumeSeriesRef.current = null;
         resizer.disconnect();
       };
     } catch (error) {
       console.log(String(error));
     }
-  }, [priceData, volumeData, chartType, timeScale, computedColorScheme]);
+  }, [chartType, JSON.stringify(chartOptions)]);
 
-  const toChartTime = (date: Date) =>
-    Math.floor(date.getTime() / 1000) as UTCTimestamp;
-
+  // sets chart data and applies color formatting
   useEffect(() => {
     try {
       if (!priceData || !priceSeriesRef.current) return;
+
+      switch (chartType) {
+        case "candle":
+          priceSeriesRef.current.applyOptions({
+            upColor: "#26a69a",
+            downColor: "#ef5350",
+            borderVisible: true,
+            wickUpColor: "#26a69a",
+            wickDownColor: "#ef5350",
+          });
+          break;
+        case "area":
+          const hasData = priceData && priceData.length > 0;
+          const upChart = hasData
+            ? priceData[0].value <= priceData[priceData.length - 1].value
+            : true;
+          const areaChartColors = {
+            lineColor: upChart ? "#26a69a" : "#ef5350",
+            topColor: upChart ? "#26a69a" : "#ef5350",
+            bottomColor: upChart
+              ? "rgba(38, 166, 154, 0.28)"
+              : "rgba(239, 83, 80, 0.28)",
+          };
+          priceSeriesRef.current.applyOptions(areaChartColors);
+          break;
+      }
+
       priceSeriesRef.current.setData(
         priceData.map((d) => ({ ...d, time: toChartTime(d.time) })),
       );
@@ -245,8 +271,57 @@ export default function StockChart(props: StockChartProps) {
     } catch (error) {
       console.log(String(error));
     }
-  }, [priceData, volumeData, computedColorScheme]);
+  }, [priceData, volumeData, computedColors]);
 
+  // updates the chart with live bars
+  useEffect(() => {
+    try {
+      if (
+        !latestTick ||
+        !priceSeriesRef.current ||
+        !volumeSeriesRef.current ||
+        !frequency
+      )
+        return;
+
+      let transformedBar: CandlestickData<Time>;
+      let volumeBar: HistogramData<Time>;
+
+      if (frequency === "intraday") {
+        if (!latestTick.minuteBar) return;
+        transformedBar = {
+          ...latestTick.minuteBar, // lightweight-charts will ignore unnecessary fields
+          time: toChartTime(latestTick.minuteBar.time),
+        };
+        volumeBar = {
+          time: toChartTime(latestTick.minuteBar.time),
+          value: latestTick.minuteBar.volume,
+        };
+      } else if (frequency === "daily") {
+        if (!latestTick.dailyBar) return;
+        const pinnedDate = new Date(
+          latestTick.dailyBar.time.getFullYear(),
+          latestTick.dailyBar.time.getMonth(),
+          latestTick.dailyBar.time.getDate(),
+        );
+        transformedBar = {
+          ...latestTick.dailyBar,
+          time: toChartTime(pinnedDate),
+        };
+        volumeBar = {
+          time: toChartTime(pinnedDate),
+          value: latestTick.dailyBar.volume,
+        };
+      }
+
+      priceSeriesRef.current.update(transformedBar);
+      volumeSeriesRef.current.update(volumeBar);
+    } catch (error) {
+      console.log(`Error updating chart series with live data:\n${error}`);
+    }
+  }, [JSON.stringify(latestTick), frequency]);
+
+  // sets date scale based on frequency
   useEffect(() => {
     if (chartRef.current) {
       chartRef.current.applyOptions({
@@ -255,9 +330,6 @@ export default function StockChart(props: StockChartProps) {
         },
       });
     }
-    return () => {
-      chartRef.current = null;
-    };
   }, [dateTickFormatter]);
   return (
     <div

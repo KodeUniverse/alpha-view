@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
@@ -25,15 +26,20 @@ export default defineConfig(({ mode }) => {
         "@utils": path.resolve(import.meta.dirname, "src", "utils"),
       },
     },
+    test: {
+      globals: true,
+      environment: "happy-dom",
+    },
     define: {
       "import.meta.env.API_URL": JSON.stringify(
         `http://localhost:${env.HOST_API_PORT}`,
       ),
-      "import.meta.env.DATA_PROVIDER": JSON.stringify(env.DATA_PROVIDER),
       "import.meta.env.ALPACA_API_KEY": JSON.stringify(env.ALPACA_API_KEY),
       "import.meta.env.ALPACA_API_SECRET": JSON.stringify(
         env.ALPACA_API_SECRET,
       ),
+      "import.meta.env.FINNHUB_API_KEY": JSON.stringify(env.FINNHUB_API_KEY),
+      "import.meta.FINNHUB_API_SECRET": JSON.stringify(env.FINNHUB_API_SECRET),
     },
   };
 });

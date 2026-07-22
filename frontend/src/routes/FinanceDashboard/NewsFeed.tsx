@@ -2,56 +2,19 @@ import { useEffect, useState } from "react";
 import { socket } from "@services/socket.js";
 import { Card, Text, Group, Stack, Divider, Box } from "@mantine/core";
 import { NewsArticle } from "@shared/types";
+import { useMarketNews } from "@/hooks/queries";
 
 interface NewsFeedProps {
   length: number;
   cardStyles?: React.CSSProperties;
 }
 function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
-  const [isLoaded, setLoaded] = useState(false);
-  const [isLoading, setLoading] = useState(false);
-  const [isError, setError] = useState(false);
-  const [newsItems, setNewsItems] = useState([]);
-  const [source, setSource] = useState("ft");
-
-  useEffect(() => {
-    setLoading(true);
-    const initLoad = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.API_URL}/news/source/${source}/latest`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setNewsItems(data.slice(0, length));
-          setLoaded(true);
-        } else {
-          setError(true);
-        }
-      } catch (e) {
-        console.log("Error: Could not contact AlphaAPI server");
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-    initLoad();
-  }, [length, source]);
-
-  useEffect(() => {
-    const updateData = (data: NewsArticle[]) => {
-      console.log("Client recieved FT news data!");
-      setNewsItems(data.slice(0, length));
-      setLoaded(true);
-    };
-
-    const socketName = `${source}-news`;
-    socket.on(socketName, updateData);
-
-    return () => {
-      socket.off(socketName, updateData);
-    };
-  }, [length, source]);
+  const {
+    data: newsItems,
+    error,
+    isError,
+    isLoading,
+  } = useMarketNews("general");
 
   if (isError) return <Text>Failed to fetch news.</Text>;
   if (isLoading) return <Text>Loading...</Text>;
@@ -60,28 +23,33 @@ function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
       <Text fw={700} size="lg" mb={10}>
         Market News
       </Text>
-      <Stack gap={0}>
-        {newsItems.map((article) => {
-          const dateObj = new Date(article.pubdate);
-          const month = dateObj.toLocaleString("default", { month: "short" });
-          const day = dateObj.toLocaleString("default", {
-            day: "2-digit",
-          });
-          const pubTime = dateObj.toLocaleString("default", {
-            timeStyle: "short",
-          });
-          return (
-            <NewsItem
-              key={article.articleid}
-              headline={article.headline}
-              descr={article.descr}
-              pubdate={`${month}-${day}`}
-              time={`${pubTime}`}
-              url={article.url}
-              source={article.newssource}
-            />
-          );
-        })}
+      <Stack gap="xs">
+        {newsItems && newsItems.length > 0 ? (
+          newsItems.map((article) => {
+            const month = article.datetime.toLocaleString("default", {
+              month: "short",
+            });
+            const day = article.datetime.toLocaleString("default", {
+              day: "2-digit",
+            });
+            const pubTime = article.datetime.toLocaleString("default", {
+              timeStyle: "short",
+            });
+            return (
+              <NewsItem
+                key={article.id}
+                headline={article.headline}
+                descr={article.summary}
+                pubdate={`${month}-${day}`}
+                time={`${pubTime}`}
+                url={article.url}
+                source={article.source}
+              />
+            );
+          })
+        ) : (
+          <Text>No news to show.</Text>
+        )}
       </Stack>
     </Card>
   );

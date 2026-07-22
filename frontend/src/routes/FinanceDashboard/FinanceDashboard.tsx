@@ -27,17 +27,23 @@ function FinanceDashboard() {
           styles={{ marginLeft: 8 }}
         />
       </Navbar>
-      <Group h="100%" align="stretch" gap={0} wrap="nowrap">
+      <Group gap="md" p="md" h="100%" align="stretch" wrap="nowrap">
         <NewsFeed length={30} cardStyles={{ width: "20%", height: "100%" }} />
-        <ChartArea
-          ticker={ticker}
-          cardStyles={{
-            flex: 1,
-            minWidth: 0,
-            height: "100%",
-            paddingBottom: 28,
-          }}
-        />
+        <Stack w={"65%"}>
+          <ChartArea
+            ticker={ticker}
+            cardStyles={{
+              flex: 1,
+              minWidth: 0,
+              height: "100%",
+            }}
+          />
+          <MetricsCard
+            ticker={ticker}
+            columns={6}
+            styles={{ overflow: "visible" }}
+          />
+        </Stack>
         <WatchlistCard cardStyles={{ width: "15%", height: "100%" }} />
       </Group>
     </Stack>

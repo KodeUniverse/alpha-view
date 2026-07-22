@@ -30,7 +30,7 @@ const theme = createTheme({
           backgroundColor: "var(--color-background-secondary)",
           border: "1px solid #333333",
           borderRadius: 10,
-          margin: 5,
+          margin: 0,
           width: "100%",
         },
       },
@@ -78,7 +78,11 @@ const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <MantineProvider theme={theme} cssVariablesResolver={cssVariablesResolver} defaultColorScheme="dark">
+    <MantineProvider
+      theme={theme}
+      cssVariablesResolver={cssVariablesResolver}
+      defaultColorScheme="dark"
+    >
       <App />
     </MantineProvider>
   </StrictMode>,
