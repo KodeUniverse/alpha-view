@@ -23,7 +23,7 @@ function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
       <Text fw={700} size="lg" mb={10}>
         Market News
       </Text>
-      <Stack gap={0}>
+      <Stack gap="xs">
         {newsItems && newsItems.length > 0 ? (
           newsItems.map((article) => {
             const month = article.datetime.toLocaleString("default", {

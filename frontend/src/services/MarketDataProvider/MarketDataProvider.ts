@@ -3,6 +3,7 @@ import {
   NewsArticle,
   NewsCategory,
   OHLCVData,
+  StockBasicFinancials,
   Ticker,
 } from "@shared/types";
 
@@ -25,8 +26,9 @@ interface MarketDataProvider {
     start: Date,
     end: Date,
   ) => Promise<OHLCVData[]>;
-  // TODO: type these unknowns. transform data inside fetch before returning
-  getBasicFinancials?: (ticker: Ticker) => Promise<unknown>;
+  getBasicFinancials?: (
+    ticker: Ticker,
+  ) => Promise<StockBasicFinancials | undefined>;
   getMarketNews?: (category: NewsCategory) => Promise<NewsArticle[]>;
 }
 export type { MarketDataProvider };

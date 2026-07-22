@@ -5,6 +5,7 @@ import {
   OHLCVData,
   NewsCategory,
   NewsArticle,
+  StockBasicFinancials,
 } from "@shared/types";
 
 export function useSymbolList(): ProviderQueryResponse<Ticker[]> {
@@ -55,7 +56,7 @@ export function useMarketNews(
 
 export function useBasicFinancials(
   ticker: Ticker,
-): ProviderQueryResponse<unknown> {
+): ProviderQueryResponse<StockBasicFinancials | undefined> {
   return useProviderQuery(
     [ticker.symbol],
     (provider) => provider.getBasicFinancials(ticker),

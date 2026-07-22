@@ -10,11 +10,11 @@ interface WatchListCardProps {
 
 function WatchListCard({ cardStyles }: WatchListCardProps) {
   return (
-    <Card style={cardStyles}>
+    <Card style={{ ...cardStyles }}>
       <Text fw={700} size="lg" mb={10}>
         Watchlist
       </Text>
-      <Stack style={{ height: "100%" }} gap={0}>
+      <Stack style={{ height: "100%" }}>
         <WatchListItem ticker={{ symbol: "AAPL" }} />
         <WatchListItem ticker={{ symbol: "MSFT" }} />
         <WatchListItem ticker={{ symbol: "WMT" }} />

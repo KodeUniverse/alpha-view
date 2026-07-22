@@ -209,7 +209,6 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
                   }}
                 />
               </Card>
-              <MetricsCard columns={6} styles={{ overflow: "visible" }} />
             </Stack>
           )}
         </Box>

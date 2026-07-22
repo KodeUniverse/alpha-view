@@ -6,6 +6,7 @@ export type {
   Ticker,
   Frequency,
   LiveTickerFeedMessage,
+  StockBasicFinancials,
 } from "./stock.js";
 export type { NewsArticle, NewsCategory } from "./news.js";
 

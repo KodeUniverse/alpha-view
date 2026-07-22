@@ -39,27 +39,67 @@ export interface LiveTickerFeedMessage {
 }
 
 export interface StockBasicFinancials {
-  // TODO: finish adding and reviewing fields.
-  adtv10Day?: number;
-  yearHigh?: number;
-  yearLow?: number;
-  beta?: number;
-  evToFCFAnnual?: number;
-  evToFCFTTM?: number;
-  divYieldTTM?: number;
-  currentRatioAnnual?: number;
-  currentRatioQuarterly?: number;
-  enterpriseValue?: number;
-  epsAnnual?: number;
-  epsTTM?: number;
+  // Valuation
+  peTTM?: number;
+  peAnnual?: number;
+  forwardPE?: number;
+  pb?: number;
+  priceToSalesTTM?: number;
+  pegTTM?: number;
   evToEBITDA?: number;
   evToRevenue?: number;
-  forwardPE?: number;
-  forwardPEG?: number;
-  peAnnual?: number;
-  peTTM?: number;
-  pegTTM?: number;
-  pb?: number; // price/book value
+  enterpriseValue?: number;
+
+  // Earnings
+  epsTTM?: number;
+  epsAnnual?: number;
+  forwardEps?: number;
+
+  // Profitability
+  roe?: number;
+  roa?: number;
+  roic?: number;
+  netProfitMargin?: number;
+  grossMargin?: number;
+  operatingMargin?: number;
+
+  // Growth
+  revenueGrowth?: number;
+  epsGrowth?: number;
+
+  // Cash Flow
+  freeCashFlow?: number;
+  operatingCashFlow?: number;
+
+  // Financial Health
+  debtToEquity?: number;
+  totalDebt?: number;
+  totalCash?: number;
+  netDebt?: number;
+  currentRatio?: number;
+  quickRatio?: number;
+  interestCoverage?: number;
+
+  // Per Share
+  bookValue?: number;
+  revenuePerShare?: number;
+  dividendPerShare?: number;
+
+  // Dividends
+  divYieldTTM?: number;
+  payoutRatio?: number;
+
+  // Market
+  marketCap?: number;
+  sharesOutstanding?: number;
+  yearHigh?: number;
+  yearLow?: number;
+
+  // Volume
+  adtv10Day?: number;
+
+  // Risk
+  beta?: number;
 }
 
 export type Frequency = "intraday" | "daily" | "weekly" | "monthly";
