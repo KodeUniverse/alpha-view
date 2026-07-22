@@ -37,7 +37,6 @@ interface FinnhubMetricResponse {
     dividendPerShareAnnual?: number;
     dividendYieldIndicatedAnnual?: number;
     enterpriseValue?: number;
-    epsAnnual?: number;
     epsGrowthTTMYoy?: number;
     epsTTM?: number;
     evEbitdaTTM?: number;
@@ -52,7 +51,6 @@ interface FinnhubMetricResponse {
     operatingMarginAnnual?: number;
     payoutRatioAnnual?: number;
     pb?: number;
-    peAnnual?: number;
     peTTM?: number;
     pegTTM?: number;
     psTTM?: number;
@@ -60,8 +58,6 @@ interface FinnhubMetricResponse {
     quickRatioQuarterly?: number;
     revenueGrowthTTMYoy?: number;
     revenuePerShareAnnual?: number;
-    roaRfy?: number;
-    roiAnnual?: number;
     roeRfy?: number;
     "totalDebt/totalEquityAnnual"?: number;
   };
@@ -128,24 +124,21 @@ export class FinnhubProvider implements MarketDataProvider {
     return {
       // Valuation
       peTTM: m.peTTM,
-      peAnnual: m.peAnnual,
       forwardPE: m.forwardPE,
       pb: m.pb,
       priceToSalesTTM: m.psTTM,
       pegTTM: m.pegTTM,
       evToEBITDA: m.evEbitdaTTM,
       evToRevenue: m.evRevenueTTM,
+      marketCap: m.marketCapitalization,
       enterpriseValue: m.enterpriseValue,
 
       // Earnings
       epsTTM: m.epsTTM,
-      epsAnnual: m.epsAnnual,
       // forwardEps: not available in Finnhub metric response
 
       // Profitability
       roe: m.roeRfy,
-      roa: m.roaRfy,
-      roic: m.roiAnnual,
       netProfitMargin: m.netProfitMarginAnnual,
       grossMargin: m.grossMarginAnnual,
       operatingMargin: m.operatingMarginAnnual,
@@ -153,10 +146,6 @@ export class FinnhubProvider implements MarketDataProvider {
       // Growth
       revenueGrowth: m.revenueGrowthTTMYoy,
       epsGrowth: m.epsGrowthTTMYoy,
-
-      // Cash Flow
-      // freeCashFlow: only per-share values available (cashFlowPerShareAnnual, pfcfShareAnnual)
-      // operatingCashFlow: only per-share values available
 
       // Financial Health
       debtToEquity: m["totalDebt/totalEquityAnnual"],
@@ -176,8 +165,11 @@ export class FinnhubProvider implements MarketDataProvider {
       divYieldTTM: m.currentDividendYieldTTM,
       payoutRatio: m.payoutRatioAnnual,
 
+      // Cash Flow
+      // freeCashFlow: only per-share values available
+      // operatingCashFlow: only per-share values available
+
       // Market
-      marketCap: m.marketCapitalization,
       yearHigh: m["52WeekHigh"],
       yearLow: m["52WeekLow"],
 

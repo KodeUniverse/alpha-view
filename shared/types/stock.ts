@@ -41,24 +41,21 @@ export interface LiveTickerFeedMessage {
 export interface StockBasicFinancials {
   // Valuation
   peTTM?: number;
-  peAnnual?: number;
   forwardPE?: number;
   pb?: number;
   priceToSalesTTM?: number;
   pegTTM?: number;
   evToEBITDA?: number;
   evToRevenue?: number;
+  marketCap?: number;
   enterpriseValue?: number;
 
   // Earnings
   epsTTM?: number;
-  epsAnnual?: number;
   forwardEps?: number; // not available in Finnhub metric response
 
   // Profitability
   roe?: number;
-  roa?: number;
-  roic?: number;
   netProfitMargin?: number;
   grossMargin?: number;
   operatingMargin?: number;
@@ -66,10 +63,6 @@ export interface StockBasicFinancials {
   // Growth
   revenueGrowth?: number;
   epsGrowth?: number;
-
-  // Cash Flow
-  freeCashFlow?: number; // Finnhub only provides per-share values
-  operatingCashFlow?: number; // Finnhub only provides per-share values
 
   // Financial Health
   debtToEquity?: number;
@@ -89,8 +82,11 @@ export interface StockBasicFinancials {
   divYieldTTM?: number;
   payoutRatio?: number;
 
+  // Cash Flow
+  freeCashFlow?: number; // Finnhub only provides per-share values
+  operatingCashFlow?: number; // Finnhub only provides per-share values
+
   // Market
-  marketCap?: number;
   sharesOutstanding?: number; // not available in Finnhub metric response
   yearHigh?: number;
   yearLow?: number;
