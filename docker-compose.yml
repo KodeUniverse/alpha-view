@@ -23,18 +23,13 @@ services:
         condition: service_healthy
 
   backend-server:
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379
     build:
       context: .
-      dockerfile: backend/services/main-api/Dockerfile
+      dockerfile: backend/Dockerfile
     develop:
       watch:
         - action: sync
-          path: ./backend/services/main-api
+          path: ./backend
           target: /app
           ignore:
             - node_modules
@@ -45,77 +40,3 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  scraping:
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      REDIS_URL: redis://redis:6379
-    build:
-      context: .
-      dockerfile: backend/services/scraping/Dockerfile
-    develop:
-      watch:
-        - action: sync
-          path: ./backend/services/scraping
-          target: /app
-          ignore:
-            - node_modules
-    depends_on:
-      postgres:
-        condition: service_healthy
-      backend-server:
-        condition: service_healthy
-
-  redis:
-    image: redis:8-alpine
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-  postgres:
-    env_file:
-      - .env
-    image: postgres:18-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql
-      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql:z # :'ro' gives read-only permissions, 'z' fixes SELinux perms if running from Fedora/RHEL.
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-  market-data-seed:
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-    build:
-      context: ./backend
-      dockerfile: services/market-data-seed/Dockerfile
-    develop:
-      watch:
-        - action: sync
-          path: ./backend/services/market-data-seed
-          target: /app
-          ignore: 
-          - venv
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-volumes:
-  postgres_data:
