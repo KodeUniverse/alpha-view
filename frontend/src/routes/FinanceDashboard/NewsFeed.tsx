@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { socket } from "@services/socket.js";
 import { Card, Text, Group, Stack, Divider, Box } from "@mantine/core";
 import { NewsArticle } from "@shared/types";
 import { useMarketNews } from "@/hooks/queries";
@@ -26,13 +25,14 @@ function NewsFeed({ length, cardStyles = {} }: NewsFeedProps) {
       <Stack gap="xs">
         {newsItems && newsItems.length > 0 ? (
           newsItems.map((article) => {
-            const month = article.datetime.toLocaleString("default", {
+            const dateObj = new Date(article.datetime);
+            const month = dateObj.toLocaleString("default", {
               month: "short",
             });
-            const day = article.datetime.toLocaleString("default", {
+            const day = dateObj.toLocaleString("default", {
               day: "2-digit",
             });
-            const pubTime = article.datetime.toLocaleString("default", {
+            const pubTime = dateObj.toLocaleString("default", {
               timeStyle: "short",
             });
             return (

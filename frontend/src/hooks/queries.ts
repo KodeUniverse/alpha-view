@@ -1,15 +1,13 @@
-import { ProviderQueryResponse, useProviderQuery } from "./useProviderQuery";
-import {
-  Frequency,
-  Ticker,
-  OHLCVData,
-  NewsCategory,
-  NewsArticle,
-  StockBasicFinancials,
-} from "@shared/types";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/api/client";
 
-export function useSymbolList(): ProviderQueryResponse<Ticker[]> {
-  return useProviderQuery([], (provider) => provider.getSymbolList(), "alpaca");
+import { Frequency, Ticker, NewsCategory } from "@shared/types";
+
+export function useSymbolList() {
+  return useQuery({
+    queryKey: ["symbolList"],
+    queryFn: () => api.getSymbols(),
+  });
 }
 
 export function useBarsForTicker(
@@ -17,12 +15,17 @@ export function useBarsForTicker(
   freq: Frequency,
   start: Date,
   end: Date,
-): ProviderQueryResponse<OHLCVData[]> {
-  return useProviderQuery(
-    [ticker.symbol, freq, start.getTime(), end.getTime()],
-    (provider) => provider.getBarsForTicker(ticker, freq, start, end),
-    "alpaca",
-  );
+) {
+  return useQuery({
+    queryKey: [
+      "barsForTicker",
+      ticker.symbol,
+      freq,
+      start.getTime(),
+      end.getTime(),
+    ],
+    queryFn: () => api.getBarsForTicker(ticker, freq, start, end),
+  });
 }
 
 export function useBars(
@@ -30,36 +33,30 @@ export function useBars(
   freq: Frequency,
   start: Date,
   end: Date,
-): ProviderQueryResponse<Record<string, OHLCVData[]>> {
-  // think about useMemo'ing this tickers array
-  return useProviderQuery(
-    [
-      tickers.map((t) => t.symbol).join(","),
+) {
+  return useQuery({
+    queryKey: [
+      "useBars",
+      JSON.stringify(tickers),
       freq,
       start.getTime(),
       end.getTime(),
+      symbols,
     ],
-    (provider) => provider.getBars(tickers, freq, start, end),
-    "alpaca",
-  );
+    queryFn: () => api.getBars(tickers, freq, start, end),
+  });
 }
 
-export function useMarketNews(
-  category: NewsCategory,
-): ProviderQueryResponse<NewsArticle[]> {
-  return useProviderQuery(
-    [category],
-    (provider) => provider.getMarketNews(category),
-    "finnhub",
-  );
+export function useMarketNews(category: NewsCategory) {
+  return useQuery({
+    queryKey: ["news", category],
+    queryFn: () => api.getNews(category),
+  });
 }
 
-export function useBasicFinancials(
-  ticker: Ticker,
-): ProviderQueryResponse<StockBasicFinancials | undefined> {
-  return useProviderQuery(
-    [ticker.symbol],
-    (provider) => provider.getBasicFinancials(ticker),
-    "finnhub",
-  );
+export function useBasicFinancials(ticker: Ticker) {
+  return useQuery({
+    queryKey: ["financials", ticker.symbol],
+    queryFn: () => api.getFinancials(ticker),
+  });
 }

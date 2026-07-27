@@ -19,11 +19,6 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "src"),
-        "@components": path.resolve(import.meta.dirname, "src", "components"),
-        "@routes": path.resolve(import.meta.dirname, "src", "routes"),
-        "@services": path.resolve(import.meta.dirname, "src", "services"),
-        "@assets": path.resolve(import.meta.dirname, "src", "assets"),
-        "@utils": path.resolve(import.meta.dirname, "src", "utils"),
       },
     },
     test: {
@@ -34,12 +29,6 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.API_URL": JSON.stringify(
         `http://localhost:${env.HOST_API_PORT}`,
       ),
-      "import.meta.env.ALPACA_API_KEY": JSON.stringify(env.ALPACA_API_KEY),
-      "import.meta.env.ALPACA_API_SECRET": JSON.stringify(
-        env.ALPACA_API_SECRET,
-      ),
-      "import.meta.env.FINNHUB_API_KEY": JSON.stringify(env.FINNHUB_API_KEY),
-      "import.meta.FINNHUB_API_SECRET": JSON.stringify(env.FINNHUB_API_SECRET),
     },
   };
 });

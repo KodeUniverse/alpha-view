@@ -1,4 +1,4 @@
-import StockChart from "@components/StockChart.tsx";
+import StockChart from "@/components/StockChart.tsx";
 import {
   Card,
   Text,

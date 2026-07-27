@@ -1,5 +1,5 @@
 import { Card, Text, Group, Box, Stack, Divider } from "@mantine/core";
-import StockChart from "@components/StockChart.jsx";
+import StockChart from "@/components/StockChart.jsx";
 import { useState, useEffect, useMemo } from "react";
 import { OHLCVData, PriceData, Ticker } from "@shared/types";
 import { useBarsForTicker } from "@/hooks/queries";

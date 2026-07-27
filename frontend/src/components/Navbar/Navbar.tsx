@@ -1,5 +1,5 @@
-import pyramidGif from "@assets/pyramid-transparent.gif";
-import alphaLogo from "@assets/alpha-view-logo.png";
+import pyramidGif from "@/assets/pyramid-transparent.gif";
+import alphaLogo from "@/assets/alpha-view-logo.png";
 import { Group, Button, ActionIcon } from "@mantine/core";
 import { Link } from "react-router-dom";
 import { ReactNode } from "react";
