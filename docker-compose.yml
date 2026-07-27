@@ -23,6 +23,8 @@ services:
         condition: service_healthy
 
   backend-server:
+    env_file:
+      - .env
     build:
       context: .
       dockerfile: backend/Dockerfile
