@@ -1,4 +1,4 @@
-.PHONY: build start stop
+.PHONY: build start stop clean restart
 
 build:
 	docker compose up --build --force-recreate --no-start
@@ -12,9 +12,3 @@ clean:
 	docker compose down
 
 restart: clean build start
-
-connect_db: 
-	docker exec -it alpha-view-postgres-1 psql -U postgres -d alpha_view
-delete_db:
-	docker volume rm alpha-view_postgres_data
-	docker volume prune

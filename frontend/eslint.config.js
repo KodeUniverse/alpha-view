@@ -8,23 +8,29 @@ import tseslint from "typescript-eslint";
 export default defineConfig([
   ...tseslint.configs.recommended,
   {
-    files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
+    files: ["**/*.{js,mjs,cjs}"],
     plugins: { js },
     extends: ["js/recommended"],
     languageOptions: { globals: globals.browser },
   },
-  pluginReact.configs.flat.recommended,
+  {
+    files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
+    ...pluginReact.configs.flat.recommended,
+  },
   {
     files: ["**/*.css"],
     plugins: { css },
     language: "css/css",
     extends: ["css/recommended"],
   },
-  { extends: ["plugin:react/jsx-runtime"] },
   {
     rules: {
+      "react/react-in-jsx-scope": "off",
       "@typescript-eslint/no-unused-vars": "warn",
       "@typescript-eslint/no-explicit-any": "warn",
+    },
+    settings: {
+      react: { version: "detect" },
     },
   },
 ]);

@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
-import { MantineProvider, createTheme, DEFAULT_THEME } from "@mantine/core";
+import { MantineProvider, createTheme } from "@mantine/core";
 import type { CSSVariablesResolver } from "@mantine/core";
 import "@mantine/core/styles.css";
 
@@ -61,7 +61,7 @@ const theme = createTheme({
   },
 });
 
-const cssVariablesResolver: CSSVariablesResolver = (theme) => ({
+const cssVariablesResolver: CSSVariablesResolver = () => ({
   variables: {
     "--mantine-color-body": "var(--color-background-primary)",
     "--mantine-color-text": "var(--color-text-primary)",

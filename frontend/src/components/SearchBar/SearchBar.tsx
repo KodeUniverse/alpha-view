@@ -1,7 +1,6 @@
 import { Select, Loader, ComboboxData } from "@mantine/core";
 import { Ticker } from "@shared/types";
 import { useSymbolList } from "@/hooks/queries";
-import { useMemo } from "react";
 
 function SearchBar({
   onTickerSelect,

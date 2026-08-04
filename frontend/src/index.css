@@ -62,7 +62,35 @@ body {
   font-family: var(--font-family);
   background-color: var(--color-background-primary);
   color: var(--color-text-primary);
+  background-image: radial-gradient(
+      1200px 700px at 50% -10%,
+      rgba(38, 166, 154, 0.07),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 600px at 100% 110%,
+      rgba(225, 32, 102, 0.05),
+      transparent 60%
+    );
+  background-attachment: fixed;
 }
+
+.mantine-Card-root {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.mantine-Card-root:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+  border-color: var(--color-border-primary);
+}
+
+.news-item:hover {
+  border-color: var(--color-highlighted);
+}
+
 html {
+  /* eslint-disable-next-line css/use-baseline */
   scrollbar-width: none;
 }

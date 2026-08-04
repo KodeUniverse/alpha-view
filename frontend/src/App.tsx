@@ -1,27 +1,22 @@
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import FinanceDashboard from "@routes/FinanceDashboard/FinanceDashboard.tsx";
-import LoginPage from "@routes/LoginPage.tsx";
-import {
-  AlpacaDataContextProvider,
-  FinnhubDataContextProvider,
-} from "@services/MarketDataProvider/MarketDataContext";
+import FinanceDashboard from "@/routes/FinanceDashboard/FinanceDashboard.tsx";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AlpacaDataContextProvider } from "@/services/MarketDataProvider/MarketDataContext";
 
 function App() {
+  const queryClient = new QueryClient();
+
   return (
-    <FinnhubDataContextProvider>
+    <QueryClientProvider client={queryClient}>
       <AlpacaDataContextProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<FinanceDashboard />} />
-            <Route
-              path="/login"
-              element={<LoginPage styles={{ width: 500 }} />}
-            />
           </Routes>
         </BrowserRouter>
       </AlpacaDataContextProvider>
-    </FinnhubDataContextProvider>
+    </QueryClientProvider>
   );
 }
 export default App;

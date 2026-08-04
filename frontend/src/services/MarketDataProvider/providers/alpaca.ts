@@ -57,17 +57,71 @@ interface AlpacaHistBarsResponse {
   next_page_token: string | null;
 }
 
+type LiveBarListener = (data: OHLCVData) => void;
+
 export class AlpacaProvider implements MarketDataProvider {
   private socket?: WebSocket;
   private readonly apiKey: string = import.meta.env.ALPACA_API_KEY;
   private readonly apiSecret: string = import.meta.env.ALPACA_API_SECRET;
   private intentionalClose: boolean = false;
-  private reconnectTimeout: ReturnType<typeof setTimeout>;
+  private authenticated: boolean = false;
+  private reconnectTimeout: ReturnType<typeof setTimeout> | undefined;
+  private readonly subscriptions: Set<string> = new Set();
+  private readonly listeners: Map<string, Set<LiveBarListener>> =
+    new Map();
 
-  startLiveTickerFeed(tickers: Ticker[], onTick: (data: OHLCVData) => void) {
-    this.stopLiveTickerFeed();
+  subscribeTickers(tickers: Ticker[], onTick: LiveBarListener) {
+    for (const ticker of tickers) {
+      if (!ticker.symbol) continue;
+      this.subscriptions.add(ticker.symbol);
+      let listeners = this.listeners.get(ticker.symbol);
+      if (!listeners) {
+        listeners = new Set();
+        this.listeners.set(ticker.symbol, listeners);
+      }
+      listeners.add(onTick);
+    }
+    this.ensureSocketConnected();
+  }
 
+  unsubscribeTickers(tickers: Ticker[], onTick: LiveBarListener) {
+    for (const ticker of tickers) {
+      if (!ticker.symbol) continue;
+      const listeners = this.listeners.get(ticker.symbol);
+      if (listeners) {
+        listeners.delete(onTick);
+        if (listeners.size === 0) {
+          this.listeners.delete(ticker.symbol);
+          this.subscriptions.delete(ticker.symbol);
+        }
+      }
+    }
+    if (this.subscriptions.size === 0) {
+      this.stopLiveTickerFeed();
+    } else {
+      this.sendSubscribe();
+    }
+  }
+
+  startLiveTickerFeed(tickers: Ticker[], onTick: LiveBarListener) {
+    this.subscribeTickers(tickers, onTick);
+  }
+
+  private ensureSocketConnected() {
+    if (
+      this.socket &&
+      (this.socket.readyState === WebSocket.OPEN ||
+        this.socket.readyState === WebSocket.CONNECTING)
+    ) {
+      this.sendSubscribe();
+      return;
+    }
+    this.openSocket();
+  }
+
+  private openSocket() {
     this.intentionalClose = false;
+    this.authenticated = false;
 
     const version = "v2";
     const feed = "iex";
@@ -75,7 +129,7 @@ export class AlpacaProvider implements MarketDataProvider {
     this.socket = new WebSocket(
       `wss://stream.data.alpaca.markets/${version}/${feed}`,
     );
-    this.socket.addEventListener("open", (event) => {
+    this.socket.addEventListener("open", () => {
       console.log("Alpaca WebSocket connected.");
       // Authenticate
       this.socket!.send(
@@ -92,46 +146,29 @@ export class AlpacaProvider implements MarketDataProvider {
       console.log(
         "Alpaca WebSocket disconnected, reconnecting in 2 seconds...",
       );
-      this.reconnectTimeout = setTimeout(
-        () => this.startLiveTickerFeed(tickers, onTick),
-        2000,
-      );
+      this.reconnectTimeout = setTimeout(() => {
+        if (this.subscriptions.size > 0) this.openSocket();
+      }, 2000);
     });
-    this.socket.addEventListener("error", (error) => {
-      console.error(`Alpaca WebSocket Error: ${error}`); // TODO: this error object is an Event instance, so doesnt log correctly.
+    this.socket.addEventListener("error", () => {
+      console.error("Alpaca WebSocket Error."); // TODO: this error object is an Event instance, so doesnt log correctly.
     });
     this.socket.addEventListener("message", (msg) => {
       let messages: AlpacaMessage[];
       try {
         messages = JSON.parse(msg.data);
-      } catch (error) {
+      } catch {
         console.error(`Malformed message from Alpaca WebSocket: ${msg.data}`);
         return;
       }
       // check for authentication reply message
       for (const data of messages as AlpacaMessage[]) {
-        console.log(`Type of Alpaca WebSocket message recieved: ${data.T}`);
         if (data.T === "success" && data.msg === "authenticated") {
           console.log("Alpaca WebSocket Authenticated.");
-          this.socket!.send(
-            JSON.stringify({
-              action: "subscribe",
-              bars: tickers.map((ticker) => ticker.symbol),
-              dailyBars: tickers.map((ticker) => ticker.symbol),
-            }),
-          );
+          this.authenticated = true;
+          this.sendSubscribe();
         } else if (data.T === "b" || data.T === "d") {
-          const transformData: OHLCVData = {
-            open: data.o,
-            close: data.c,
-            high: data.h,
-            low: data.l,
-            volume: data.v,
-            time: new Date(data.t),
-            symbol: data.S,
-            frequency: data.T === "b" ? "intraday" : "daily",
-          };
-          onTick(transformData);
+          this.handleBarMessage(data);
         } else if (data.T === "error") {
           console.error(
             `Alpaca WebSocket returned an error: ${JSON.stringify(data)}`,
@@ -142,11 +179,51 @@ export class AlpacaProvider implements MarketDataProvider {
       }
     });
   }
+
+  private sendSubscribe() {
+    if (
+      !this.socket ||
+      this.socket.readyState !== WebSocket.OPEN ||
+      !this.authenticated
+    )
+      return;
+    const symbols = Array.from(this.subscriptions);
+    if (symbols.length === 0) return;
+    this.socket.send(
+      JSON.stringify({
+        action: "subscribe",
+        bars: symbols,
+        dailyBars: symbols,
+      }),
+    );
+  }
+
+  private handleBarMessage(data: AlpacaBarMessage) {
+    const transformData: OHLCVData = {
+      open: data.o,
+      close: data.c,
+      high: data.h,
+      low: data.l,
+      volume: data.v,
+      time: new Date(data.t),
+      symbol: data.S,
+      frequency: data.T === "b" ? "intraday" : "daily",
+    };
+    const listeners = this.listeners.get(data.S);
+    if (!listeners) return;
+    for (const listener of listeners) {
+      listener(transformData);
+    }
+  }
+
   stopLiveTickerFeed() {
     this.intentionalClose = true;
     clearTimeout(this.reconnectTimeout);
     this.socket?.close();
     this.socket = undefined;
+    this.authenticated = false;
+    this.listeners.clear();
+    this.subscriptions.clear();
   }
   async getSymbolList() {
     if (!this.apiKey || !this.apiSecret)

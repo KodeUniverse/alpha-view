@@ -1,10 +1,13 @@
-import { useBasicFinancials } from "@/hooks/queries";
+import { useBasicFinancials, useBarsForTicker } from "@/hooks/queries";
 import { Card, Table, Text, Group } from "@mantine/core";
 import { StockBasicFinancials, Ticker } from "@shared/types";
+import { computeQuantMetrics } from "@/utils/quant";
+import { useMemo } from "react";
 
 interface MetricRow {
   key: string;
   value: number;
+  pct?: boolean;
 }
 
 interface MetricsCardProps {
@@ -13,7 +16,7 @@ interface MetricsCardProps {
   styles?: React.CSSProperties;
 }
 
-const FinancialsNameMapping: Record<keyof StockBasicFinancials, string> = {
+const FinancialsNameMapping: Partial<Record<keyof StockBasicFinancials, string>> = {
   // Valuation
   peTTM: "P/E (TTM)",
   forwardPE: "Forward P/E",
@@ -27,7 +30,6 @@ const FinancialsNameMapping: Record<keyof StockBasicFinancials, string> = {
 
   // Earnings
   epsTTM: "EPS (TTM)",
-  forwardEps: "Forward EPS",
 
   // Profitability
   roe: "Return on Equity",
@@ -45,17 +47,13 @@ const FinancialsNameMapping: Record<keyof StockBasicFinancials, string> = {
   totalCash: "Total Cash",
   netDebt: "Net Debt",
   currentRatio: "Current Ratio",
-  quickRatio: "Quick Ratio",
   interestCoverage: "Interest Cov.",
 
   // Per Share
   bookValue: "Book Value",
-  revenuePerShare: "Rev. per Share",
-  dividendPerShare: "Div. per Share",
 
   // Dividends
   divYieldTTM: "Dividend Yield (TTM)",
-  payoutRatio: "Payout Ratio",
 
   // Cash Flow
   freeCashFlow: "FCF",
@@ -73,20 +71,60 @@ const FinancialsNameMapping: Record<keyof StockBasicFinancials, string> = {
   beta: "Beta",
 };
 
+function formatMetric(metric: MetricRow) {
+  if (metric.value == null || Number.isNaN(metric.value)) return "—";
+  if (metric.pct) return `${(metric.value * 100).toFixed(2)}%`;
+  return Math.round(metric.value * 100) / 100;
+}
+
 function MetricsCard({ ticker, columns = 6, styles = {} }: MetricsCardProps) {
-  const { data, isError, isLoading, error } = useBasicFinancials(ticker);
+  const { data, isError, isLoading } = useBasicFinancials(ticker);
+
+  const { start, end } = useMemo(() => {
+    const end = new Date();
+    const start = new Date(
+      end.getFullYear() - 1,
+      end.getMonth(),
+      end.getDate(),
+    );
+    return { start, end };
+  }, []);
+
+  const { data: bars } = useBarsForTicker(ticker, "daily", start, end);
+
+  const quantMetrics = useMemo(() => {
+    if (!bars || bars.length < 2) return null;
+    const closes = bars.map((bar) => bar.close);
+    return computeQuantMetrics(closes);
+  }, [bars]);
+
+  const quantRows: MetricRow[] | null = quantMetrics
+    ? [
+        { key: "Sharpe Ratio", value: quantMetrics.sharpeRatio },
+        { key: "Volatility (Ann.)", value: quantMetrics.volatility, pct: true },
+        { key: "Sortino Ratio", value: quantMetrics.sortinoRatio },
+        { key: "Max Drawdown", value: quantMetrics.maxDrawdown, pct: true },
+        { key: "VaR (95%)", value: quantMetrics.var95, pct: true },
+      ]
+    : null;
 
   const financials = data
-    ? Object.entries(data).map(([k, v]) => {
-        return { key: FinancialsNameMapping[k], value: v } as MetricRow;
-      })
+    ? Object.entries(data)
+        .filter(([k]) => FinancialsNameMapping[k as keyof StockBasicFinancials])
+        .map(([k, v]) => {
+          return {
+            key: FinancialsNameMapping[k as keyof StockBasicFinancials],
+            value: v as number,
+          } as MetricRow;
+        })
     : null;
   let colsToRender: MetricRow[][];
   if (financials) {
-    const colSize = Math.ceil(financials.length / columns);
+    const rows = [...financials, ...(quantRows ?? [])];
+    const colSize = Math.ceil(rows.length / columns);
 
     colsToRender = Array.from({ length: columns }, (_, i) =>
-      financials
+      rows
         .slice(i * colSize, (i + 1) * colSize)
         .filter((m) => m !== undefined),
     );
@@ -115,7 +153,7 @@ function MetricsCard({ ticker, columns = 6, styles = {} }: MetricsCardProps) {
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              {!metric.value ? "—" : Math.round(metric.value * 100) / 100}
+              {formatMetric(metric)}
             </Table.Td>
           </Table.Tr>
         ))}

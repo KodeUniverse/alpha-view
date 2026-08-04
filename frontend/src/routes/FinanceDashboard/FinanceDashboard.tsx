@@ -1,5 +1,5 @@
-import Navbar from "@components/Navbar/Navbar.tsx";
-import SearchBar from "@components/SearchBar/SearchBar.tsx";
+import Navbar from "@/components/Navbar/Navbar.tsx";
+import SearchBar from "@/components/SearchBar/SearchBar.tsx";
 import NewsFeed from "./NewsFeed.jsx";
 import ChartArea from "./ChartArea.jsx";
 import MetricsCard from "./MetricsCard.tsx";

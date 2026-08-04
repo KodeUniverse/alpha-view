@@ -1,65 +1,108 @@
-import { ProviderQueryResponse, useProviderQuery } from "./useProviderQuery";
-import {
-  Frequency,
-  Ticker,
-  OHLCVData,
-  NewsCategory,
-  NewsArticle,
-  StockBasicFinancials,
-} from "@shared/types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/api/client";
 
-export function useSymbolList(): ProviderQueryResponse<Ticker[]> {
-  return useProviderQuery([], (provider) => provider.getSymbolList(), "alpaca");
+import { Frequency, Ticker, NewsCategory } from "@shared/types";
+
+export function useWatchlist() {
+    return useQuery({
+        queryKey: ["watchlist"],
+        queryFn: () => api.getWatchlist(),
+    });
+}
+
+export function useAddToWatchlist() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (ticker: Ticker) => api.addToWatchlist(ticker),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+        },
+    });
+}
+
+export function useRemoveFromWatchlist() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (symbol: string) => api.removeFromWatchlist(symbol),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+        },
+    });
+}
+
+export function useSymbolList() {
+    return useQuery({
+        queryKey: ["symbolList"],
+        queryFn: () => api.getSymbols(),
+    });
 }
 
 export function useBarsForTicker(
-  ticker: Ticker,
-  freq: Frequency,
-  start: Date,
-  end: Date,
-): ProviderQueryResponse<OHLCVData[]> {
-  return useProviderQuery(
-    [ticker.symbol, freq, start.getTime(), end.getTime()],
-    (provider) => provider.getBarsForTicker(ticker, freq, start, end),
-    "alpaca",
-  );
+    ticker: Ticker,
+    freq: Frequency,
+    start: Date,
+    end: Date,
+) {
+    return useQuery({
+        queryKey: [
+            "barsForTicker",
+            ticker.symbol,
+            freq,
+            start.getTime(),
+            end.getTime(),
+        ],
+        queryFn: () => api.getBarsForTicker(ticker, freq, start, end),
+    });
 }
 
 export function useBars(
-  tickers: Ticker[],
-  freq: Frequency,
-  start: Date,
-  end: Date,
-): ProviderQueryResponse<Record<string, OHLCVData[]>> {
-  // think about useMemo'ing this tickers array
-  return useProviderQuery(
-    [
-      tickers.map((t) => t.symbol).join(","),
-      freq,
-      start.getTime(),
-      end.getTime(),
-    ],
-    (provider) => provider.getBars(tickers, freq, start, end),
-    "alpaca",
-  );
+    tickers: Ticker[],
+    freq: Frequency,
+    start: Date,
+    end: Date,
+) {
+    return useQuery({
+        queryKey: [
+            "useBars",
+            JSON.stringify(tickers),
+            freq,
+            start.getTime(),
+            end.getTime(),
+        ],
+        queryFn: () => api.getBars(tickers, freq, start, end),
+        enabled: tickers.length > 0,
+    });
 }
 
-export function useMarketNews(
-  category: NewsCategory,
-): ProviderQueryResponse<NewsArticle[]> {
-  return useProviderQuery(
-    [category],
-    (provider) => provider.getMarketNews(category),
-    "finnhub",
-  );
+export function useBarsBySymbol(
+    tickers: Ticker[],
+    freq: Frequency,
+    start: Date,
+    end: Date,
+) {
+    return useQuery({
+        queryKey: [
+            "barsBySymbol",
+            JSON.stringify(tickers.map((t) => t.symbol)),
+            freq,
+            start.getTime(),
+            end.getTime(),
+        ],
+        queryFn: () => api.getBarsBySymbol(tickers, freq, start, end),
+        enabled: tickers.length > 0,
+    });
 }
 
-export function useBasicFinancials(
-  ticker: Ticker,
-): ProviderQueryResponse<StockBasicFinancials | undefined> {
-  return useProviderQuery(
-    [ticker.symbol],
-    (provider) => provider.getBasicFinancials(ticker),
-    "finnhub",
-  );
+export function useMarketNews(category: NewsCategory) {
+    return useQuery({
+        queryKey: ["news", category],
+        queryFn: () => api.getNews(category),
+    });
+}
+
+export function useBasicFinancials(ticker: Ticker) {
+    return useQuery({
+        queryKey: ["financials", ticker.symbol],
+        queryFn: () => api.getFinancials(ticker),
+    });
 }
