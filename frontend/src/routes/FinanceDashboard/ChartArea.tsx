@@ -6,15 +6,20 @@ import {
   Box,
   Stack,
   SegmentedControl,
-  Divider,
+  Checkbox,
 } from "@mantine/core";
 import { OHLCData, Ticker, VolumeData, Frequency } from "@shared/types";
-import MetricsCard from "./MetricsCard";
 import { useBarsForTicker } from "@/hooks/queries";
 import { useLiveTickerFeed } from "@/hooks/useLiveTickerFeed";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 
 type ChartRange = "1d" | "5d" | "3m" | "6m" | "1y" | "3y" | "Max";
+
+interface ChartIndicators {
+  sma: boolean;
+  ema: boolean;
+  bollinger: boolean;
+}
 
 interface ChartAreaProps {
   ticker: Ticker;
@@ -24,16 +29,24 @@ interface ChartAreaProps {
 interface ChartDisplayOptionsWidgetProps {
   onFreqChange: (value: string) => void;
   onRangeChange: (value: string) => void;
+  onIndicatorsChange: (indicators: ChartIndicators) => void;
   frequency: Frequency;
   range: ChartRange;
+  indicators: ChartIndicators;
 }
 
 function ChartDisplayOptionsWidget({
   onFreqChange,
   onRangeChange,
+  onIndicatorsChange,
   frequency,
   range,
+  indicators,
 }: ChartDisplayOptionsWidgetProps) {
+  const handleIndicatorToggle = (key: keyof ChartIndicators) => {
+    onIndicatorsChange({ ...indicators, [key]: !indicators[key] });
+  };
+
   return (
     <>
       <Stack style={{ gap: 5 }}>
@@ -81,6 +94,45 @@ function ChartDisplayOptionsWidget({
             value={range}
           />
         </Group>
+        <Group
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            border: "1px solid",
+            borderColor: "var(--color-background-secondary)",
+            borderRadius: 5,
+            padding: 5,
+          }}
+        >
+          <Text
+            style={{
+              marginRight: "auto",
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            Indicators
+          </Text>
+          <Group gap="xs">
+            <Checkbox
+              label="SMA"
+              size="xs"
+              checked={indicators.sma}
+              onChange={() => handleIndicatorToggle("sma")}
+            />
+            <Checkbox
+              label="EMA"
+              size="xs"
+              checked={indicators.ema}
+              onChange={() => handleIndicatorToggle("ema")}
+            />
+            <Checkbox
+              label="Bollinger"
+              size="xs"
+              checked={indicators.bollinger}
+              onChange={() => handleIndicatorToggle("bollinger")}
+            />
+          </Group>
+        </Group>
       </Stack>
     </>
   );
@@ -89,9 +141,14 @@ function ChartDisplayOptionsWidget({
 export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   const [frequency, setFrequency] = useState<Frequency>("daily");
   const [range, setRange] = useState<ChartRange>("3m");
+  const [indicators, setIndicators] = useState<ChartIndicators>({
+    sma: false,
+    ema: false,
+    bollinger: false,
+  });
 
-  const tick = useLiveTickerFeed([ticker]);
-  console.log(`Live Ticker Data: ${JSON.stringify(tick)}`);
+  const liveFeed = useLiveTickerFeed([ticker]);
+  const tick = liveFeed[ticker.symbol];
 
   const { start, end } = useMemo(() => {
     let end = new Date();
@@ -137,17 +194,27 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
     return { start, end };
   }, [range]);
 
-  const { isLoading, isError, data, error } = useBarsForTicker(
+  const dailyStart = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d;
+  }, []);
+  const { data: dailyBars } = useBarsForTicker(ticker, "daily", dailyStart, new Date());
+
+  const { isLoading, isError, data } = useBarsForTicker(
     ticker,
     frequency,
     start,
     end,
   );
   const priceData: OHLCData[] | null = data
-    ? data.map((bar) => {
-        const { volume, ...transformed } = bar;
-        return transformed;
-      })
+    ? data.map((bar) => ({
+        time: bar.time,
+        open: bar.open,
+        high: bar.high,
+        low: bar.low,
+        close: bar.close,
+      }))
     : null;
   const volumeData: VolumeData[] | null = data
     ? data.map((bar) => {
@@ -166,6 +233,35 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
       })
     : null;
 
+  const { lastPrice, change, percentChange } = useMemo(() => {
+    const liveClose =
+      tick?.minuteBar?.close ?? tick?.dailyBar?.close;
+    const lastPrice =
+      liveClose ??
+      (priceData && priceData.length > 0
+        ? priceData[priceData.length - 1].close
+        : null);
+    let prevClose: number | null = null;
+    if (dailyBars) {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const prior = dailyBars.filter((bar) => bar.time < todayStart);
+      if (prior.length > 0) prevClose = prior[prior.length - 1].close;
+    }
+    if (lastPrice != null && prevClose != null) {
+      const change = lastPrice - prevClose;
+      return {
+        lastPrice,
+        change,
+        percentChange: (change / prevClose) * 100,
+      };
+    }
+    return { lastPrice, change: null, percentChange: null };
+  }, [tick, priceData, dailyBars]);
+
+  const isUp = change != null && change >= 0;
+  const changeColor = change == null ? "var(--color-text-secondary)" : isUp ? "#26a69a" : "#ef5350";
+
   const handleFreqChange = (newFreq: Frequency) => {
     setFrequency(newFreq);
   };
@@ -176,15 +272,64 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   return (
     <>
       <Card style={cardStyles}>
-        <Group p="xs" ml="md">
-          <Text size="36px" fw={700} style={{ marginRight: "auto" }}>
-            {ticker.symbol}
-          </Text>
+        <Group
+          p="xs"
+          ml="md"
+          justify="space-between"
+          align="flex-start"
+          wrap="nowrap"
+        >
+          <Stack gap={2} mr="auto" style={{ minWidth: 0 }}>
+            <Group gap={12} wrap="nowrap">
+              <Text size="32px" fw={700} style={{ lineHeight: 1.1 }}>
+                {ticker.symbol}
+              </Text>
+              <Group
+                gap={8}
+                wrap="nowrap"
+                style={{
+                  border: "1px solid",
+                  borderColor: changeColor,
+                  borderRadius: 999,
+                  padding: "2px 10px",
+                  backgroundColor: "var(--color-background-tertiary)",
+                }}
+              >
+                <Text
+                  size="md"
+                  fw={700}
+                  style={{
+                    color: changeColor,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {lastPrice != null ? `$${lastPrice.toFixed(2)}` : "—"}
+                </Text>
+                <Text
+                  size="sm"
+                  fw={600}
+                  style={{
+                    color: changeColor,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {percentChange != null
+                    ? `${isUp ? "+" : ""}${percentChange.toFixed(2)}%`
+                    : ""}
+                </Text>
+              </Group>
+            </Group>
+            <Text size="sm" c="dimmed" truncate>
+              {ticker.name ?? ticker.symbol}
+            </Text>
+          </Stack>
           <ChartDisplayOptionsWidget
             onFreqChange={handleFreqChange}
             onRangeChange={handleRangeChange}
+            onIndicatorsChange={setIndicators}
             frequency={frequency}
             range={range}
+            indicators={indicators}
           />
         </Group>
         <Box style={{ height: "100%" }}>
@@ -199,6 +344,7 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
                   volumeData={volumeData}
                   latestTick={tick}
                   frequency={frequency}
+                  indicators={indicators}
                   chartType="candle"
                   timeScale={true}
                   containerStyles={{

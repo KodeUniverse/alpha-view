@@ -8,6 +8,14 @@ import {
 } from "@shared/types";
 
 interface MarketDataProvider {
+  subscribeTickers?: (
+    tickers: Ticker[],
+    onTick: (data: OHLCVData) => void,
+  ) => void;
+  unsubscribeTickers?: (
+    tickers: Ticker[],
+    onTick: (data: OHLCVData) => void,
+  ) => void;
   startLiveTickerFeed?: (
     tickers: Ticker[],
     onTick: (data: OHLCVData) => void,

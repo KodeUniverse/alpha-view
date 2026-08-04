@@ -2,6 +2,7 @@ import {
   CandlestickSeries,
   AreaSeries,
   HistogramSeries,
+  LineSeries,
   ColorType,
   createChart,
   ChartOptions,
@@ -12,6 +13,9 @@ import {
   BusinessDay,
   CandlestickData,
   HistogramData,
+  LineData,
+  LineStyle,
+  LineSeriesOptions,
   Time,
 } from "lightweight-charts";
 import {
@@ -19,16 +23,22 @@ import {
   VolumeData,
   PriceData,
   Frequency,
-  OHLCVData,
   LiveTickerFeedMessage,
 } from "@shared/types";
 import { useCallback, useEffect, useRef } from "react";
-import { useComputedColorScheme } from "@mantine/core";
+import { sma, ema, bollingerBands } from "@/utils/indicators";
+
+interface ChartIndicators {
+  sma?: boolean;
+  ema?: boolean;
+  bollinger?: boolean;
+}
 
 interface BaseChartProps {
   volumeData?: VolumeData[] | null;
   latestTick?: LiveTickerFeedMessage;
   frequency?: Frequency;
+  indicators?: ChartIndicators;
   containerStyles?: React.CSSProperties;
   chartOptionOverride?: DeepPartial<ChartOptions>;
   timeScale?: boolean;
@@ -50,6 +60,8 @@ interface AreaChartProps extends BaseChartProps {
 
 type StockChartProps = CandleChartProps | AreaChartProps;
 
+type IndicatorSeriesName = "sma" | "ema" | "bollingerMid" | "bollingerUpper" | "bollingerLower";
+
 function toChartTime(date: Date): UTCTimestamp {
   return Math.floor(date.getTime() / 1000) as UTCTimestamp;
 }
@@ -60,6 +72,7 @@ export default function StockChart(props: StockChartProps) {
     chartType,
     latestTick,
     frequency,
+    indicators = {},
     volumeData = null,
     containerStyles = { width: "100%", height: "100%" },
     chartOptionOverride = null,
@@ -74,6 +87,13 @@ export default function StockChart(props: StockChartProps) {
   const chartRef = useRef<IChartApi | null>(null);
   const priceSeriesRef = useRef<ISeriesApi<"Candlestick" | "Area">>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram">>(null);
+  const indicatorSeriesRef = useRef<Record<IndicatorSeriesName, ISeriesApi<"Line"> | null>>({
+    sma: null,
+    ema: null,
+    bollingerMid: null,
+    bollingerUpper: null,
+    bollingerLower: null,
+  });
 
   const dateTickFormatter = useCallback(
     (time: UTCTimestamp | BusinessDay) => {
@@ -87,14 +107,14 @@ export default function StockChart(props: StockChartProps) {
     [frequency],
   );
 
-  const computedColorScheme = useComputedColorScheme();
-
   interface ComputedColorsCSS {
     backgroundPrimary?: string;
     backgroundSecondary?: string;
     chartGrid?: string;
     textPrimary?: string;
   }
+
+  const computedColors: ComputedColorsCSS = {};
 
   const cssVarMap: Record<string, keyof ComputedColorsCSS> = {
     "--color-background-primary": "backgroundPrimary",
@@ -103,7 +123,6 @@ export default function StockChart(props: StockChartProps) {
     "--color-text-primary": "textPrimary",
   };
   const cssVars: string[] = Object.keys(cssVarMap);
-  const computedColors: ComputedColorsCSS = {};
 
   for (const cssVar of cssVars) {
     const property = cssVarMap[cssVar];
@@ -137,32 +156,32 @@ export default function StockChart(props: StockChartProps) {
     ...chartOptionOverride,
   };
 
-  !interactive
-    ? (chartOptionBuilder = {
-        handleScale: false,
-        handleScroll: false,
-        ...chartOptionBuilder,
-      })
-    : null;
-  !showHorizAxis
-    ? (chartOptionBuilder = {
-        timeScale: { visible: false },
-        ...chartOptionBuilder,
-      })
-    : null;
-  !showVertAxis
-    ? (chartOptionBuilder = {
-        rightPriceScale: { visible: false },
-        leftPriceScale: { visible: false },
-        ...chartOptionBuilder,
-      })
-    : null;
-  !showGrid
-    ? (chartOptionBuilder = {
-        grid: { horzLines: { visible: false }, vertLines: { visible: false } },
-        ...chartOptionBuilder,
-      })
-    : null;
+  if (!interactive) {
+    chartOptionBuilder = {
+      handleScale: false,
+      handleScroll: false,
+      ...chartOptionBuilder,
+    };
+  }
+  if (!showHorizAxis) {
+    chartOptionBuilder = {
+      timeScale: { visible: false },
+      ...chartOptionBuilder,
+    };
+  }
+  if (!showVertAxis) {
+    chartOptionBuilder = {
+      rightPriceScale: { visible: false },
+      leftPriceScale: { visible: false },
+      ...chartOptionBuilder,
+    };
+  }
+  if (!showGrid) {
+    chartOptionBuilder = {
+      grid: { horzLines: { visible: false }, vertLines: { visible: false } },
+      ...chartOptionBuilder,
+    };
+  }
   const chartOptions = chartOptionBuilder;
 
   useEffect(() => {
@@ -185,12 +204,11 @@ export default function StockChart(props: StockChartProps) {
       }
 
       priceSeriesRef.current = priceSeries;
-      priceSeries.priceScale().applyOptions({
-        scaleMargins: {
-          top: 0.1,
-          bottom: 0.4,
-        },
-      });
+      priceSeries.priceScale().applyOptions(
+        chartType === "area"
+          ? { scaleMargins: { top: 0.05, bottom: 0.05 } }
+          : { scaleMargins: { top: 0.1, bottom: 0.4 } },
+      );
 
       const volumeSeries = chart.addSeries(HistogramSeries, {
         priceFormat: {
@@ -205,6 +223,36 @@ export default function StockChart(props: StockChartProps) {
           bottom: 0,
         },
       });
+
+      const indicatorOptions: Record<IndicatorSeriesName, DeepPartial<LineSeriesOptions>> = {
+        sma: { color: "#f0b90b", lineWidth: 2 },
+        ema: { color: "#3b82f6", lineWidth: 2 },
+        bollingerMid: { color: "rgba(225, 32, 102, 0.85)", lineWidth: 1 },
+        bollingerUpper: {
+          color: "rgba(225, 32, 102, 0.45)",
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+        },
+        bollingerLower: {
+          color: "rgba(225, 32, 102, 0.45)",
+          lineWidth: 1,
+          lineStyle: LineStyle.Dashed,
+        },
+      };
+
+      const defaultLine = {
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+        visible: false,
+      };
+
+      for (const name of Object.keys(indicatorSeriesRef.current) as IndicatorSeriesName[]) {
+        indicatorSeriesRef.current[name] = chart.addSeries(LineSeries, {
+          ...defaultLine,
+          ...indicatorOptions[name],
+        });
+      }
 
       if (timeScale) chart.timeScale().fitContent();
 
@@ -222,6 +270,13 @@ export default function StockChart(props: StockChartProps) {
         chartRef.current = null;
         priceSeriesRef.current = null;
         volumeSeriesRef.current = null;
+        indicatorSeriesRef.current = {
+          sma: null,
+          ema: null,
+          bollingerMid: null,
+          bollingerUpper: null,
+          bollingerLower: null,
+        };
         resizer.disconnect();
       };
     } catch (error) {
@@ -273,28 +328,73 @@ export default function StockChart(props: StockChartProps) {
     }
   }, [priceData, volumeData, computedColors]);
 
+  // sets indicator series data and visibility
+  useEffect(() => {
+    try {
+      if (!priceData || priceData.length === 0) return;
+
+      const times = priceData.map((d) => toChartTime(d.time));
+      const closes = priceData.map((d) => d.close);
+
+      const setIndicator = (
+        name: IndicatorSeriesName,
+        values: (number | null)[] | null,
+        visible: boolean,
+      ) => {
+        const series = indicatorSeriesRef.current[name];
+        if (!series) return;
+        series.applyOptions({ visible });
+        if (!visible || !values) {
+          series.setData([]);
+          return;
+        }
+        const data: LineData<Time>[] = [];
+        values.forEach((value, i) => {
+          if (value != null) data.push({ time: times[i], value });
+        });
+        series.setData(data);
+      };
+
+      const showSma = indicators.sma === true;
+      const showEma = indicators.ema === true;
+      const showBollinger = indicators.bollinger === true;
+
+      setIndicator("sma", showSma ? sma(closes, 20) : null, showSma);
+      setIndicator("ema", showEma ? ema(closes, 20) : null, showEma);
+      const bands = showBollinger ? bollingerBands(closes, 20, 2) : null;
+      setIndicator("bollingerMid", bands ? bands.middle : null, showBollinger);
+      setIndicator("bollingerUpper", bands ? bands.upper : null, showBollinger);
+      setIndicator("bollingerLower", bands ? bands.lower : null, showBollinger);
+    } catch (error) {
+      console.log(`Error updating indicator series:\n${error}`);
+    }
+  }, [priceData, indicators.sma, indicators.ema, indicators.bollinger]);
+
   // updates the chart with live bars
   useEffect(() => {
     try {
       if (
         !latestTick ||
         !priceSeriesRef.current ||
-        !volumeSeriesRef.current ||
         !frequency
       )
         return;
 
-      let transformedBar: CandlestickData<Time>;
-      let volumeBar: HistogramData<Time>;
+      let transformedBar: CandlestickData<Time> | LineData<Time>;
+      let volumeBar: HistogramData<Time> | null = null;
 
       if (frequency === "intraday") {
         if (!latestTick.minuteBar) return;
-        transformedBar = {
-          ...latestTick.minuteBar, // lightweight-charts will ignore unnecessary fields
-          time: toChartTime(latestTick.minuteBar.time),
-        };
+        const time = toChartTime(latestTick.minuteBar.time);
+        transformedBar =
+          chartType === "area"
+            ? { time, value: latestTick.minuteBar.close }
+            : {
+                ...latestTick.minuteBar, // lightweight-charts will ignore unnecessary fields
+                time,
+              };
         volumeBar = {
-          time: toChartTime(latestTick.minuteBar.time),
+          time,
           value: latestTick.minuteBar.volume,
         };
       } else if (frequency === "daily") {
@@ -304,22 +404,28 @@ export default function StockChart(props: StockChartProps) {
           latestTick.dailyBar.time.getMonth(),
           latestTick.dailyBar.time.getDate(),
         );
-        transformedBar = {
-          ...latestTick.dailyBar,
-          time: toChartTime(pinnedDate),
-        };
+        const time = toChartTime(pinnedDate);
+        transformedBar =
+          chartType === "area"
+            ? { time, value: latestTick.dailyBar.close }
+            : {
+                ...latestTick.dailyBar,
+                time,
+              };
         volumeBar = {
-          time: toChartTime(pinnedDate),
+          time,
           value: latestTick.dailyBar.volume,
         };
       }
 
       priceSeriesRef.current.update(transformedBar);
-      volumeSeriesRef.current.update(volumeBar);
+      if (volumeData && volumeSeriesRef.current && volumeBar) {
+        volumeSeriesRef.current.update(volumeBar);
+      }
     } catch (error) {
       console.log(`Error updating chart series with live data:\n${error}`);
     }
-  }, [JSON.stringify(latestTick), frequency]);
+  }, [JSON.stringify(latestTick), frequency, chartType, volumeData]);
 
   // sets date scale based on frequency
   useEffect(() => {

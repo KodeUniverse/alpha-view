@@ -10,6 +10,7 @@ import * as z from "zod";
 async function apiFetch(
     path: string,
     params?: Record<string, string>,
+    init?: RequestInit,
 ): Promise<unknown> {
     const endpoint = new URL(`${import.meta.env.API_URL}${path}`);
 
@@ -19,13 +20,14 @@ async function apiFetch(
         });
     }
 
-    const res = await fetch(endpoint);
+    const res = await fetch(endpoint, init);
 
     if (!res.ok)
         throw new Error(
             `HTTP ${res.status}: API fetch failed on endpoint ${endpoint}`,
         );
 
+    if (res.status === 204) return undefined;
     const data = await res.json();
     return data;
 }
@@ -59,6 +61,13 @@ const OHLCVSchema = z.object({
     frequency: z.enum(["intraday", "daily", "weekly", "monthly"]).optional(),
 }) satisfies z.ZodType<OHLCVData>;
 const OHLCVArraySchema = z.array(OHLCVSchema);
+const OHLCVBySymbolSchema = z.record(z.string(), OHLCVArraySchema);
+
+const WatchlistTickerSchema = z.object({
+    symbol: z.string(),
+    name: z.string().optional(),
+}) satisfies z.ZodType<Ticker>;
+const WatchlistArraySchema = z.array(WatchlistTickerSchema);
 
 const api = {
     getBars: async (
@@ -93,6 +102,21 @@ const api = {
 
         return result;
     },
+    getBarsBySymbol: async (
+        tickers: Ticker[],
+        freq: Frequency,
+        start: Date,
+        end: Date,
+    ): Promise<Record<string, OHLCVData[]>> => {
+        const data = await apiFetch("/api/bars", {
+            symbols: tickers.map((t) => t.symbol).join(","),
+            freq,
+            start: start.toISOString(),
+            end: end.toISOString(),
+        });
+        const result = OHLCVBySymbolSchema.parse(data);
+        return result;
+    },
     getNews: async (category: NewsCategory): Promise<NewsArticle[]> => {
         const data = await apiFetch("/api/news", { category });
         const result = NewsArticleArraySchema.parse(data);
@@ -108,6 +132,32 @@ const api = {
         return await apiFetch(
             `/api/financials/${ticker.symbol}`,
         );
+    },
+    getWatchlist: async (): Promise<Ticker[]> => {
+        const data = await apiFetch("/api/watchlist");
+        const result = WatchlistArraySchema.parse(data);
+        return result;
+    },
+    addToWatchlist: async (ticker: Ticker): Promise<Ticker> => {
+        const data = await apiFetch(
+            "/api/watchlist",
+            undefined,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    symbol: ticker.symbol,
+                    name: ticker.name,
+                }),
+            },
+        );
+        const result = WatchlistTickerSchema.parse(data);
+        return result;
+    },
+    removeFromWatchlist: async (symbol: string): Promise<void> => {
+        await apiFetch(`/api/watchlist/${symbol}`, undefined, {
+            method: "DELETE",
+        });
     },
 };
 

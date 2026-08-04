@@ -16,4 +16,5 @@ COPY backend/tsconfig.json ./
 RUN npm run build
 
 EXPOSE 8080
-CMD ["node", "dist/server.js"]
+# Rebuild on start so synced source (docker compose develop watch) is always reflected.
+CMD ["sh", "-c", "npm run build && node dist/server.js"]

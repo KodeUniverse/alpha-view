@@ -1,117 +1,66 @@
 # AlphaView
 
-**A self-hosted financial dashboard for real-time market data, news aggregation, and portfolio tracking.**
+A self-hosted financial dashboard for real-time market data, news, and stock analytics.
 
-Built as a multi-service application using React, Node.js, TypeScript, Python, and PostgreSQL, orchestrated with Docker Compose.
-
-> 📸 _[need to add screenshot/GIF]_
-
----
+![AlphaView dashboard](screenshots/front-page.png)
 
 ## Features
 
-- Real-time and historical market data via the [Alpaca Market Data API](https://alpaca.markets/)
-- Financial news aggregation and analysis
-- Persistent storage with PostgreSQL
-- Redis for pub/sub messaging, caching
-- Automated data scraping and background market data seeding
+- Real-time and historical price charts with SMA, EMA, and Bollinger Band indicators
+- Live price feed for any ticker
+- Persistent watchlist with live prices and intraday mini charts
+- Stock financials and quantitative metrics (Sharpe, Sortino, volatility, max drawdown, VaR)
+- Market news feed
+- Dark-themed UI
 
----
+## Tech Stack
 
-## Architecture
-
-AlphaView is composed of six Docker services:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                     Docker Compose                      │
-│                                                         │
-│  ┌──────────┐    ┌──────────┐    ┌───────────────────┐  │
-│  │ Frontend │───▶│ Backend  │───▶│   PostgreSQL DB   │  │
-│  │ React/TS │    │ Node/TS  │    └───────────────────┘  │
-│  └──────────┘    └────┬─────┘                           │
-│                       │         ┌───────────────────┐   │
-│                       └────────▶│      Redis        │   │
-│                                 └───────────────────┘   │
-│  ┌──────────────┐  ┌──────────────────────────────────┐ │
-│  │   Scraper    │  │   Market Data Seeder (Python)    │ │
-│  │   (TS)       │  │   Alpaca API → PostgreSQL        │ │
-│  └──────────────┘  └──────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────┘
-```
-
-| Service             | Tech              | Role                                               |
-|---------------------|-------------------|----------------------------------------------------|
-| `frontend`          | React, TypeScript | UI dashboard                                       |
-| `backend`           | Node.js, TypeScript | REST API, business logic                         |
-| `scraping`          | TypeScript        | News and data scraper                              |
-| `market-data-seed`  | Python            | Downloads and seeds market data from Yahoo Finance |
-| `postgres`          | PostgreSQL 16     | Primary data store                                 |
-| `redis`             | Redis             | Caching layer                                      |
-
-Services use health checks to ensure correct startup order.
-
----
-
-## Prerequisites
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose plugin)
-- An [Alpaca Markets](https://alpaca.markets/) account (free tier works) for API keys
-
----
+- **Frontend:** React, TypeScript, Mantine, Lightweight Charts, Vite
+- **Backend:** Node.js, Express, TypeScript, SQLite
+- **Data:** Alpaca Market Data API, Finnhub API
+- **Deployment:** Docker Compose
 
 ## Getting Started
 
-### 1. Clone the repository
+### Prerequisites
+
+- [Docker](https://docs.docker.com/engine/install/) with the Compose plugin
+- Free API keys from [Alpaca](https://alpaca.markets/) (required) and [Finnhub](https://finnhub.io/) (for news/financials)
+
+### Setup
 
 ```bash
-git clone https://github.com/KodeUniverse/alpha-view.git
+git clone git@github.com:KodeUniverse/alpha-view.git
 cd alpha-view
-```
 
-### 2. Configure environment variables
-
-```bash
 cp .env.example .env
 ```
 
-Then open `.env` and fill in your values:
+Edit `.env` and add your API keys:
 
 ```env
-# Host ports — the ports exposed on your machine
-HOST_PORT=3000          # Frontend
-HOST_API_PORT=3001      # Backend API
-
-# PostgreSQL
-POSTGRES_DB=alpha_view
-POSTGRES_USER=your_username
-POSTGRES_PASSWORD=your_password
-
-# Alpaca Market Data API
-# Get your keys at https://alpaca.markets/ → API Keys
-ALPACA_API_KEY=your_api_key
-ALPACA_API_SECRET=your_api_secret
+HOST_PORT=1337
+HOST_API_PORT=9001
+ALPACA_API_KEY=your_alpaca_key
+ALPACA_API_SECRET=your_alpaca_secret
+FINNHUB_API_KEY=your_finnhub_key
+FINNHUB_API_SECRET=your_finnhub_secret
 ```
 
-### 3. Build and start
+### Run
 
 ```bash
-make build   # Build all images
-make start   # Start all services
+make start
 ```
 
-Then open `http://localhost:3000` in your browser.
+Open `http://localhost:1337` in your browser.
 
----
+## Commands
 
-## Available Commands
-
-| Command        | Description                                           |
-|----------------|-------------------------------------------------------|
-| `make build`   | Build all Docker images                               |
-| `make start`   | Start all services with live file sync                |
-| `make stop`    | Stop all running services                             |
-| `make restart` | Full teardown, rebuild, and restart                   |
-| `make clean`   | Stop and remove all containers                        |
-| `make connect_db` | Open a `psql` shell into the running database      |
-| `make delete_db`  | Remove the postgres data volume (destructive)      |
+| Command      | Description                       |
+|--------------|-----------------------------------|
+| `make build` | Build all Docker images           |
+| `make start` | Start services with live file sync |
+| `make stop`  | Stop all services                 |
+| `make restart` | Rebuild and restart all services |
+| `make clean` | Stop and remove all containers    |

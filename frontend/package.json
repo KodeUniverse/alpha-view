@@ -2,22 +2,19 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "build": "vite build"
   },
   "devDependencies": {
     "@eslint/css": "^0.14.1",
-    "@tanstack/eslint-plugin-query": "^5.101.4",
     "@types/node": "^25.6.0",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.0.0",
-    "happy-dom": "^20.10.6",
     "typescript": "^5.6.0",
-    "vite": "^7.3.0",
-    "vitest": "^4.1.10"
+    "typescript-eslint": "^8.0.0",
+    "vite": "^7.3.0"
   },
   "dependencies": {
     "@mantine/core": "^8.1.0",
@@ -25,15 +22,11 @@
     "@shared/types": "file:../shared/types",
     "@tabler/icons-react": "^3.42.0",
     "@tanstack/react-query": "^5.101.4",
-    "@tanstack/react-query-devtools": "^5.91.1",
-    "@types/react-grid-layout": "^1.3.5",
     "@vitejs/plugin-react": "^5.1.2",
     "lightweight-charts": "^5.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.2.3",
-    "react-grid-layout": "^2.2.3",
     "react-router-dom": "^7.11.0",
-    "socket.io-client": "^4.8.3",
     "zod": "^4.4.3"
   }
 }

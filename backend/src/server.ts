@@ -7,9 +7,10 @@ const app = express();
 const HOSTNAME = "0.0.0.0";
 const PORT = 8080;
 
-initDatabaseSchema();
+await initDatabaseSchema();
 
 app.use(cors());
+app.use(express.json());
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });

@@ -3,6 +3,11 @@ import { barsController } from "../../controllers/api/bars.js";
 import { newsController } from "../../controllers/api/news.js";
 import { symbolsController } from "../../controllers/api/symbols.js";
 import { financialsController } from "../../controllers/api/financials.js";
+import {
+  getWatchlistController,
+  addToWatchlistController,
+  removeFromWatchlistController,
+} from "../../controllers/api/watchlist.js";
 
 const apiRouter = Router();
 
@@ -14,5 +19,8 @@ apiRouter.get("/bars", barsController);
 apiRouter.get("/news", newsController);
 apiRouter.get("/symbols", symbolsController);
 apiRouter.get("/financials/:ticker", financialsController);
+apiRouter.get("/watchlist", getWatchlistController);
+apiRouter.post("/watchlist", addToWatchlistController);
+apiRouter.delete("/watchlist/:symbol", removeFromWatchlistController);
 
 export { apiRouter };
