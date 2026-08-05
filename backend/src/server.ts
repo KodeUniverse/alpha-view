@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { initDatabaseSchema } from "./database/init.js";
 import { apiRouter } from "./routes/api/apiRouter.js";
+import { attachLiveFeedSocket } from "./routes/ws/liveFeedSocket.js";
 
 const app = express();
 const HOSTNAME = "0.0.0.0";
@@ -18,6 +19,8 @@ app.get("/health", (_req, res) => {
 
 app.use("/api", apiRouter);
 
-app.listen(PORT, HOSTNAME, () => {
+const server = app.listen(PORT, HOSTNAME, () => {
   console.log(`Server running at http://${HOSTNAME}:${PORT}`);
 });
+
+attachLiveFeedSocket(server);

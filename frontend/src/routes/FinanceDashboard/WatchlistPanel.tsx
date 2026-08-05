@@ -72,11 +72,14 @@ function WatchListCard({ cardStyles }: WatchListCardProps) {
     d.setDate(d.getDate() - 10);
     return d;
   }, []);
+  // Memoized, not inline `new Date()` -- an unstable value here would
+  // change the query key (and refetch) on every live-tick re-render.
+  const dailyEnd = useMemo(() => new Date(), []);
   const { data: dailyBars } = useBarsBySymbol(
     watchlist ?? [],
     "daily",
     dailyStart,
-    new Date(),
+    dailyEnd,
   );
 
   function handleAdd(symbol: string) {

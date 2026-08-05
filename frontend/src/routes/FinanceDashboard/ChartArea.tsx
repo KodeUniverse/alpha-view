@@ -199,7 +199,10 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
     d.setDate(d.getDate() - 7);
     return d;
   }, []);
-  const { data: dailyBars } = useBarsForTicker(ticker, "daily", dailyStart, new Date());
+  // Memoized, not inline `new Date()` -- an unstable value here would
+  // change the query key (and refetch) on every live-tick re-render.
+  const dailyEnd = useMemo(() => new Date(), []);
+  const { data: dailyBars } = useBarsForTicker(ticker, "daily", dailyStart, dailyEnd);
 
   const { isLoading, isError, data } = useBarsForTicker(
     ticker,

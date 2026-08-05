@@ -17,12 +17,14 @@
     "@shared/types": "file:../shared/types",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "^6.0.1",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
+    "@types/ws": "^8.18.0",
     "tsc-alias": "^1.8.10",
     "typescript": "^5.6.0"
   }
