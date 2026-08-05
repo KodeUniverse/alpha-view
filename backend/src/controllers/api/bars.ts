@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { getBars, getBarsForTicker } from "../../providers/index.js";
+import { getBars } from "../../providers/index.js";
 import { Ticker, Frequency } from "@shared/types";
 
 export async function barsController(req: Request, res: Response) {
@@ -16,13 +16,11 @@ export async function barsController(req: Request, res: Response) {
     const startDate = new Date(start as string);
     const endDate = new Date(end as string);
 
-    if (tickerList.length === 1) {
-      const bars = await getBarsForTicker(tickerList[0], frequency, startDate, endDate);
-      res.json(bars);
-    } else {
-      const bars = await getBars(tickerList, frequency, startDate, endDate);
-      res.json(bars);
-    }
+    // Always respond with the { [symbol]: OHLCVData[] } shape, regardless of
+    // how many symbols were requested, so clients don't need to special-case
+    // the single-symbol response.
+    const bars = await getBars(tickerList, frequency, startDate, endDate);
+    res.json(bars);
   } catch (error) {
     console.error("Error fetching bars:", error);
     res.status(500).json({ error: "Failed to fetch bars." });

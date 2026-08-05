@@ -199,7 +199,12 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
     d.setDate(d.getDate() - 7);
     return d;
   }, []);
-  const { data: dailyBars } = useBarsForTicker(ticker, "daily", dailyStart, new Date());
+  // Pin "now" once per mount instead of passing `new Date()` inline -- the
+  // live ticker feed re-renders this component on every tick, and an
+  // ever-changing `end` value would change the query key on every render,
+  // busting the cache and re-hitting Alpaca's REST API on every tick.
+  const dailyEnd = useMemo(() => new Date(), []);
+  const { data: dailyBars } = useBarsForTicker(ticker, "daily", dailyStart, dailyEnd);
 
   const { isLoading, isError, data } = useBarsForTicker(
     ticker,

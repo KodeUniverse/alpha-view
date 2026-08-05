@@ -82,8 +82,10 @@ const api = {
             start: start.toDateString(),
             end: end.toDateString(),
         });
-        const result = OHLCVArraySchema.parse(data);
-        return result;
+        // The backend always responds with bars keyed by symbol, regardless
+        // of how many symbols were requested.
+        const result = OHLCVBySymbolSchema.parse(data);
+        return Object.values(result).flat();
     },
     getBarsForTicker: async (
         ticker: Ticker,
@@ -98,9 +100,9 @@ const api = {
             end: end.toISOString(),
         });
 
-        const result = OHLCVArraySchema.parse(data);
+        const result = OHLCVBySymbolSchema.parse(data);
 
-        return result;
+        return result[ticker.symbol] ?? [];
     },
     getBarsBySymbol: async (
         tickers: Ticker[],
