@@ -69,13 +69,9 @@ const WatchlistTickerSchema = z.object({
 }) satisfies z.ZodType<Ticker>;
 const WatchlistArraySchema = z.array(WatchlistTickerSchema);
 
-// --- Live ticker feed -------------------------------------------------
-//
-// Alpaca only allows a single upstream WebSocket connection per account, so
-// the backend owns that connection and relays bar messages down to a single
-// /ws/live endpoint (see backend/src/providers/alpacaStream.ts). This class
-// is a module-level singleton -- there is only ever one connection to that
-// endpoint for the whole app, no matter how many components subscribe.
+// Connects to the backend's /ws/live relay (backend/src/providers/alpacaStream.ts),
+// which owns the actual Alpaca connection. Instantiated once below as a
+// module-level singleton, so the whole app shares one WebSocket.
 interface AlpacaBarMessage {
     T: "b" | "d";
     S: string;
@@ -156,12 +152,10 @@ class LiveTickerFeed {
 
         this.socket.addEventListener("open", () => {
             console.log("Live ticker feed connected.");
-            // (Re)send the full subscription set -- covers both the first
-            // connection and any reconnect after a drop.
-            this.sendSubscribe(Array.from(this.subscriptions));
+            this.sendSubscribe(Array.from(this.subscriptions)); // covers reconnects too
         });
         this.socket.addEventListener("close", (event) => {
-            if (event.target !== this.socket) return; // stale socket, ignore. socket.close() is async
+            if (event.target !== this.socket) return; // ignore stale socket (close is async)
             if (this.intentionalClose) return;
             console.log(
                 "Live ticker feed disconnected, reconnecting in 2 seconds...",
@@ -252,9 +246,7 @@ const api = {
             start: start.toDateString(),
             end: end.toDateString(),
         });
-        // The backend always responds with bars keyed by symbol, regardless
-        // of how many symbols were requested.
-        const result = OHLCVBySymbolSchema.parse(data);
+        const result = OHLCVBySymbolSchema.parse(data); // always keyed by symbol
         return Object.values(result).flat();
     },
     getBarsForTicker: async (

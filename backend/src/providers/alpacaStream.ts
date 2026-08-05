@@ -24,22 +24,16 @@ interface AlpacaBarMessage {
 const STREAM_URL = "wss://stream.data.alpaca.markets/v2/iex";
 const RECONNECT_DELAY_MS = 2000;
 
-/**
- * Owns the single upstream WebSocket connection to Alpaca's live bar stream
- * (Alpaca only allows one connection per account/feed) and fans bar messages
- * out to whichever downstream browser clients are interested in a symbol.
- *
- * Alpaca credentials never leave the backend process.
- */
+// Alpaca allows only one upstream connection per account, so this owns that
+// single connection and fans bar messages out to interested clients.
 class AlpacaStreamRelay {
   private upstream?: WebSocket;
   private authenticated = false;
   private intentionalClose = false;
   private reconnectTimeout?: NodeJS.Timeout;
 
-  // symbol -> downstream clients currently interested in it
   private readonly interest = new Map<string, Set<WebSocket>>();
-  // downstream client -> symbols it is currently subscribed to (for cleanup on disconnect)
+  // tracked per-client so we can undo it all on disconnect
   private readonly clientSymbols = new Map<WebSocket, Set<string>>();
 
   addClient(client: WebSocket) {
@@ -84,7 +78,7 @@ class AlpacaStreamRelay {
       if (!clients) {
         clients = new Set();
         this.interest.set(symbol, clients);
-        newlyInteresting.push(symbol); // first downstream client for this symbol
+        newlyInteresting.push(symbol);
       }
       clients.add(client);
     }
@@ -96,7 +90,7 @@ class AlpacaStreamRelay {
       clients.delete(client);
       if (clients.size === 0) {
         this.interest.delete(symbol);
-        noLongerInteresting.push(symbol); // last downstream client for this symbol left
+        noLongerInteresting.push(symbol);
       }
     }
 

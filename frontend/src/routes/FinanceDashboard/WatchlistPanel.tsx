@@ -72,10 +72,8 @@ function WatchListCard({ cardStyles }: WatchListCardProps) {
     d.setDate(d.getDate() - 10);
     return d;
   }, []);
-  // Pin "now" once per mount instead of passing `new Date()` inline -- the
-  // live ticker feed re-renders this component on every tick, and an
-  // ever-changing `end` value would change the query key on every render,
-  // busting the cache and re-hitting Alpaca's REST API on every tick.
+  // Memoized, not inline `new Date()` -- an unstable value here would
+  // change the query key (and refetch) on every live-tick re-render.
   const dailyEnd = useMemo(() => new Date(), []);
   const { data: dailyBars } = useBarsBySymbol(
     watchlist ?? [],

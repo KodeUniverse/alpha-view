@@ -8,12 +8,8 @@ interface ClientMessage {
   dailyBars?: string[];
 }
 
-/**
- * Attaches the downstream live-feed WebSocket endpoint (/ws/live) that the
- * frontend connects to. Speaks the same subscribe/unsubscribe/bar-message
- * shape as Alpaca's own stream, but requires no credentials from the client
- * -- the backend is the only thing that ever holds the Alpaca API secret.
- */
+// No credentials required from the client -- only the backend ever holds
+// the Alpaca API secret.
 export function attachLiveFeedSocket(server: Server) {
   const wss = new WebSocketServer({ server, path: "/ws/live" });
 

@@ -16,9 +16,7 @@ export async function barsController(req: Request, res: Response) {
     const startDate = new Date(start as string);
     const endDate = new Date(end as string);
 
-    // Always respond with the { [symbol]: OHLCVData[] } shape, regardless of
-    // how many symbols were requested, so clients don't need to special-case
-    // the single-symbol response.
+    // Always keyed by symbol, even for a single ticker -- keep this consistent.
     const bars = await getBars(tickerList, frequency, startDate, endDate);
     res.json(bars);
   } catch (error) {
