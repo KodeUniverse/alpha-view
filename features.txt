@@ -1,0 +1,12 @@
+GenAI feature, taking user net-worth data as input.
+My example:
+ - I have a net-worth graph from my broker. Presumably also have position-level performance data and historical statements from brokerage.
+ - I need to know why my net-worth fell in a certain time, and why it rised, and why at times it went from linear to parabolic. 
+ - Once the AI figures out what positions are driving the changes and increases, it can then check news to see if it was driven by news events. (or just call a skill for analyzing why a stock moved)
+
+TODO:
+ - Get the input data. Net-worth graph, or more simply a performance graph for a broker account. and then position level data, and performance per ticker (maybe this can be collected with Alpaca API)
+ - Write deterministic logic for determining the drivers of performance.
+ - Wire up an LLM
+ - Present the drivers of performance to the AI, and have it run the analysis of what happened.
+
