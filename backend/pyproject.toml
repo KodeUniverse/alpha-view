@@ -6,4 +6,5 @@ dependencies = [
     "alpaca-py>=0.44.0",
     "fastapi[standard]>=0.141.1",
     "finnhub-python>=2.4.29",
+    "sqlalchemy[asyncio]>=2.0.52",
 ]
