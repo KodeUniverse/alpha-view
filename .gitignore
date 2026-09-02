@@ -1,3 +1,10 @@
+#AlphaDB
+*.db
+
+# Python
+.venv
+__pycache__
+
 # NodeJS stuff
 node_modules
 package-lock.json
