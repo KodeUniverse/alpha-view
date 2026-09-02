@@ -39,6 +39,12 @@ def _data_client() -> StockHistoricalDataClient:
     return StockHistoricalDataClient(api_key, api_secret)
 
 
+async def probe_credentials() -> None:
+    """Validate Alpaca credentials at startup. Raises on auth failure."""
+    client = _trading_client()
+    await asyncio.to_thread(client.get_account)
+
+
 async def get_symbol_list() -> list[Ticker]:
     client = _trading_client()
     request = GetAssetsRequest(
