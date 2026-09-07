@@ -3,7 +3,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 
-from app.providers import alpaca
+import app.providers.alpaca.fetches as alpaca
 from app.schemas.stock import Frequency, OHLCVData, Ticker
 
 logger = logging.getLogger(__name__)

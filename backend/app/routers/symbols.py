@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 
-from app.providers import alpaca
+import app.providers.alpaca.fetches as alpaca
 from app.schemas.stock import Ticker
 
 logger = logging.getLogger(__name__)

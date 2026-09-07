@@ -1,5 +1,4 @@
 import asyncio
-import os
 from datetime import datetime
 
 from alpaca.data.enums import Adjustment, DataFeed
@@ -13,6 +12,8 @@ from alpaca.trading.requests import GetAssetsRequest
 
 from app.schemas.stock import Frequency, OHLCVData, Ticker
 
+from .auth import get_credentials
+
 FREQ_MAP: dict[Frequency, TimeFrame] = {
     "intraday": TimeFrame(1, TimeFrameUnit.Minute),
     "daily": TimeFrame(1, TimeFrameUnit.Day),
@@ -21,21 +22,13 @@ FREQ_MAP: dict[Frequency, TimeFrame] = {
 }
 
 
-def _get_credentials() -> tuple[str, str]:
-    api_key = os.environ.get("ALPACA_API_KEY")
-    api_secret = os.environ.get("ALPACA_API_SECRET")
-    if not api_key or not api_secret:
-        raise RuntimeError("Alpaca API key/secret is undefined.")
-    return api_key, api_secret
-
-
 def _trading_client() -> TradingClient:
-    api_key, api_secret = _get_credentials()
+    api_key, api_secret = get_credentials()
     return TradingClient(api_key, api_secret, paper=True)
 
 
 def _data_client() -> StockHistoricalDataClient:
-    api_key, api_secret = _get_credentials()
+    api_key, api_secret = get_credentials()
     return StockHistoricalDataClient(api_key, api_secret)
 
 
