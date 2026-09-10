@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.database import watchlist
-from app.database.base import metadata
+from app.database.watchlist import metadata
 
 AlphaDatabase = create_async_engine(
     "sqlite+aiosqlite:///alphaview.db"
