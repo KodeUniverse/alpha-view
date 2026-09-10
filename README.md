@@ -16,7 +16,7 @@ A self-hosted financial dashboard for real-time market data, news, and stock ana
 ## Tech Stack
 
 - **Frontend:** React, TypeScript, Mantine, Lightweight Charts, Vite
-- **Backend:** Node.js, Express, TypeScript, SQLite
+- **Backend:** Python, FastAPI, SQLite, REST API and WebSocket
 - **Data:** Alpaca Market Data API, Finnhub API
 - **Deployment:** Docker Compose
 
