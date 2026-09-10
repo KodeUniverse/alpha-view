@@ -1,11 +1,12 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_database_schema
-from app.providers import alpaca
+from app.providers.alpaca.fetches import probe_credentials
+from app.providers.alpaca.live import LiveStockDataFeed
 from app.routers import bars, financials, news, symbols, watchlist
 
 
@@ -13,9 +14,11 @@ from app.routers import bars, financials, news, symbols, watchlist
 async def lifespan(app: FastAPI):
     # runs before API startup
     await init_database_schema()
-    await alpaca.probe_credentials()
+    await probe_credentials()
+    app.state.live_feed = await LiveStockDataFeed.new()
     yield
     # shutdown/clean up code. runs after API shutdown
+    await app.state.live_feed.close()
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
@@ -34,8 +37,13 @@ async def root():
 async def health_check():
     return "Healthy!"
 
+@app.websocket("/ws/live")
+async def live_stock_stream(websocket: WebSocket):
+    await app.state.live_feed.serve(websocket)
+
 app.include_router(bars.router, prefix="/api")
 app.include_router(news.router, prefix="/api")
 app.include_router(watchlist.router, prefix="/api")
 app.include_router(symbols.router, prefix="/api")
 app.include_router(financials.router, prefix="/api")
+

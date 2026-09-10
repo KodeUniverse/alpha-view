@@ -72,18 +72,24 @@ const WatchlistArraySchema = z.array(WatchlistTickerSchema);
 // Connects to the backend's /ws/live relay (backend/src/providers/alpacaStream.ts),
 // which owns the actual Alpaca connection. Instantiated once below as a
 // module-level singleton, so the whole app shares one WebSocket.
-interface AlpacaBarMessage {
-    T: "b" | "d";
-    S: string;
-    o: number;
-    h: number;
-    l: number;
-    c: number;
-    v: number;
-    vw: number;
-    n: number;
-    t: string;
-}
+const LiveBarPayloadSchema = z.object({
+    symbol: z.string(),
+    timestamp: z.string(),
+    open: z.number(),
+    high: z.number(),
+    low: z.number(),
+    close: z.number(),
+    volume: z.number(),
+    trade_count: z.number().nullable(),
+    vwap: z.number().nullable(),
+});
+
+const LiveFeedEnvelopeSchema = z.discriminatedUnion("type", [
+    z.object({ type: z.literal("minute_bar"), bar: LiveBarPayloadSchema }),
+    z.object({ type: z.literal("daily_bar"), bar: LiveBarPayloadSchema }),
+    z.object({ type: z.literal("error"), message: z.string() }),
+]);
+type LiveFeedEnvelope = z.infer<typeof LiveFeedEnvelopeSchema>;
 
 type LiveTickListener = (data: OHLCVData) => void;
 
@@ -168,15 +174,15 @@ class LiveTickerFeed {
             console.error("Live ticker feed WebSocket error.");
         });
         this.socket.addEventListener("message", (msg) => {
-            let messages: AlpacaBarMessage[];
             try {
-                messages = JSON.parse(msg.data);
-            } catch {
-                console.error(`Malformed message from live ticker feed: ${msg.data}`);
-                return;
-            }
-            for (const data of messages) {
-                this.handleBarMessage(data);
+                const envelope = LiveFeedEnvelopeSchema.parse(JSON.parse(msg.data));
+                if (envelope.type === "error") {
+                    console.error(`Live ticker feed server error: ${envelope.message}`);
+                    return;
+                }
+                this.handleBarMessage(envelope);
+            } catch (err) {
+                console.error(`Malformed message from live ticker feed: ${msg.data}`, err);
             }
         });
     }
@@ -205,18 +211,19 @@ class LiveTickerFeed {
         );
     }
 
-    private handleBarMessage(data: AlpacaBarMessage) {
+    private handleBarMessage(envelope: Extract<LiveFeedEnvelope, { type: "minute_bar" | "daily_bar" }>) {
+        const { bar } = envelope;
         const transformed: OHLCVData = {
-            open: data.o,
-            close: data.c,
-            high: data.h,
-            low: data.l,
-            volume: data.v,
-            time: new Date(data.t),
-            symbol: data.S,
-            frequency: data.T === "b" ? "intraday" : "daily",
+            open: bar.open,
+            close: bar.close,
+            high: bar.high,
+            low: bar.low,
+            volume: bar.volume,
+            time: new Date(bar.timestamp),
+            symbol: bar.symbol,
+            frequency: envelope.type === "minute_bar" ? "intraday" : "daily",
         };
-        const listeners = this.listeners.get(data.S);
+        const listeners = this.listeners.get(bar.symbol);
         if (!listeners) return;
         for (const listener of listeners) listener(transformed);
     }
