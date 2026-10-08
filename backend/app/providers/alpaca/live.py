@@ -40,7 +40,7 @@ class SubscribedTicker(NamedTuple):
     name: str
     freq: BarKind
 
-@dataclass
+@dataclass(eq=False)
 class ClientSession:
     socket: WebSocket
     outbox: Queue[tuple[BarKind, Bar | dict[Any, Any]]]
@@ -76,6 +76,31 @@ class LiveStockDataFeed:
         self._stream_task = asyncio.create_task(self.stream_client._run_forever())
 
         return self
+    
+    def _register_client_sub(self, socket: WebSocket, msg: SubscribeMsg):
+        if msg.bars:
+            for ticker in msg.bars:
+                registry_key = SubscribedTicker(ticker, freq="minute_bar")
+                
+                if (sessions := self.registry.get(registry_key)) is not None:
+
+                    if not any(socket is session.socket for session in sessions):
+                        sessions.append(ClientSession(socket, Queue()))
+                else:
+                    self.registry[registry_key] = [ClientSession(socket, Queue())]
+
+        if msg.dailyBars:
+            for ticker in msg.dailyBars:
+                registry_key = SubscribedTicker(ticker, freq="daily_bar")
+
+                if (sessions := self.registry.get(registry_key)) is not None:
+
+                    if not any(socket is session.socket for session in sessions):
+                        sessions.append(ClientSession(socket, Queue()))
+                else:
+                    self.registry[registry_key] = [ClientSession(socket, Queue())]
+
+        
 
     async def serve(self, websocket: WebSocket) -> None:
         await websocket.accept()
@@ -86,11 +111,12 @@ class LiveStockDataFeed:
                     validated_msg = RecievedMsgAdapter.validate_json(msg)
 
                     if isinstance(validated_msg, SubscribeMsg):
-
-
+                        self._register_client_sub(websocket, validated_msg)
+                        
                         #self.subscribe(validated_msg)
                     else:
-                        self.unsubscribe(validated_msg)
+                        #self.unsubscribe(validated_msg)
+                        pass
                 except ValidationError:
                     logger.info("Malformed message recieved to LiveStockDataFeed server.")
 
@@ -123,14 +149,17 @@ class LiveStockDataFeed:
     async def _enqueue_daily_bar(self, bar: Bar | dict[Any, Any]) -> None:
         await self.alpaca_data_queue.put(("daily_bar", bar))
 
-    def subscribe(self, sub_msg: SubscribeMsg):
-        if not sub_msg.bars and not sub_msg.dailyBars:
-            return
+    def subscribe(self):
+        min_bars = daily_bars = []
 
-        if sub_msg.bars:
-            self.stream_client.subscribe_bars(self._enqueue_minute_bar, *sub_msg.bars)
-        if sub_msg.dailyBars:
-            self.stream_client.subscribe_daily_bars(self._enqueue_daily_bar, *sub_msg.dailyBars)
+        for sub_ticker, connected_sessions in self.registry.items():
+            if len(connected_sessions) > 0:
+                if sub_ticker.freq == "minute_bar":
+                    min_bars.append(sub_ticker.name)
+                else:
+                    daily_bars.append(sub_ticker.name)
+        self.stream_client.subscribe_bars(self._enqueue_minute_bar, *min_bars)
+        self.stream_client.subscribe_daily_bars(self._enqueue_daily_bar, *daily_bars)
 
     def unsubscribe(self, unsub_msg: UnsubscribeMsg):
         if not unsub_msg.bars and not unsub_msg.dailyBars:
