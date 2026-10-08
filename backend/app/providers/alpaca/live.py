@@ -2,7 +2,8 @@ import asyncio
 import json
 import logging
 from asyncio.queues import Queue
-from typing import Annotated, Any, Literal
+from dataclasses import dataclass
+from typing import Annotated, Any, Literal, NamedTuple
 
 from alpaca.data.live.stock import StockDataStream as AlpacaStockDataStream
 from alpaca.data.models.bars import Bar
@@ -35,6 +36,15 @@ class ErrorEnvelope(BaseModel):
     type: Literal["error"] = "error"
     message: str
 
+class SubscribedTicker(NamedTuple):
+    name: str
+    freq: BarKind
+
+@dataclass
+class ClientSession:
+    socket: WebSocket
+    outbox: Queue[tuple[BarKind, Bar | dict[Any, Any]]]
+
 class LiveStockDataFeed:
     """Relays a single Alpaca live-bars stream to FastAPI WebSocket clients.
 
@@ -46,11 +56,13 @@ class LiveStockDataFeed:
     """
 
     stream_client: AlpacaStockDataStream
-    out_data_queue: Queue[tuple[BarKind, Bar | dict[Any, Any]]]
+    alpaca_data_queue: Queue[tuple[BarKind, Bar | dict[Any, Any]]]
     _stream_task: asyncio.Task[None] | None = None
 
+    registry: dict[SubscribedTicker, list[ClientSession]] = {}
+
     def __init__(self):
-        self.out_data_queue = Queue()
+        self.alpaca_data_queue = Queue()
 
         api_key, api_secret = get_alpaca_credentials()
         self.stream_client = AlpacaStockDataStream(api_key, api_secret)
@@ -74,18 +86,17 @@ class LiveStockDataFeed:
                     validated_msg = RecievedMsgAdapter.validate_json(msg)
 
                     if isinstance(validated_msg, SubscribeMsg):
-                        self.subscribe(validated_msg)
+
+
+                        #self.subscribe(validated_msg)
                     else:
                         self.unsubscribe(validated_msg)
                 except ValidationError:
                     logger.info("Malformed message recieved to LiveStockDataFeed server.")
-                    await websocket.send_text(
-                        ErrorEnvelope(message="Malformed message recieved to LiveStockDataFeed server.").model_dump_json()
-                    )
 
         async def outgoing_handler():
             while True:
-                kind, data = await self.out_data_queue.get()
+                kind, data = await self.alpaca_data_queue.get()
                 try:
                     bar = data if isinstance(data, Bar) else Bar.model_validate(data)
                     payload = BarEnvelope(type=kind, bar=bar).model_dump_json()
@@ -107,10 +118,10 @@ class LiveStockDataFeed:
             task.cancel()
 
     async def _enqueue_minute_bar(self, bar: Bar | dict[Any, Any]) -> None:
-        await self.out_data_queue.put(("minute_bar", bar))
+        await self.alpaca_data_queue.put(("minute_bar", bar))
 
     async def _enqueue_daily_bar(self, bar: Bar | dict[Any, Any]) -> None:
-        await self.out_data_queue.put(("daily_bar", bar))
+        await self.alpaca_data_queue.put(("daily_bar", bar))
 
     def subscribe(self, sub_msg: SubscribeMsg):
         if not sub_msg.bars and not sub_msg.dailyBars:
