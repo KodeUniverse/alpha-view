@@ -1,9 +1,10 @@
 import asyncio
 import json
 import logging
+import uuid
 from asyncio.queues import Queue
-from dataclasses import dataclass
-from typing import Annotated, Any, Literal, NamedTuple
+from collections import defaultdict
+from typing import Annotated, Literal, NamedTuple, override
 
 from alpaca.data.live.stock import StockDataStream as AlpacaStockDataStream
 from alpaca.data.models.bars import Bar
@@ -40,10 +41,25 @@ class SubscribedTicker(NamedTuple):
     name: str
     freq: BarKind
 
-@dataclass(eq=False)
+
 class ClientSession:
-    socket: WebSocket
-    outbox: Queue[tuple[BarKind, Bar | dict[Any, Any]]]
+
+    def __init__(self, id: int, socket: WebSocket):
+        self.id: int = id
+        self.socket: WebSocket = socket
+        self.outbox: Queue[Bar] = Queue()
+    
+    @override
+    def __hash__(self):
+        return hash(self.id)
+
+    @override
+    def __eq__(self, other):
+
+        if not isinstance(other, ClientSession):
+            return NotImplemented
+
+        return self.id == other.id
 
 class LiveStockDataFeed:
     """Relays a single Alpaca live-bars stream to FastAPI WebSocket clients.
@@ -55,55 +71,53 @@ class LiveStockDataFeed:
     client shares the same upstream stream and subscription set.
     """
 
-    stream_client: AlpacaStockDataStream
-    alpaca_data_queue: Queue[tuple[BarKind, Bar | dict[Any, Any]]]
-    _stream_task: asyncio.Task[None] | None = None
-
-    registry: dict[SubscribedTicker, list[ClientSession]] = {}
-
     def __init__(self):
-        self.alpaca_data_queue = Queue()
 
         api_key, api_secret = get_alpaca_credentials()
-        self.stream_client = AlpacaStockDataStream(api_key, api_secret)
+
+        self.alpaca_data_queue: Queue[Bar] = Queue()
+        self.stream_client: AlpacaStockDataStream = AlpacaStockDataStream(api_key, api_secret)
+        self.registry: defaultdict[SubscribedTicker, set[ClientSession]] = defaultdict(set) 
+
+        self._stream_task: asyncio.Task[None] | None = None
 
     @classmethod
     async def new(cls) -> "LiveStockDataFeed":
         self = cls()
 
-        # alpaca-py only exposes a blocking run(). _run_forever() is its non-blocking coroutine, 
-        # so we run it as a task on the app's event loop
+        # alpaca-py only exposes a blocking run(). _run_forever() is its non-blocking coroutine.
+        # This won't work because _run_forever has sync calls inside it. this task needs its own thread.
+        # The thread will gete data from alpaca and push it to alpaca queue in a thread-safe manner.
+         
         self._stream_task = asyncio.create_task(self.stream_client._run_forever())
 
         return self
     
-    def _register_client_sub(self, socket: WebSocket, msg: SubscribeMsg):
-        if msg.bars:
-            for ticker in msg.bars:
-                registry_key = SubscribedTicker(ticker, freq="minute_bar")
-                
-                if (sessions := self.registry.get(registry_key)) is not None:
+    def _register_client_sub(self, session: ClientSession, sub: SubscribedTicker):
 
-                    if not any(socket is session.socket for session in sessions):
-                        sessions.append(ClientSession(socket, Queue()))
-                else:
-                    self.registry[registry_key] = [ClientSession(socket, Queue())]
-
-        if msg.dailyBars:
-            for ticker in msg.dailyBars:
-                registry_key = SubscribedTicker(ticker, freq="daily_bar")
-
-                if (sessions := self.registry.get(registry_key)) is not None:
-
-                    if not any(socket is session.socket for session in sessions):
-                        sessions.append(ClientSession(socket, Queue()))
-                else:
-                    self.registry[registry_key] = [ClientSession(socket, Queue())]
-
+        if sub not in self.registry:
+            # alpaca sub
+            pass
         
+        self.registry[sub].add(session)
+
+    
+    def _register_client_unsub(self, session: ClientSession, unsub: SubscribedTicker):
+        
+        if unsub in self.registry and session in self.registry[unsub]:
+            listeners = self.registry[unsub]
+            listeners.remove(session)
+            ref_ct = len(listeners)
+
+            if ref_ct == 0:
+                pass
+                # alpaca unsub
 
     async def serve(self, websocket: WebSocket) -> None:
         await websocket.accept()
+        
+        client_uuid = int(uuid.uuid4()) # collisions possible but practically unlikely at this scale 
+        client = ClientSession(id=client_uuid, socket=websocket)
 
         async def incoming_handler():
             async for msg in websocket.iter_text():
@@ -111,11 +125,22 @@ class LiveStockDataFeed:
                     validated_msg = RecievedMsgAdapter.validate_json(msg)
 
                     if isinstance(validated_msg, SubscribeMsg):
-                        self._register_client_sub(websocket, validated_msg)
                         
-                        #self.subscribe(validated_msg)
+                        tickers_to_sub: list[SubscribedTicker] = []
+                        if minute_bars := validated_msg.bars:
+                            for ticker in minute_bars:
+                                tickers_to_sub.append(SubscribedTicker(ticker, "minute_bar"))
+
+                        if daily_bars := validated_msg.dailyBars:
+                            for ticker in daily_bars:
+                                tickers_to_sub.append(SubscribedTicker(ticker, "daily_bar"))
+                        
+                        for ticker in tickers_to_sub:
+                            self._register_client_sub(session=client, sub=ticker)
+                            
                     else:
-                        #self.unsubscribe(validated_msg)
+
+                        # Same logic as above here but call registry unsub
                         pass
                 except ValidationError:
                     logger.info("Malformed message recieved to LiveStockDataFeed server.")
@@ -143,11 +168,11 @@ class LiveStockDataFeed:
         for task in pending:
             task.cancel()
 
-    async def _enqueue_minute_bar(self, bar: Bar | dict[Any, Any]) -> None:
-        await self.alpaca_data_queue.put(("minute_bar", bar))
+    async def _enqueue_minute_bar(self, bar: Bar) -> None:
+        await self.alpaca_data_queue.put(bar)
 
-    async def _enqueue_daily_bar(self, bar: Bar | dict[Any, Any]) -> None:
-        await self.alpaca_data_queue.put(("daily_bar", bar))
+    async def _enqueue_daily_bar(self, bar: Bar) -> None:
+        await self.alpaca_data_queue.put(bar)
 
     def subscribe(self):
         min_bars = daily_bars = []
