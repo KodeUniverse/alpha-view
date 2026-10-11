@@ -2,13 +2,13 @@ import asyncio
 import json
 import logging
 import uuid
-from asyncio.queues import Queue, QueueFull
+from asyncio.queues import Queue, QueueFull, QueueShutDown
 from collections import defaultdict
 from typing import Annotated, Any, Literal, NamedTuple, Never, override
 
 from alpaca.data.live.stock import StockDataStream as AlpacaStockDataStream
 from alpaca.data.models.bars import Bar
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 from app.providers.alpaca.auth import get_credentials as get_alpaca_credentials
@@ -46,6 +46,8 @@ class ClientSession:
         self.id: int = id
         self.socket: WebSocket = socket
         self.outbox: Queue[str] = Queue(maxsize=outbox_size)
+        self.tickers: set[SubscribedTicker] = set() 
+        self.evicted: bool = False
     
     @override
     def __hash__(self):
@@ -65,8 +67,13 @@ class LiveStockDataFeed:
 
     Alpaca only allows one active market-data connection per free account, so one
     instance is meant to live for the app's whole lifetime (create it in
-    FastAPI's lifespan and stash it on app.state). `serve()` is then called
-    once per client connecting to the websocket route.
+    FastAPI's lifespan and stash it on app.state).
+
+    Scope: this class owns the *upstream* side -- the single Alpaca connection,
+    the registry of who wants which ticker, and the dispatcher that fans bars out
+    to per-client outboxes. It deliberately does not own any single socket's
+    lifecycle (accept, reader/writer tasks, teardown); that belongs to the
+    websocket route, which calls `new_client()` and `handle_client_message()`.
 
     Each client gets a ClientSession, which will be used to track subscriptions to 
     tickers per-client. Alpaca will produce data for many tickers, and clients will 
@@ -81,8 +88,12 @@ class LiveStockDataFeed:
         self.stream_client: AlpacaStockDataStream = AlpacaStockDataStream(api_key, api_secret)
         self.registry: defaultdict[SubscribedTicker, set[ClientSession]] = defaultdict(set) 
 
-        self.stream_task: asyncio.Task[None] = asyncio.create_task(asyncio.to_thread(self.stream_client.run))
+        # Started lazily on the first subscription -- see _start_stream_if_needed.
+        self.stream_task: asyncio.Task[None] | None = None
         self._dispatcher_task: asyncio.Task[Never] = asyncio.create_task(self._dispatcher())
+        self._dispatcher_task.add_done_callback(self._on_dispatcher_exit)
+
+        self._shutting_down: bool = False
 
         self._app_loop: asyncio.AbstractEventLoop = asyncio.get_running_loop()
 
@@ -93,60 +104,89 @@ class LiveStockDataFeed:
         return self
     
 
-    async def serve(self, websocket: WebSocket) -> None:
-        await websocket.accept()
+    def new_client(self, socket: WebSocket) -> ClientSession:
+        """Create the per-connection session (socket + outbox) for one client.
+
+        The feed owns session *identity* (id scheme, outbox sizing) but not the
+        connection's lifecycle -- accepting, pumping and tearing down a single
+        socket is the websocket route's job.
+        """
+        session = ClientSession(id=int(uuid.uuid4()), socket=socket)
+        logger.info(f"Client {session.id} connected.")
+        return session
+
+    def _start_stream_if_needed(self) -> None:
+        """Start the Alpaca thread on first use, once handlers exist.
+
+        _run_forever() spins on `await asyncio.sleep(0)` -- yielding but never
+        delaying -- until something is registered, which pegs a core for as long
+        as no client has subscribed. Calling subscribe_bars() first means the
+        gate is already open by the time the thread starts.
+
+        Safe to call from the app loop on that first subscription: the thread
+        hasn't connected yet, so `_running` is still False and _subscribe()
+        skips its blocking run_coroutine_threadsafe(...).result() path.
+        """
+        if self.stream_task is not None:
+            return
+        self.stream_task = asyncio.create_task(asyncio.to_thread(self.stream_client.run))
+        self.stream_task.add_done_callback(self._on_stream_exit)
+
+    def _on_stream_exit(self, task: asyncio.Task[None]) -> None:
+        """The stream thread exited. Nothing restarts it, so this is the only signal."""
+        if self._shutting_down:
+            return
+        logger.error(
+            "Alpaca stream thread exited unexpectedly. Live bars will not resume "
+            "until this process restarts. exception=%r",
+            task.exception() if not task.cancelled() else None,
+        )
+
+    def _on_dispatcher_exit(self, task: asyncio.Task[Never]) -> None:
+        """The dispatcher ended. Cancelled by close() is expected; anything else is not."""
+        if task.cancelled():
+            return
+        logger.error("Dispatcher task exited unexpectedly; no bars will be delivered.")
+    
+    def release_client(self, session: ClientSession) -> None:
+        """Unwind a session from the registry and release upstream subscriptions.
+
+        Synchronous on purpose: the dispatcher may need to call this directly,
+        and it sits inside the fan-out loop where awaiting is not an option.
+        Deliberately does not close the socket -- every path that needs a close
+        already has one (the client closed it, or the writer task closed it on
+        QueueShutDown), and starlette raises if you close a dead socket twice.
+        """
+        for ticker in list(session.tickers):
+            self._register_client_unsub(session, ticker)
+
         
-        client_uuid = int(uuid.uuid4()) # collisions possible but practically unlikely at this scale 
-        client = ClientSession(id=client_uuid, socket=websocket)
-        
-        logger.info(f"Client {client.id} connected.")
 
-        async def incoming_handler():
-            async for msg in websocket.iter_text():
-                try:
-                    validated_msg = RecievedMsgAdapter.validate_json(msg)
+    def handle_client_message(self, session: ClientSession, raw_msg: str) -> None:
+        """Parse one inbound client message and apply it to the registry.
 
-                    tickers: list[SubscribedTicker] = []
-                    if minute_bars := validated_msg.bars:
-                        for ticker in minute_bars:
-                            tickers.append(SubscribedTicker(ticker, "minute_bar"))
+        Deliberately knows nothing about sockets: it takes the session so it can
+        attribute the subscription, then mutates registry/alpaca state only.
+        """
+        try:
+            validated_msg = RecievedMsgAdapter.validate_json(raw_msg)
+        except ValidationError as e:
+            logger.info(f"Malformed message recieved to LiveStockDataFeed server: {e}")
+            return
 
-                    if daily_bars := validated_msg.dailyBars:
-                        for ticker in daily_bars:
-                            tickers.append(SubscribedTicker(ticker, "daily_bar"))
+        tickers: list[SubscribedTicker] = []
+        if minute_bars := validated_msg.bars:
+            tickers.extend(SubscribedTicker(ticker, "minute_bar") for ticker in minute_bars)
 
-                    if isinstance(validated_msg, SubscribeMsg):
-                        
-                        for ticker in tickers:
-                            self._register_client_sub(session=client, sub=ticker)
-                    else:
+        if daily_bars := validated_msg.dailyBars:
+            tickers.extend(SubscribedTicker(ticker, "daily_bar") for ticker in daily_bars)
 
-                        for ticker in tickers:
-                            self._register_client_unsub(session=client, unsub=ticker)
-
-                except ValidationError as e:
-                    # TODO: return some error to the client
-                    logger.info(f"Malformed message recieved to LiveStockDataFeed server: {e}")
-
-        async def outgoing_handler():
-
-            while True:
-                
-                payload = await client.outbox.get()
-
-                try:
-                    await client.socket.send_text(payload)
-                except WebSocketDisconnect:
-                    logger.info(f"Client {client.id} disconnected.")
-                    break
-
-        consumer_task = asyncio.create_task(incoming_handler())
-        producer_task = asyncio.create_task(outgoing_handler())
-        # when one task completes/stops, the other will also stop. Incoming and outgoing should live and die together.
-        done, pending = await asyncio.wait([consumer_task, producer_task], return_when=asyncio.FIRST_COMPLETED)
-
-        for task in pending:
-            task.cancel()
+        if isinstance(validated_msg, SubscribeMsg):
+            for ticker in tickers:
+                self._register_client_sub(session=session, sub=ticker)
+        else:
+            for ticker in tickers:
+                self._register_client_unsub(session=session, unsub=ticker)
 
     def _register_client_sub(self, session: ClientSession, sub: SubscribedTicker):
 
@@ -157,13 +197,19 @@ class LiveStockDataFeed:
                 case "minute_bar":
                     self.stream_client.subscribe_bars(self._enqueue_minute_bar, sub.name)
 
+            # After the subscribe, so _run_forever() finds handlers already registered.
+            self._start_stream_if_needed()
+
         self.registry[sub].add(session)
+        session.tickers.add(sub)
     
     def _register_client_unsub(self, session: ClientSession, unsub: SubscribedTicker):
         
         if unsub in self.registry and session in self.registry[unsub]:
             listeners = self.registry[unsub]
             listeners.remove(session)
+            session.tickers.remove(unsub)
+
             ref_ct = len(listeners)
 
             if ref_ct == 0:
@@ -182,18 +228,34 @@ class LiveStockDataFeed:
 
         while True:
 
-            bar, bar_kind = await self.alpaca_data_queue.get()
-            ticker = SubscribedTicker(bar.symbol, bar_kind)
+            # The dispatcher is a single point of failure: if this task dies, no
+            # client gets bars ever again. Everything after `get()` sits inside
+            # the guard, including the unpack -- a malformed item must not be
+            # able to kill the loop.
+            item = await self.alpaca_data_queue.get()
 
-            if listening_clients := self.registry.get(ticker):
-                for client in listening_clients:
-                    try:
-                        client.outbox.put_nowait(LiveBar(bar, bar_kind).to_json())
-                    except QueueFull:
-                        logger.info(f"Client {client.id}'s queue is full, closing client session.")
-                        # TODO: Don't await here, what if the listening_clients changes from incoming_handler while awaiting here?
-                        # Will raise RuntimeError: Set changes size during iteration.
-                        await client.socket.close()
+            try:
+                bar, bar_kind = item
+                ticker = SubscribedTicker(bar.symbol, bar_kind)
+                listening_clients = self.registry.get(ticker)
+
+                if listening_clients:
+                    payload = LiveBar(bar, bar_kind).to_json()
+
+                    for client in listening_clients:
+                        if client.evicted:
+                            continue
+
+                        try:
+                            client.outbox.put_nowait(payload)
+                        except QueueFull:
+                            client.evicted = True
+                            client.outbox.shutdown(immediate=True)
+                            logger.info(f"Client {client.id}'s outbox is full, evicting.")
+                        except QueueShutDown:
+                            logger.info(f"Client {client.id}'s outbox was written to after shutdown.")
+            except Exception:
+                logger.exception("Dispatcher failed to route a bar; dropping it.")
 
     async def _enqueue_minute_bar(self, bar: Bar | dict[Any, Any]) -> None:
         
@@ -211,8 +273,19 @@ class LiveStockDataFeed:
 
 
     async def close(self) -> None:
+        """Shut down the dispatcher and the stream thread. Safe to call at any time.
+
+        Tolerates a stream that was never started -- with lazy start, a backend
+        that never served a subscribing client has no stream_task at all.
+        """
+        self._shutting_down = True
+
+        self._dispatcher_task.cancel()
+        await asyncio.gather(self._dispatcher_task, return_exceptions=True)
+
+        if self.stream_task is None:
+            return
+
         await self.stream_client.stop_ws()
-        if self.stream_task:
-            await self.stream_task
-        if self._dispatcher_task:
-            await self._dispatcher_task
+        await self.stream_task
+
