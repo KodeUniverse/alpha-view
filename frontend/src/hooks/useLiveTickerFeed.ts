@@ -1,5 +1,5 @@
 import api from "@/api/client";
-import { OHLCVData, Ticker, LiveTickerFeedMessage } from "@shared/types";
+import { OHLCVData, Ticker, LiveTickerFeedMessage } from "@/types";
 import { useState, useEffect, useCallback } from "react";
 
 export function useLiveTickerFeed(

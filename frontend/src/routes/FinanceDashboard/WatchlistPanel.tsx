@@ -10,7 +10,7 @@ import {
 import { IconPlus, IconX } from "@tabler/icons-react";
 import StockChart from "@/components/StockChart.jsx";
 import { useState, useMemo } from "react";
-import { OHLCVData, PriceData, Ticker, LiveTickerFeedMessage } from "@shared/types";
+import { OHLCVData, PriceData, Ticker, LiveTickerFeedMessage } from "@/types";
 import {
   useWatchlist,
   useAddToWatchlist,

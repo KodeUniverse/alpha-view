@@ -1,5 +1,5 @@
 import { Select, Loader, ComboboxData } from "@mantine/core";
-import { Ticker } from "@shared/types";
+import { Ticker } from "@/types";
 import { useSymbolList } from "@/hooks/queries";
 
 function SearchBar({

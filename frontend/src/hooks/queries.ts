@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/client";
 
-import { Frequency, Ticker, NewsCategory } from "@shared/types";
+import { Frequency, Ticker, NewsCategory } from "@/types";
 
 export function useWatchlist() {
     return useQuery({

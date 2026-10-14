@@ -24,7 +24,7 @@ import {
   PriceData,
   Frequency,
   LiveTickerFeedMessage,
-} from "@shared/types";
+} from "@/types";
 import { useCallback, useEffect, useRef } from "react";
 import { sma, ema, bollingerBands } from "@/utils/indicators";
 

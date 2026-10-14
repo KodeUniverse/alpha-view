@@ -22,8 +22,7 @@
       "@routes/*": ["src/routes/*"],
       "@services/*": ["src/services/*"],
       "@assets/*": ["src/assets/*"],
-      "@utils/*": ["src/utils/*"],
-      "@shared/types": ["../shared/types"]
+      "@utils/*": ["src/utils/*"]
     },
     "types": ["node"]
   },

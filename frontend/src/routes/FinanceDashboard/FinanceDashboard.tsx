@@ -5,7 +5,7 @@ import ChartArea from "./ChartArea.jsx";
 import MetricsCard from "./MetricsCard.tsx";
 import WatchlistCard from "./WatchlistPanel.jsx";
 import { useState } from "react";
-import { Ticker } from "@shared/types";
+import { Ticker } from "@/types";
 import { Group, Stack } from "@mantine/core";
 
 function FinanceDashboard() {

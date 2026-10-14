@@ -8,7 +8,7 @@ import {
   SegmentedControl,
   Checkbox,
 } from "@mantine/core";
-import { OHLCData, Ticker, VolumeData, Frequency } from "@shared/types";
+import { OHLCData, Ticker, VolumeData, Frequency } from "@/types";
 import { useBarsForTicker } from "@/hooks/queries";
 import { useLiveTickerFeed } from "@/hooks/useLiveTickerFeed";
 import { useState, useMemo } from "react";

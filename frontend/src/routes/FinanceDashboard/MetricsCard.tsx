@@ -1,6 +1,6 @@
 import { useBasicFinancials, useBarsForTicker } from "@/hooks/queries";
 import { Card, Table, Text, Group } from "@mantine/core";
-import { StockBasicFinancials, Ticker } from "@shared/types";
+import { StockBasicFinancials, Ticker } from "@/types";
 import { computeQuantMetrics } from "@/utils/quant";
 import { useMemo } from "react";
 
