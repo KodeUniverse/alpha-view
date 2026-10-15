@@ -8,6 +8,7 @@ import "@mantine/core/styles.css";
 
 const theme = createTheme({
   primaryColor: "custom",
+  defaultRadius: "sm",
   colors: {
     custom: [
       "var(--color-highlighted)",

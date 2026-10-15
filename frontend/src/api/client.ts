@@ -301,7 +301,7 @@ const api = {
     return result;
   },
   getWatchListItems: async (listId: Number) => {
-    const items = await apiFetch(`/api/watchlists/${listId}`);
+    const items = await apiFetch(`/api/watchlists/${listId}/items`);
     const result = WatchListItemsSchema.parse(items);
     return result;
   },
@@ -316,7 +316,9 @@ const api = {
   addToWatchList: async (
     ticker: Ticker,
     listId: Number,
-    sortId: Number = 0,
+    // Omitted on purpose: the backend appends at the end (max SortId + 1) only when
+    // this is absent. Sending 0 collides with UniqueConstraint(ListId, SortId).
+    sortId?: number,
   ): Promise<WatchListTicker> => {
     const data = await apiFetch(`/api/watchlists/${listId}/items`, undefined, {
       method: "POST",

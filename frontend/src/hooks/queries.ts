@@ -9,19 +9,21 @@ export function useGetWatchLists() {
     queryFn: () => api.getWatchLists(),
   });
 }
-export function useWatchList() {
+export function useGetWatchListItems(listId: number | null) {
   return useQuery({
-    queryKey: ["watchlist"],
-    queryFn: () => api.getWatchList(),
+    queryKey: ["getWatchListItems", listId],
+    queryFn: () => api.getWatchListItems(listId!),
+    enabled: listId != null,
   });
 }
 
 export function useAddToWatchList() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (ticker: Ticker) => api.addToWatchList(ticker),
+    mutationFn: ({ ticker, listId }: { ticker: Ticker; listId: number }) =>
+      api.addToWatchList(ticker, listId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+      queryClient.invalidateQueries({ queryKey: ["getWatchListItems"] });
     },
   });
 }
@@ -29,9 +31,10 @@ export function useAddToWatchList() {
 export function useRemoveFromWatchList() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (symbol: string) => api.removeFromWatchList(symbol),
+    mutationFn: ({ ticker, listId }: { ticker: Ticker; listId: number }) =>
+      api.removeFromWatchList(ticker, listId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+      queryClient.invalidateQueries({ queryKey: ["getWatchListItems"] });
     },
   });
 }
