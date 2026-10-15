@@ -9,10 +9,6 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "0.0.0.0",
       port: 5379,
-      hmr: {
-        clientPort: Number(env.HOST_PORT),
-        port: 5379,
-      },
     },
     plugins: [react()],
     resolve: {
