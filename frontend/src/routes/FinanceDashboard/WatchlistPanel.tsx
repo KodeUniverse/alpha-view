@@ -13,7 +13,15 @@ import {
   Button,
   UnstyledButton,
 } from "@mantine/core";
-import { IconCaretDownFilled, IconX } from "@tabler/icons-react";
+import {
+  IconCaretDownFilled,
+  IconEdit,
+  IconPlaylistAdd,
+  IconPlaylistX,
+  IconPlus,
+  IconTrash,
+  IconX,
+} from "@tabler/icons-react";
 import StockChart from "@/components/StockChart.jsx";
 import { useState, useMemo } from "react";
 import {
@@ -75,7 +83,7 @@ function WatchListSelectButton(props) {
         <Text fw={"bold"} size="lg" mr="auto">
           Watchlists
         </Text>
-        <IconCaretDownFilled size={15} />
+        <IconCaretDownFilled size={12} />
       </Group>
     </UnstyledButton>
   );
@@ -88,9 +96,26 @@ function WatchListSelectMenu({ watchLists }: { watchLists: WatchList[] }) {
       </Menu.Target>
       <Menu.Dropdown>
         <Menu.Label>Lists</Menu.Label>
-        {watchLists.map((watchlist) => {
-          return <Menu.Item key={watchlist.id}>{watchlist.listName}</Menu.Item>;
-        })}
+        <Menu.RadioGroup>
+          {watchLists.map((watchlist) => {
+            return (
+              <Menu.RadioItem key={watchlist.id}>
+                {watchlist.listName}
+              </Menu.RadioItem>
+            );
+          })}
+        </Menu.RadioGroup>
+        <Menu.Divider />
+        <Menu.Label>Options</Menu.Label>
+        <Menu.Item leftSection={<IconPlus size={20} />}>
+          Create new watchlist
+        </Menu.Item>
+        <Menu.Item leftSection={<IconEdit size={20} />}>
+          Rename watchlist
+        </Menu.Item>
+        <Menu.Item leftSection={<IconTrash size={20} />} color="red">
+          Delete watchlist
+        </Menu.Item>
       </Menu.Dropdown>
     </Menu>
   );
