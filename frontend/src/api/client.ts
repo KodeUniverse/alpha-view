@@ -308,6 +308,7 @@ const api = {
   createWatchList: async (listName: string): Promise<WatchList> => {
     const res = await apiFetch("/api/watchlists", undefined, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ list_name: listName }),
     });
     const validated = WatchListSchema.parse(res);

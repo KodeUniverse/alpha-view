@@ -36,18 +36,6 @@ const theme = createTheme({
         },
       },
     },
-    CardHeader: {
-      styles: {
-        title: {
-          fontSize: "var(--font-size-lg)",
-          fontWeight: 700,
-          color: "var(--color-text-primary)",
-        },
-        subheader: {
-          color: "var(--color-text-secondary)",
-        },
-      },
-    },
     TextInput: {
       styles: {
         input: {
@@ -56,6 +44,38 @@ const theme = createTheme({
         },
         label: {
           color: "var(--color-text-primary)",
+        },
+      },
+    },
+    // Modal renders through a portal, so it doesn't inherit the Card's context --
+    // it needs its own surface treatment to match.
+    Modal: {
+      styles: {
+        content: {
+          backgroundColor: "var(--color-background-secondary)",
+          color: "var(--color-text-primary)",
+          border: "1px solid var(--color-background-tertiary)",
+          borderRadius: 10,
+        },
+        header: {
+          backgroundColor: "var(--color-background-secondary)",
+        },
+        title: {
+          color: "var(--color-text-primary)",
+          fontWeight: 700,
+        },
+        body: {
+          color: "var(--color-text-primary)",
+        },
+        close: {
+          color: "var(--color-text-secondary)",
+          "&:hover": {
+            backgroundColor: "var(--color-hover-overlay)",
+          },
+        },
+        // --color-shadow is rgba(0,0,0,0.1) -- too light for a backdrop.
+        overlay: {
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
         },
       },
     },

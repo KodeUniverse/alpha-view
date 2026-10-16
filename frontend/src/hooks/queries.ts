@@ -9,6 +9,23 @@ export function useGetWatchLists() {
     queryFn: () => api.getWatchLists(),
   });
 }
+export function useCreateWatchList() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listName }: { listName: string }) =>
+      api.createWatchList(listName),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["getWatchLists"] }),
+  });
+}
+export function useDeleteWatchList() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listId }: { listId: number }) => api.deleteWatchList(listId),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["getWatchLists"] }),
+  });
+}
 export function useGetWatchListItems(listId: number | null) {
   return useQuery({
     queryKey: ["getWatchListItems", listId],
@@ -22,9 +39,8 @@ export function useAddToWatchList() {
   return useMutation({
     mutationFn: ({ ticker, listId }: { ticker: Ticker; listId: number }) =>
       api.addToWatchList(ticker, listId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["getWatchListItems"] });
-    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["getWatchListItems"] }),
   });
 }
 

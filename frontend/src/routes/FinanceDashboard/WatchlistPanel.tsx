@@ -12,6 +12,9 @@ import {
   Menu,
   Button,
   UnstyledButton,
+  Modal,
+  Input,
+  Select,
 } from "@mantine/core";
 import {
   IconCaretDownFilled,
@@ -25,7 +28,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import StockChart from "@/components/StockChart.jsx";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import {
   OHLCVData,
   PriceData,
@@ -41,32 +44,15 @@ import {
   useBarsBySymbol,
   useGetWatchLists,
   useGetWatchListItems,
+  useCreateWatchList,
+  useDeleteWatchList,
 } from "@/hooks/queries";
 import { useLiveTickerFeed } from "@/hooks/useLiveTickerFeed";
+import { isSameTradingDay } from "@/utils/dates";
+import { useDisclosure } from "@mantine/hooks";
 
 interface WatchListCardProps {
   cardStyles?: React.CSSProperties;
-}
-
-function useMarketSession() {
-  return useMemo(() => {
-    const today = new Date();
-    const start = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-      9,
-      30,
-    );
-    const end = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-      16,
-      0,
-    );
-    return { start, end };
-  }, []);
 }
 
 function WatchListSelectButton(props) {
@@ -90,50 +76,156 @@ function WatchListSelectButton(props) {
     </UnstyledButton>
   );
 }
+
+function CreateWatchListModal({
+  opened,
+  closeHandler,
+}: {
+  opened: boolean;
+  closeHandler: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { mutate: createList } = useCreateWatchList();
+
+  const createListHandler = () => {
+    createList({ listName: inputRef.current.value });
+    closeHandler();
+  };
+  return (
+    <Modal
+      opened={opened}
+      onClose={closeHandler}
+      title="Create watchlist"
+      centered
+    >
+      <Stack gap={1}>
+        <Input.Wrapper label="List name">
+          <Input placeholder={"Stocks"} ref={inputRef} />
+        </Input.Wrapper>
+      </Stack>
+      <Stack mt={20}>
+        <Button ml="auto" variant="filled" onClick={createListHandler}>
+          Create
+        </Button>
+      </Stack>
+    </Modal>
+  );
+}
+
+function DeleteWatchListModal({
+  opened,
+  closeHandler,
+  watchlists,
+}: {
+  opened: boolean;
+  closeHandler: () => void;
+  watchlists: WatchList[];
+}) {
+  const [listName, setListName] = useState<string>(null);
+  const { mutate: deleteList } = useDeleteWatchList();
+
+  const deleteListHandler = useCallback(() => {
+    const listId = watchlists.find((list) => {
+      return list.listName === listName;
+    })?.id;
+    if (listId) {
+      deleteList({ listId });
+      closeHandler();
+    }
+  }, [listName]);
+
+  return (
+    <Modal
+      opened={opened}
+      onClose={closeHandler}
+      title="Delete watchlist"
+      centered
+    >
+      <Stack>
+        <Select
+          label="Watchlists"
+          data={watchlists.map((list) => {
+            return list.listName;
+          })}
+          value={listName}
+          onChange={(value) => setListName(value)}
+        />
+        <Button ml="auto" onClick={deleteListHandler}>
+          Delete
+        </Button>
+      </Stack>
+    </Modal>
+  );
+}
+
 function WatchListSelectMenu({
-  watchLists,
+  watchlists,
   selectedListId,
   onSelect,
 }: {
-  watchLists: WatchList[];
+  watchlists: WatchList[];
   selectedListId: number | null;
   onSelect: (id: number) => void;
 }) {
+  const [createListOpened, { open: createListOpen, close: createListClose }] =
+    useDisclosure(false);
+  const [deleteListOpened, { open: deleteListOpen, close: deleteListClose }] =
+    useDisclosure(false);
   return (
-    <Menu shadow="md" width={200} checkIcon={<IconCheck size={12} />}>
-      <Menu.Target>
-        <WatchListSelectButton />
-      </Menu.Target>
-      <Menu.Dropdown>
-        <Menu.Label>Lists</Menu.Label>
-        <Menu.RadioGroup
-          value={selectedListId === null ? null : String(selectedListId)}
-          onChange={(value) => onSelect(Number(value))}
-        >
-          {watchLists.map((watchlist) => {
-            return (
-              <Menu.RadioItem
-                key={watchlist.id}
-                value={watchlist.id.toString()}
-              >
-                {watchlist.listName}
-              </Menu.RadioItem>
-            );
-          })}
-        </Menu.RadioGroup>
-        <Menu.Divider />
-        <Menu.Label>Options</Menu.Label>
-        <Menu.Item leftSection={<IconPlus size={20} />}>
-          Create new watchlist
-        </Menu.Item>
-        <Menu.Item leftSection={<IconEdit size={20} />}>
-          Rename watchlist
-        </Menu.Item>
-        <Menu.Item leftSection={<IconTrash size={20} />} color="red">
-          Delete watchlist
-        </Menu.Item>
-      </Menu.Dropdown>
-    </Menu>
+    <>
+      {/**Modals**/}
+      <CreateWatchListModal
+        opened={createListOpened}
+        closeHandler={createListClose}
+      />
+      <DeleteWatchListModal
+        opened={deleteListOpened}
+        closeHandler={deleteListClose}
+        watchlists={watchlists}
+      />
+      {/**Select Menu**/}
+      <Menu shadow="md" width={200} checkIcon={<IconCheck size={12} />}>
+        <Menu.Target>
+          <WatchListSelectButton />
+        </Menu.Target>
+        <Menu.Dropdown>
+          <Menu.Label>Lists</Menu.Label>
+          <Menu.RadioGroup
+            value={selectedListId === null ? null : String(selectedListId)}
+            onChange={(value) => onSelect(Number(value))}
+          >
+            {watchlists?.map((watchlist) => {
+              return (
+                <Menu.RadioItem
+                  key={watchlist.id}
+                  value={watchlist.id.toString()}
+                >
+                  {watchlist.listName}
+                </Menu.RadioItem>
+              );
+            })}
+          </Menu.RadioGroup>
+          <Menu.Divider />
+          <Menu.Label>Options</Menu.Label>
+          <Menu.Item
+            leftSection={<IconPlus size={20} />}
+            onClick={createListOpen}
+          >
+            Create new watchlist
+          </Menu.Item>
+          <Menu.Item leftSection={<IconEdit size={20} />}>
+            Rename watchlist
+          </Menu.Item>
+          <Menu.Item
+            leftSection={<IconTrash size={20} />}
+            color="red"
+            onClick={deleteListOpen}
+          >
+            Delete watchlist
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    </>
   );
 }
 
@@ -151,19 +243,18 @@ function AddTickerMenu({
   const [query, setQuery] = useState("");
   const { data: symbols } = useSymbolList();
 
+  // track already watchlisted symbols to avoid showing.
   const taken = useMemo(() => new Set(existingSymbols), [existingSymbols]);
 
-  // /api/symbols returns every active US equity, so results only appear once the
-  // user has typed something and the list is capped.
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q || !symbols) return [];
     return symbols
       .filter(
-        (symbol) =>
-          !taken.has(symbol.symbol) &&
-          (symbol.symbol.toLowerCase().includes(q) ||
-            (symbol.name ?? "").toLowerCase().includes(q)),
+        (ticker) =>
+          !taken.has(ticker.symbol) &&
+          (ticker.symbol.toLowerCase().includes(q) ||
+            (ticker.name ?? "").toLowerCase().includes(q)),
       )
       .slice(0, ADD_TICKER_RESULT_LIMIT);
   }, [query, symbols, taken]);
@@ -248,7 +339,22 @@ function WatchListCard({ cardStyles }: WatchListCardProps) {
     [listItems],
   );
 
-  const { start, end } = useMarketSession();
+  // Ask for a generous intraday window rather than exactly today's session. A
+  // window of "today 09:30-16:00" returns nothing at all outside trading hours --
+  // before the open, after the close, overnight, or across a weekend/holiday --
+  // which leaves the mini charts blank. With a lookback, the newest-session anchor
+  // inside WatchListItem selects whichever session actually has data.
+  // Memoized: useBarsBySymbol keys on start/end .getTime(), so an inline
+  // `new Date()` would refetch on every live tick.
+  const intradayWindow = useMemo(() => {
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(start.getDate() - 7);
+    return { start, end };
+  }, []);
+
+  // this dailyStart and dailyEnd are fed to computePrevClose to compute % chg from
+  // the last trading day close. It looks thru the last 10 days to find the most recent last close.
   const dailyStart = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 10);
@@ -256,14 +362,13 @@ function WatchListCard({ cardStyles }: WatchListCardProps) {
   }, []);
   const dailyEnd = useMemo(() => new Date(), []);
 
-  // Hooks stay unconditional and are batched at the card level: one WebSocket
-  // subscription and one request per frequency, instead of one of each per row.
+  // a live feed subscription and a historical
   const liveMessages = useLiveTickerFeed(tickers);
   const { data: intradayBars } = useBarsBySymbol(
     tickers,
     "intraday",
-    start,
-    end,
+    intradayWindow.start,
+    intradayWindow.end,
   );
   const { data: dailyBars } = useBarsBySymbol(
     tickers,
@@ -291,14 +396,9 @@ function WatchListCard({ cardStyles }: WatchListCardProps) {
 
   return (
     <Card style={{ ...cardStyles, display: "flex", alignItems: "center" }}>
-      <Group
-        display="flex"
-        w="100%"
-        align="center"
-        justify="space-between"
-      >
+      <Group display="flex" w="100%" align="center" justify="space-between">
         <WatchListSelectMenu
-          watchLists={watchlists ?? []}
+          watchlists={watchlists ?? []}
           selectedListId={selectedList?.id ?? null}
           onSelect={setSelectedListId}
         />
@@ -379,14 +479,6 @@ function computePrevClose(
   return prior[prior.length - 1].close;
 }
 
-function isSameTradingDay(time: Date, reference: Date): boolean {
-  return (
-    time.getFullYear() === reference.getFullYear() &&
-    time.getMonth() === reference.getMonth() &&
-    time.getDate() === reference.getDate()
-  );
-}
-
 interface WatchListItemProps {
   ticker: Ticker;
   liveMessage: LiveTickerFeedMessage | undefined;
@@ -404,14 +496,32 @@ function WatchListItem({
 }: WatchListItemProps) {
   const { mutate: removeTicker } = useRemoveFromWatchList();
 
-  // The mini chart is scoped to the current trading day. The query already asks
-  // the server for today only, but clamping here also stops a live tick from
-  // outside the window (premarket, a stale replay) from stretching the x-axis,
-  // since StockChart.update() expands the visible range to fit whatever it gets.
-  const today = new Date();
+  // The mini chart shows ONE trading session -- never a mix of two on one axis,
+  // and never a stray out-of-window tick stretching the range (StockChart.update()
+  // expands the visible range to fit whatever it is handed).
+  //
+  // The anchor is the newest timestamp we actually hold, NOT `new Date()`.
+  // Anchoring to the clock blanked the chart whenever the fetched window didn't
+  // line up with the current day. Anchoring to the data means today during the
+  // session, the last session overnight, and the last session across weekends and
+  // holidays -- with no timer and no trading calendar involved.
+  const anchor = useMemo(() => {
+    const newestBar = intradayBars.reduce<Date | null>(
+      (newest, bar) =>
+        newest === null || bar.time > newest ? bar.time : newest,
+      null,
+    );
+    const candidates = [newestBar, liveMessage?.minuteBar.time ?? null].filter(
+      (d): d is Date => d !== null,
+    );
+    return candidates.reduce<Date>(
+      (newest, d) => (d > newest ? d : newest),
+      new Date(0),
+    );
+  }, [intradayBars, liveMessage]);
 
   const priceData: PriceData[] = intradayBars
-    .filter((bar) => isSameTradingDay(bar.time, today))
+    .filter((bar) => isSameTradingDay(bar.time, anchor))
     .map((bar) => ({
       value: bar.close,
       time: bar.time,
@@ -419,12 +529,13 @@ function WatchListItem({
 
   const todayLiveMessage: LiveTickerFeedMessage | undefined = liveMessage && {
     dailyBar:
-      liveMessage.dailyBar && isSameTradingDay(liveMessage.dailyBar.time, today)
+      liveMessage.dailyBar &&
+      isSameTradingDay(liveMessage.dailyBar.time, anchor)
         ? liveMessage.dailyBar
         : null,
     minuteBar:
       liveMessage.minuteBar &&
-      isSameTradingDay(liveMessage.minuteBar.time, today)
+      isSameTradingDay(liveMessage.minuteBar.time, anchor)
         ? liveMessage.minuteBar
         : null,
   };
