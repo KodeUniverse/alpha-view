@@ -47,18 +47,30 @@ export const TickerSchema = z.object({
   exchange: z.string().optional(),
 });
 
-export const WatchListSchema = z.object({
-  id: z.number(),
-  listName: z.string(),
-});
+// The backend persists watchlist columns in PascalCase (see
+// backend/app/database/watchlist.py), so the wire format is `Id`/`ListName`. Validate the
+// shape we actually receive, then transform to the camelCase shape the app consumes --
+// `z.infer` still yields `{ id, listName }`, so call sites are unaffected.
+export const WatchListSchema = z
+  .object({ Id: z.number(), ListName: z.string() })
+  .transform((v) => ({ id: v.Id, listName: v.ListName }));
 
-export const WatchListTickerSchema = z.object({
-  id: z.number(),
-  listId: z.number(),
-  ticker: z.string(),
-  name: z.string(),
-  sortId: z.number(),
-});
+// `Name` is `str | None` on the backend (WatchlistItemResponse), hence .nullable().
+export const WatchListTickerSchema = z
+  .object({
+    Id: z.number(),
+    ListId: z.number(),
+    Ticker: z.string(),
+    Name: z.string().nullable(),
+    SortId: z.number(),
+  })
+  .transform((v) => ({
+    id: v.Id,
+    listId: v.ListId,
+    ticker: v.Ticker,
+    name: v.Name,
+    sortId: v.SortId,
+  }));
 
 export const LiveTickerFeedMessageSchema = z.object({
   dailyBar: OHLCVDataSchema.nullable(),
