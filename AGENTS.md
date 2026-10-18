@@ -31,8 +31,10 @@ mockups/    design mockups
 screenshots/ README assets
 ```
 
-Area-specific guidance lives in `backend/AGENTS.md` and `frontend/AGENTS.md`. Those
-files are loaded automatically when work happens inside those directories.
+**Read `backend/AGENTS.md` or `frontend/AGENTS.md` before reasoning about backend or
+frontend code.** They hold the constraints behind the live-feed fan-out, the test
+monkeypatching, the live subscription effect deps, and the Docker mount boundary —
+each a defect already hit. Don't infer the reasoning from the code.
 
 ## Workflow
 
@@ -92,12 +94,6 @@ relevant; do not change them silently as part of an unrelated task.
 
 - Backend `NewsCategory` omits `"crypto"`, while the frontend zod enum includes it.
   A `crypto` news request is rejected by the backend.
-- `getFinancials` in `frontend/src/api/client.ts` is unvalidated; there is a TODO in
-  the code. Do not assume its return shape is checked.
-- `backend/app/dependencies.py` is empty and unused. The watchlist router pulls
-  `get_session` directly from `app.database`.
-- Some frontend imports carry a `.jsx` extension while the files are `.tsx`. Vite
-  resolves them; do not "fix" them in passing.
 - A stale path comment in `frontend/src/api/client.ts` references
   `backend/src/providers/alpacaStream.ts`, which does not exist.
 - Root `.gitignore` ignores `package-lock.json`, but `frontend/package-lock.json` is

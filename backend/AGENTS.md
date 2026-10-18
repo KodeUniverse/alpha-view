@@ -69,7 +69,8 @@ via `result.mappings().one()`, `.one_or_none()`, or `.all()`. Schema creation is
 `init_database_schema()` called from the lifespan.
 
 `get_session` is a FastAPI dependency. `app/dependencies.py` is empty and unused;
-do not treat it as the convention to follow.
+do not treat it as the convention to follow. The watchlist router pulls `get_session`
+directly from `app.database`.
 
 Provider SDKs are synchronous, so every blocking SDK call is wrapped in
 `asyncio.to_thread`. Keep that wrapper.
