@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
 import { FeedSocketState } from "@/api/client";
 import { FeedHealth, MarketClock } from "@/types";
+
+// Pure derivation only -- anything touching React lives in hooks/ (see hooks/useNow.ts).
+//
+// `FeedStatus` is hand-written rather than zod-derived, which is a deliberate exception to
+// the schema rule: it is derived view state computed from already-validated inputs, never a
+// shape that crosses the network, so there is no response for a schema to parse.
 
 // Alpaca publishes a minute bar per minute while a symbol trades, so a gap longer than this
 // during open hours means something is wrong. Deliberately generous: an illiquid ticker can
@@ -76,19 +81,7 @@ export function deriveFeedStatus(input: {
 }
 
 /**
- * Re-render on a timer.
- *
- * Staleness cannot be evaluated on bar arrival: a dead feed produces no bars, which means
- * no re-render, which means a memo reading Date.now() would freeze on the last good value
- * and report LIVE on a feed that died five minutes ago.
+ * Exported so the indicator component can type its prop off the derivation instead of
+ * restating the shape by hand.
  */
-export function useNow(intervalMs = 5_000): number {
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), intervalMs);
-    return () => clearInterval(id);
-  }, [intervalMs]);
-
-  return now;
-}
+export type { FeedStatus, FeedState };

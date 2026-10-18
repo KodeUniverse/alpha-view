@@ -39,7 +39,8 @@ import {
   INDICATOR_COLOR_TOKENS,
   getComputedColor,
 } from "@/utils/colors";
-import { deriveFeedStatus, useNow } from "@/utils/feedStatus";
+import { deriveFeedStatus, FeedStatus } from "@/utils/feedStatus";
+import { useNow } from "@/hooks/useNow";
 
 type ChartRange = "1d" | "5d" | "3m" | "6m" | "1y" | "3y" | "Max";
 
@@ -57,11 +58,7 @@ interface ChartAreaProps {
 }
 
 interface FeedStatusIndicatorProps {
-  status: {
-    state: "live" | "closed" | "down";
-    label: string;
-    detail: string;
-  };
+  status: FeedStatus;
   rootStyles?: React.CSSProperties;
 }
 
