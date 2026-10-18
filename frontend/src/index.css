@@ -44,11 +44,13 @@
 [data-mantine-color-scheme="dark"] {
   --mantine-color-body: var(--color-background-primary);
   --mantine-color-text: var(--color-text-primary);
+  --color-hover-overlay: rgba(255, 255, 255, 0.06);
 }
 
 [data-mantine-color-scheme="light"] {
   --mantine-color-body: var(--color-background-primary);
   --mantine-color-text: var(--color-text-primary);
+  --color-hover-overlay: rgba(0, 0, 0, 0.03);
 }
 
 /* GLOBAL STYLING */
@@ -62,7 +64,8 @@ body {
   font-family: var(--font-family);
   background-color: var(--color-background-primary);
   color: var(--color-text-primary);
-  background-image: radial-gradient(
+  background-image:
+    radial-gradient(
       1200px 700px at 50% -10%,
       rgba(38, 166, 154, 0.07),
       transparent 60%
@@ -88,6 +91,14 @@ body {
 
 .news-item:hover {
   border-color: var(--color-highlighted);
+}
+
+.watchlist-select-button {
+  transition: background-color 0.2s ease-in-out;
+}
+
+.watchlist-select-button:hover {
+  background-color: var(--color-hover-overlay);
 }
 
 html {

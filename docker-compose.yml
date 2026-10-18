@@ -5,13 +5,12 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts
     develop:
       watch:
-        - action: sync
-          path: ./frontend
-          target: /app
-          ignore:
-            - node_modules
         - action: rebuild
           path: ./frontend/package.json
         - action: rebuild

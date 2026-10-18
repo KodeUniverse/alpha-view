@@ -12,6 +12,7 @@ import { OHLCData, Ticker, VolumeData, Frequency } from "@/types";
 import { useBarsForTicker } from "@/hooks/queries";
 import { useLiveTickerFeed } from "@/hooks/useLiveTickerFeed";
 import { useState, useMemo } from "react";
+import { isSameTradingDay } from "@/utils/dates";
 
 type ChartRange = "1d" | "5d" | "3m" | "6m" | "1y" | "3y" | "Max";
 
@@ -236,31 +237,43 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
       })
     : null;
 
-  const { lastPrice, change, percentChange } = useMemo(() => {
-    const liveClose =
-      tick?.minuteBar?.close ?? tick?.dailyBar?.close;
-    const lastPrice =
-      liveClose ??
-      (priceData && priceData.length > 0
-        ? priceData[priceData.length - 1].close
-        : null);
-    let prevClose: number | null = null;
+  const { lastPrice, change, percentChange, showChange } = useMemo(() => {
+    // The live feed carries BOTH a minute bar and a daily bar, updated every
+    // minute. Which one is authoritative depends on the selected frequency:
+    // intraday tracks the minute bar, everything else tracks the running daily
+    // bar. The minute bar is always the fresher print of the two, but comparing
+    // it against prevClose on a daily chart would mix series.
+    const liveBar = frequency === "intraday" ? tick?.minuteBar : tick?.dailyBar;
+    const lastSeriesBar =
+      priceData && priceData.length > 0 ? priceData[priceData.length - 1] : null;
+    const shownBar = liveBar ?? lastSeriesBar;
+    const lastPrice = shownBar ? shownBar.close : null;
+
+    let prevCloseBar: OHLCData | null = null;
     if (dailyBars) {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
       const prior = dailyBars.filter((bar) => bar.time < todayStart);
-      if (prior.length > 0) prevClose = prior[prior.length - 1].close;
+      if (prior.length > 0) prevCloseBar = prior[prior.length - 1];
     }
-    if (lastPrice != null && prevClose != null) {
-      const change = lastPrice - prevClose;
+
+    if (lastPrice != null && prevCloseBar != null) {
+      const change = lastPrice - prevCloseBar.close;
+      // When the newest price and the previous close come from the SAME calendar
+      // day, the comparison is a value against itself -- the market is shut and
+      // nothing has moved since that session's close. Reporting 0.00% there reads
+      // as "flat today" when it actually means "not trading", so show nothing.
+      const sameSession =
+        shownBar != null && isSameTradingDay(shownBar.time, prevCloseBar.time);
       return {
         lastPrice,
         change,
-        percentChange: (change / prevClose) * 100,
+        percentChange: (change / prevCloseBar.close) * 100,
+        showChange: !sameSession,
       };
     }
-    return { lastPrice, change: null, percentChange: null };
-  }, [tick, priceData, dailyBars]);
+    return { lastPrice, change: null, percentChange: null, showChange: false };
+  }, [tick, priceData, dailyBars, frequency]);
 
   const isUp = change != null && change >= 0;
   const changeColor = change == null ? "var(--color-text-secondary)" : isUp ? "#26a69a" : "#ef5350";
@@ -316,9 +329,9 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {percentChange != null
+                  {percentChange != null && showChange
                     ? `${isUp ? "+" : ""}${percentChange.toFixed(2)}%`
-                    : ""}
+                    : "—"}
                 </Text>
               </Group>
             </Group>

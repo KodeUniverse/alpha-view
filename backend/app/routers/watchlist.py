@@ -176,7 +176,46 @@ async def delete_watchlist(list_id: int, session: AsyncSession = Depends(get_ses
     if deleted is None:
         await session.rollback()
         raise HTTPException(404, f"No watchlist with id {list_id} found.")
-    
+
+    # SQLite ignores the ON DELETE CASCADE on watch_list_item.ListId unless the
+    # foreign_keys pragma is on, so the rows go explicitly.
+    stmt = delete(watch_list_item).where(watch_list_item.c.ListId == list_id).returning(watch_list_item.c.ListId)
+    await session.execute(stmt)
+
     await session.commit()
     logger.info("Deleted watchlist with id %s", list_id)
+
+@router.patch("/watchlists/{list_id}", response_model=WatchlistResponse)
+async def rename_watchlist(
+    list_id: int, list_name: str, session: AsyncSession = Depends(get_session)
+):
+    list_name = list_name.strip()
+    if not list_name:
+        raise HTTPException(400, "Watchlist name cannot be empty.")
+
+    stmt = (
+        watch_list.update()
+        .where(watch_list.c.Id == list_id)
+        .values(ListName=list_name)
+        .returning(watch_list)
+    )
+
+    try:
+        result = await session.execute(stmt)
+        renamed = result.mappings().one_or_none()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            409, "Watchlist name already exists. Watchlists must have unique names."
+        )
+
+    if renamed is None:
+        await session.rollback()
+        raise HTTPException(404, f"No watchlist with id {list_id} found.")
+
+    await session.commit()
+    logger.info("Renamed watchlist with id %s to %s", list_id, list_name)
+
+    return renamed
+
 
