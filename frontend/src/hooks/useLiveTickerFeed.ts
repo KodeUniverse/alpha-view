@@ -1,4 +1,4 @@
-import api from "@/api/client";
+import api, { FeedSocketState } from "@/api/client";
 import { OHLCVData, Ticker, LiveTickerFeedMessage } from "@/types";
 import { useState, useEffect, useCallback } from "react";
 
@@ -38,4 +38,20 @@ export function useLiveTickerFeed(
   }, [onTick, JSON.stringify(tickers.map((t) => t.symbol))]);
 
   return messages;
+}
+
+// This tab's own connection to the backend relay, which /health cannot report: the backend
+// can be perfectly healthy while this socket is dead. Lives beside the feed hook because it
+// is the same lifecycle.
+export function useFeedSocketState(): FeedSocketState {
+  const [state, setState] = useState<FeedSocketState>("connecting");
+
+  useEffect(() => {
+    // Read once up front: the socket may already be open (StrictMode remounts, a late
+    // subscription) and the listener only fires on transitions.
+    setState(api.getFeedState());
+    return api.subscribeFeedState(setState);
+  }, []);
+
+  return state;
 }

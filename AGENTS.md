@@ -84,6 +84,11 @@ gate that exists.
   schemas the frontend validates every response against, and backend Pydantic models
   in `app/schemas/` are the source shapes. A field rename on one side needs a
   matching change on the other, in the same commit.
+- **Color is tokenized, not literal.** Both color schemes are defined by CSS custom
+  properties in `frontend/src/index.css`. Any color a change needs must resolve to one
+  of them, whether it lands in JSX, a `style` prop, or a canvas chart series — add the
+  token under both schemes if it does not exist yet. `frontend/src/utils/colors.ts`
+  resolves a token name to a concrete value. See `frontend/AGENTS.md`.
 - **Secrets and artifacts are not source.** Never commit `.env`, `*.db`,
   `*.sqlite`, `dist/`, or `*.tsbuildinfo`. `.env.example` is the committed template.
 

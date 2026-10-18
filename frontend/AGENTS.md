@@ -127,10 +127,24 @@ Mantine v9, dark by default with a Navbar toggle.
 - **Colors are CSS custom properties in `src/index.css`**: `--color-background-primary`
   / `-secondary` / `-tertiary`, `--color-text-primary` / `-secondary`,
   `--color-border`, `--color-highlighted`, `--color-hover-overlay`, `--color-chart-grid`,
+  `--color-chart-up` / `-down` / `-up-fill` / `-down-fill`,
+  `--color-indicator-sma` / `-ema` / `-bollinger-mid` / `-bollinger-band`,
   `--font-*`. A light-scheme override lives under `[data-mantine-color-scheme="light"]`.
-- **Add new tokens there.** Do not hardcode hex or rgba values inline in JSX. The few
-  exceptions in `main.tsx` (`#333333` border, the `rgba(0,0,0,0.6)` overlay) are
-  deliberate and commented; they are not a license to add more.
+- **Add new tokens there.** Every color a change needs must resolve to one of these
+  properties -- not hex, not `rgb()`/`rgba()`, not an 8-digit hex carrying an alpha byte.
+  Anywhere: JSX, `style` props, `utils/`, and values handed to a canvas.
+  `src/utils/colors.ts` holds `getComputedColor(token)` plus the `CHART_COLOR_TOKENS` /
+  `INDICATOR_COLOR_TOKENS` name maps; lightweight-charts reads tokens through it, the same
+  way it already reads `--color-chart-grid`. When no token fits, **add one** under both
+  color schemes before using it. The two exceptions in `main.tsx` (`#333333` border, the
+  `rgba(0,0,0,0.6)` overlay) are deliberate and commented; they are not a license to add
+  more.
+- **In a `style` prop, prefer the token reference over the resolved value.**
+  `` `var(${CHART_COLOR_TOKENS.up})` `` resolves in the browser and follows a theme toggle
+  for free; `getComputedColor()` reads the value once, at the moment it is called.
+- **A token that a function post-processes must keep a compatible format.** The SMA/EMA
+  tokens are 6-digit hex because `moverColor()` appends an alpha byte to build the period
+  fade. An `oklch()` value there yields a malformed color rather than an error.
 - Global component overrides go through `createTheme` in `src/main.tsx` — `Card`,
   `TextInput`, and `Modal` are configured there. `Modal` needs its own rules because
   it portals out of the `Card` context. The `cssVariablesResolver` maps Mantine vars

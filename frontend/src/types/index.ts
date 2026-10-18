@@ -9,6 +9,7 @@ export {
   StockBasicFinancialsSchema,
   WatchListSchema,
   WatchListTickerSchema,
+  MarketClockSchema,
 } from "./stock.js";
 export type {
   OHLCVData,
@@ -21,10 +22,11 @@ export type {
   StockBasicFinancials,
   WatchList,
   WatchListTicker,
+  MarketClock,
 } from "./stock.js";
 
 export { NewsCategorySchema, NewsArticleSchema } from "./news.js";
 export type { NewsArticle, NewsCategory } from "./news.js";
 
-export { MarketDataProviderNameSchema } from "./provider.js";
-export type { MarketDataProviderName } from "./provider.js";
+export { MarketDataProviderNameSchema, FeedHealthSchema } from "./provider.js";
+export type { MarketDataProviderName, FeedHealth } from "./provider.js";

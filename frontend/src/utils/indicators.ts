@@ -153,30 +153,24 @@ export function indicatorWarmupStart(
 // reads at a glance and the period is carried by weight instead of by hue. Alpha and width fall
 // off with the period rank: the shortest average is the strongest line, the longest is a faint
 // background reference. Exported so the settings menu can swatch the exact line it toggles.
-export const MOVER_COLORS = {
-  sma: "#f0b90b",
-  ema: "#3b82f6",
-} as const;
-
+//
+// Colors live as tokens (see INDICATOR_COLOR_TOKENS) so they follow the active theme; the
+// ramp below takes an already-resolved base rather than reading one itself, which keeps this
+// module free of DOM access and identical for the chart and the menu swatches.
 export const MOVER_ALPHA = [1, 0.78, 0.6, 0.45] as const;
 
 export const MOVER_LINE_WIDTH: LineWidth[] = [2, 2, 1, 1];
 
-export const BOLLINGER_COLORS = {
-  mid: "rgba(225, 32, 102, 0.85)",
-  band: "rgba(225, 32, 102, 0.45)",
-} as const;
+export type MoverFamily = "sma" | "ema";
 
-export type MoverFamily = keyof typeof MOVER_COLORS;
-
-// 8-digit hex is CSS Color 4 and is what lightweight-charts hands to the canvas, so the ramp is
-// a base hue plus an alpha byte rather than a hand-written rgba() for every period.
-export function moverColor(family: MoverFamily, period: number): string {
+// `base` must be a 6-digit hex: the ramp appends an alpha byte to it. That constraint is why
+// the SMA/EMA tokens in index.css are 6-digit hex and cannot be an rgb()/oklch() value.
+export function moverColor(base: string, period: number): string {
   const rank = Math.min(PERIOD_RANK[period] ?? 0, MOVER_ALPHA.length - 1);
   const alphaByte = Math.round(MOVER_ALPHA[rank] * 255)
     .toString(16)
     .padStart(2, "0");
-  return `${MOVER_COLORS[family]}${alphaByte}`;
+  return `${base}${alphaByte}`;
 }
 
 export function moverLineWidth(period: number): LineWidth {

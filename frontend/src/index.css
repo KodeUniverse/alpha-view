@@ -15,6 +15,28 @@
 
   --color-chart-grid: rgba(45, 82, 82, 0.3);
 
+  /* Chart series. Repeated verbatim in the light block below -- same as
+     --color-chart-grid -- so light mode can be tuned as a one-line change without
+     disturbing the dark values. */
+  --color-chart-up: #26a69a;
+  --color-chart-down: #ef5350;
+  --color-chart-up-fill: rgba(38, 166, 154, 0.28);
+  --color-chart-down-fill: rgba(239, 83, 80, 0.28);
+
+  /* Indicator lines. The SMA and EMA tokens MUST stay 6-digit hex: StockChart builds the
+     per-period fade by appending an alpha byte, so an rgb()/oklch() value here would produce
+     a malformed color rather than an error. */
+  --color-indicator-sma: #f0b90b;
+  --color-indicator-ema: #3b82f6;
+  --color-indicator-bollinger-mid: rgba(225, 32, 102, 0.85);
+  --color-indicator-bollinger-band: rgba(225, 32, 102, 0.45);
+
+  /* Feed status. Shares the chart's up/down hues on purpose: the header already teaches
+     that teal means rising and red means falling, and reusing them keeps the vocabulary to
+     two signals. */
+  --color-feed-live: #26a69a;
+  --color-feed-down: #ef5350;
+
   /* Fonts */
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-size-sm: 0.875rem;
@@ -38,6 +60,21 @@
   --color-highlighted: rgba(225, 32, 102, 0.5);
 
   --color-chart-grid: rgba(45, 82, 82, 0.3);
+
+  /* Chart series -- see the note on the dark values above. */
+  --color-chart-up: #26a69a;
+  --color-chart-down: #ef5350;
+  --color-chart-up-fill: rgba(38, 166, 154, 0.28);
+  --color-chart-down-fill: rgba(239, 83, 80, 0.28);
+
+  /* Indicator lines -- must remain 6-digit hex, see the note above. */
+  --color-indicator-sma: #f0b90b;
+  --color-indicator-ema: #3b82f6;
+  --color-indicator-bollinger-mid: rgba(225, 32, 102, 0.85);
+  --color-indicator-bollinger-band: rgba(225, 32, 102, 0.45);
+
+  --color-feed-live: #26a69a;
+  --color-feed-down: #ef5350;
 }
 
 /* Mantine theme overrides */
@@ -99,6 +136,42 @@ body {
 
 .watchlist-select-button:hover {
   background-color: var(--color-hover-overlay);
+}
+
+.feed-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.feed-status-dot--live {
+  background-color: var(--color-feed-live);
+  animation: feed-status-pulse 2s ease-in-out infinite;
+}
+
+.feed-status-dot--closed {
+  background-color: var(--color-text-secondary);
+}
+
+.feed-status-dot--down {
+  background-color: var(--color-feed-down);
+}
+
+@keyframes feed-status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-status-dot--live {
+    animation: none;
+  }
 }
 
 html {

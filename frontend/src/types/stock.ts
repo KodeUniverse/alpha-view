@@ -20,6 +20,12 @@ export const OHLCVDataSchema = z.object({
   volume: z.number(),
   symbol: z.string().optional(),
   frequency: FrequencySchema.optional(),
+  // Stamped by the socket handler on arrival, never sent by the backend -- which is why it
+  // is optional and why the REST responses still parse. Alpaca's `time` carries an
+  // exchange-local offset, so measuring how long ago a bar arrived against it would fold the
+  // viewer's timezone and clock skew into the result. Receipt time answers "is data still
+  // coming in" directly.
+  receivedAt: z.number().optional(),
 });
 
 export const OHLCDataSchema = z.object({
@@ -76,6 +82,20 @@ export const LiveTickerFeedMessageSchema = z.object({
   dailyBar: OHLCVDataSchema.nullable(),
   minuteBar: OHLCVDataSchema.nullable(),
 });
+
+// Alpaca's trading clock. snake_case on the wire, camelCase in the app -- same shape as the
+// watchlist schemas' transform.
+export const MarketClockSchema = z
+  .object({
+    is_open: z.boolean(),
+    next_open: z.coerce.date(),
+    next_close: z.coerce.date(),
+  })
+  .transform((v) => ({
+    isOpen: v.is_open,
+    nextOpen: v.next_open,
+    nextClose: v.next_close,
+  }));
 
 export const StockBasicFinancialsSchema = z.object({
   // Valuation
@@ -142,6 +162,7 @@ export const StockBasicFinancialsSchema = z.object({
 //====================================================================================================
 
 export type Frequency = z.infer<typeof FrequencySchema>;
+export type MarketClock = z.infer<typeof MarketClockSchema>;
 export type OHLCVData = z.infer<typeof OHLCVDataSchema>;
 export type OHLCData = z.infer<typeof OHLCDataSchema>;
 export type PriceData = z.infer<typeof PriceDataSchema>;
