@@ -11,6 +11,10 @@ import {
   WatchList,
   WatchListTickerSchema,
   WatchListTicker,
+  MarketClock,
+  MarketClockSchema,
+  FeedHealth,
+  FeedHealthSchema,
 } from "@/types";
 import * as z from "zod";
 
@@ -37,6 +41,17 @@ async function apiFetch(
   if (res.status === 204) return undefined;
   const data = await res.json();
   return data;
+}
+
+// `/health` answers 503 when the feed is degraded, and that IS the answer we asked for --
+// the body is identical either way, only the status differs. apiFetch throws on any non-ok,
+// which would turn a readable `"status": "degraded"` into an opaque network error, so this
+// path reads the body regardless of status code.
+async function apiFetchAllowingStatus(path: string): Promise<unknown> {
+  const endpoint = new URL(`${import.meta.env.API_URL}${path}`);
+  const res = await fetch(endpoint);
+  if (res.status === 204) return undefined;
+  return await res.json();
 }
 const TickerArraySchema = z.array(TickerSchema);
 
@@ -75,12 +90,48 @@ type LiveTickListener = (data: OHLCVData) => void;
 
 const LIVE_FEED_RECONNECT_DELAY_MS = 2000;
 
+/**
+ * This browser tab's connection to the backend relay.
+ *
+ * Distinct from the backend's own view of Alpaca, which `/health` reports: a sleeping
+ * laptop or a network blip leaves the backend perfectly healthy while this tab receives
+ * nothing. Both are needed to tell "the pipeline is fine" from "I am receiving".
+ */
+export type FeedSocketState = "connecting" | "open" | "closed";
+
+function toFeedSocketState(socket?: WebSocket): FeedSocketState {
+  if (!socket) return "closed";
+  if (socket.readyState === WebSocket.OPEN) return "open";
+  if (socket.readyState === WebSocket.CONNECTING) return "connecting";
+  return "closed";
+}
+
 class LiveTickerFeed {
   private socket?: WebSocket;
   private intentionalClose = false;
   private reconnectTimeout?: ReturnType<typeof setTimeout>;
   private readonly subscriptions = new Set<string>();
   private readonly listeners = new Map<string, Set<LiveTickListener>>();
+  private readonly stateListeners = new Set<(state: FeedSocketState) => void>();
+
+  getState(): FeedSocketState {
+    if (this.socket) return toFeedSocketState(this.socket);
+    // No socket on a fresh page load means "not started yet", not "disconnected" -- without
+    // this the status indicator reports FEED DOWN before the mount effect has run once.
+    return this.subscriptions.size > 0 ? "closed" : "connecting";
+  }
+
+  subscribeState(listener: (state: FeedSocketState) => void): () => void {
+    this.stateListeners.add(listener);
+    return () => {
+      this.stateListeners.delete(listener);
+    };
+  }
+
+  private notifyState(): void {
+    const state = this.getState();
+    for (const listener of this.stateListeners) listener(state);
+  }
 
   subscribe(tickers: Ticker[], onTick: LiveTickListener) {
     const added: string[] = [];
@@ -138,6 +189,7 @@ class LiveTickerFeed {
 
     this.socket.addEventListener("open", () => {
       console.log("Live ticker feed connected.");
+      this.notifyState();
       this.sendSubscribe(Array.from(this.subscriptions)); // covers reconnects too
     });
     this.socket.addEventListener("close", (event) => {
@@ -146,6 +198,7 @@ class LiveTickerFeed {
       console.log(
         "Live ticker feed disconnected, reconnecting in 2 seconds...",
       );
+      this.notifyState();
       this.reconnectTimeout = setTimeout(() => {
         if (this.subscriptions.size > 0) this.open();
       }, LIVE_FEED_RECONNECT_DELAY_MS);
@@ -216,6 +269,10 @@ class LiveTickerFeed {
       symbol: bar.symbol,
       frequency: envelope.type === "minute_bar" ? "intraday" : "daily",
     };
+    // Arrival time, not Alpaca's stamp: the feed-status indicator measures whether data is
+    // still coming in, and doing that against exchange-local timestamps would drag the
+    // viewer's timezone and clock skew into the result.
+    transformed.receivedAt = Date.now();
     const listeners = this.listeners.get(bar.symbol);
     if (!listeners) return;
     for (const listener of listeners) listener(transformed);
@@ -289,6 +346,16 @@ const api = {
   getSymbols: async (): Promise<Ticker[]> => {
     const data = await apiFetch("/api/symbols");
     const result = TickerArraySchema.parse(data);
+    return result;
+  },
+  getMarketClock: async (): Promise<MarketClock> => {
+    const data = await apiFetch("/api/clock");
+    const result = MarketClockSchema.parse(data);
+    return result;
+  },
+  getFeedHealth: async (): Promise<FeedHealth> => {
+    const data = await apiFetchAllowingStatus("/health");
+    const result = FeedHealthSchema.parse(data);
     return result;
   },
   // TODO: figure out a way to validate this and finalize the shape of this stock financials interface.
@@ -370,6 +437,9 @@ const api = {
   unsubscribeTickers: (tickers: Ticker[], onTick: LiveTickListener): void => {
     liveTickerFeed.unsubscribe(tickers, onTick);
   },
+  getFeedState: (): FeedSocketState => liveTickerFeed.getState(),
+  subscribeFeedState: (listener: (state: FeedSocketState) => void): (() => void) =>
+    liveTickerFeed.subscribeState(listener),
 };
 
 export default api;

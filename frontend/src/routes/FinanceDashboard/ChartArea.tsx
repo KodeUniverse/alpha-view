@@ -9,17 +9,21 @@ import {
   Menu,
   Button,
 } from "@mantine/core";
-import {
-  IconAdjustmentsHorizontal,
-  IconChevronDown,
-} from "@tabler/icons-react";
+import { IconChevronDown } from "@tabler/icons-react";
 import { OHLCData, Ticker, VolumeData, Frequency } from "@/types";
-import { useBarsForTicker, useSymbolList } from "@/hooks/queries";
-import { useLiveTickerFeed } from "@/hooks/useLiveTickerFeed";
+import {
+  useBarsForTicker,
+  useSymbolList,
+  useMarketClock,
+  useFeedHealth,
+} from "@/hooks/queries";
+import {
+  useLiveTickerFeed,
+  useFeedSocketState,
+} from "@/hooks/useLiveTickerFeed";
 import { useState, useMemo } from "react";
 import { isSameTradingDay } from "@/utils/dates";
 import {
-  BOLLINGER_COLORS,
   BOLLINGER_MULTIPLIER,
   BOLLINGER_PERIOD,
   ChartIndicators,
@@ -30,6 +34,12 @@ import {
   indicatorWarmupStart,
   moverColor,
 } from "@/utils/indicators";
+import {
+  CHART_COLOR_TOKENS,
+  INDICATOR_COLOR_TOKENS,
+  getComputedColor,
+} from "@/utils/colors";
+import { deriveFeedStatus, useNow } from "@/utils/feedStatus";
 
 type ChartRange = "1d" | "5d" | "3m" | "6m" | "1y" | "3y" | "Max";
 
@@ -46,12 +56,38 @@ interface ChartAreaProps {
   cardStyles?: React.CSSProperties;
 }
 
+interface FeedStatusIndicatorProps {
+  status: {
+    state: "live" | "closed" | "down";
+    label: string;
+    detail: string;
+  };
+  rootStyles?: React.CSSProperties;
+}
+
+function FeedStatusIndicator({ status, rootStyles }: FeedStatusIndicatorProps) {
+  return (
+    <Group style={{ ...rootStyles }} gap={6} wrap="nowrap" align="center">
+      <Box className={`feed-status-dot feed-status-dot--${status.state}`} />
+      <Text
+        size="xs"
+        fw={700}
+        tt="uppercase"
+        style={{ letterSpacing: "0.06em" }}
+      >
+        {status.label}
+      </Text>
+      <Text size="xs" c="dimmed" truncate>
+        {status.detail}
+      </Text>
+    </Group>
+  );
+}
+
 interface IndicatorSwatchProps {
   color: string;
 }
 
-// Small colour chip so the menu shows the line it is about to toggle. Square, because every
-// other control in this header is square.
 function IndicatorSwatch({ color }: IndicatorSwatchProps) {
   return (
     <Box
@@ -86,14 +122,15 @@ function MovingAverageSubmenu({
     (period) => indicators[family][period],
   ).length;
   const { group, short } = MOVER_LABELS[family];
+  // Resolved to the same concrete value StockChart builds its series from, so a swatch can
+  // never drift from the line it toggles.
+  const base = getComputedColor(INDICATOR_COLOR_TOKENS[family]);
 
   return (
     <Menu.Sub position="right-start">
       <Menu.Sub.Target>
         <Menu.Sub.Item
-          leftSection={
-            <IndicatorSwatch color={moverColor(family, periods[0])} />
-          }
+          leftSection={<IndicatorSwatch color={moverColor(base, periods[0])} />}
         >
           <Group gap={6} wrap="nowrap">
             <Text size="sm">{group}</Text>
@@ -117,7 +154,7 @@ function MovingAverageSubmenu({
             onChange={(checked) => onToggle(family, period, checked)}
           >
             <Group gap={8} wrap="nowrap">
-              <IndicatorSwatch color={moverColor(family, period)} />
+              <IndicatorSwatch color={moverColor(base, period)} />
               <Text size="sm">
                 {short} {period}
                 {unit}
@@ -203,7 +240,9 @@ function IndicatorSettingsMenu({
           }
         >
           <Group gap={8} wrap="nowrap">
-            <IndicatorSwatch color={BOLLINGER_COLORS.mid} />
+            <IndicatorSwatch
+              color={getComputedColor(INDICATOR_COLOR_TOKENS.bollingerMid)}
+            />
             <Text size="sm">
               Bollinger Bands ({BOLLINGER_PERIOD}, {BOLLINGER_MULTIPLIER}σ)
             </Text>
@@ -384,9 +423,9 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
     ? data.map((bar) => {
         let volumeBarColor: string;
         if (bar.open < bar.close) {
-          volumeBarColor = "#26a69a";
+          volumeBarColor = getComputedColor(CHART_COLOR_TOKENS.up);
         } else {
-          volumeBarColor = "#ef5350";
+          volumeBarColor = getComputedColor(CHART_COLOR_TOKENS.down);
         }
         const newRow = {
           time: bar.time,
@@ -438,12 +477,14 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   }, [tick, priceData, dailyBars, frequency]);
 
   const isUp = change != null && change >= 0;
+  // Left as a var() reference: this lands on borderColor/color in a style prop, which the
+  // browser resolves itself, so reading the token into a concrete value would be wasted work.
   const changeColor =
     change == null
       ? "var(--color-text-secondary)"
       : isUp
-        ? "#26a69a"
-        : "#ef5350";
+        ? `var(${CHART_COLOR_TOKENS.up})`
+        : `var(${CHART_COLOR_TOKENS.down})`;
 
   // The search result carries name + exchange, but the default ticker (and anything restored
   // without them) only has a symbol. The symbol list is already cached by the search bar, so
@@ -454,6 +495,31 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
     return symbols?.find((s) => s.symbol === ticker.symbol)?.exchange ?? null;
   }, [ticker.exchange, ticker.symbol, symbols]);
   const displayName = ticker.name ?? ticker.symbol;
+
+  // Receipt time of the bar this chart is actually tracking, not of whichever bar arrived
+  // last -- the two differ on a daily chart, where the minute bar keeps ticking all session.
+  const trackedBar =
+    frequency === "intraday" ? tick?.minuteBar : tick?.dailyBar;
+  const lastBarAt = trackedBar?.receivedAt ?? null;
+
+  const socketState = useFeedSocketState();
+  const { data: clock, isError: clockError } = useMarketClock();
+  const { data: health, isError: healthError } = useFeedHealth();
+  const now = useNow();
+
+  const feedStatus = useMemo(
+    () =>
+      deriveFeedStatus({
+        socketState,
+        healthError,
+        health,
+        clockError,
+        clock,
+        lastBarAt,
+        now,
+      }),
+    [socketState, healthError, health, clockError, clock, lastBarAt, now],
+  );
 
   const handleFreqChange = (newFreq: Frequency) => {
     // Each frequency offers a different period set (see INDICATOR_PERIODS), so drop anything
@@ -487,7 +553,7 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
           align="flex-start"
           wrap="nowrap"
         >
-          <Stack gap={2} mr="auto" style={{ minWidth: 0 }}>
+          <Stack gap={2} mr="auto" h="100%" style={{ minWidth: 0 }}>
             <Group gap={8} wrap="nowrap">
               <Text size="32px" fw={700} style={{ lineHeight: 1.1 }}>
                 {ticker.symbol}
@@ -552,6 +618,10 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
             <Text size="sm" c="dimmed" truncate>
               {displayName}
             </Text>
+            <FeedStatusIndicator
+              status={feedStatus}
+              rootStyles={{ marginTop: "auto" }}
+            />
           </Stack>
           <ChartDisplayOptionsWidget
             onFreqChange={handleFreqChange}

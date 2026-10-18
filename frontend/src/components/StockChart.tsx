@@ -18,6 +18,7 @@ import {
   LineSeriesOptions,
   Time,
 } from "lightweight-charts";
+import { useComputedColorScheme } from "@mantine/core";
 import {
   OHLCData,
   VolumeData,
@@ -28,7 +29,6 @@ import {
 import { useCallback, useEffect, useRef } from "react";
 import {
   ALL_INDICATOR_PERIODS,
-  BOLLINGER_COLORS,
   BOLLINGER_MULTIPLIER,
   BOLLINGER_PERIOD,
   ChartIndicators,
@@ -39,6 +39,12 @@ import {
   ema,
   bollingerBands,
 } from "@/utils/indicators";
+import {
+  CHART_COLOR_TOKENS,
+  INDICATOR_COLOR_TOKENS,
+  THEME_COLOR_TOKENS,
+  getComputedColor,
+} from "@/utils/colors";
 
 interface BaseChartProps {
   volumeData?: VolumeData[] | null;
@@ -86,8 +92,12 @@ type IndicatorSeriesName =
 
 function indicatorSeriesNames(): IndicatorSeriesName[] {
   return [
-    ...ALL_INDICATOR_PERIODS.map((period) => `sma${period}` as IndicatorSeriesName),
-    ...ALL_INDICATOR_PERIODS.map((period) => `ema${period}` as IndicatorSeriesName),
+    ...ALL_INDICATOR_PERIODS.map(
+      (period) => `sma${period}` as IndicatorSeriesName,
+    ),
+    ...ALL_INDICATOR_PERIODS.map(
+      (period) => `ema${period}` as IndicatorSeriesName,
+    ),
     "bollingerMid",
     "bollingerUpper",
     "bollingerLower",
@@ -111,25 +121,34 @@ function buildIndicatorOptions(): Record<
   IndicatorSeriesName,
   DeepPartial<LineSeriesOptions>
 > {
-  const options = {} as Record<IndicatorSeriesName, DeepPartial<LineSeriesOptions>>;
+  const options = {} as Record<
+    IndicatorSeriesName,
+    DeepPartial<LineSeriesOptions>
+  >;
+  // Resolved once here rather than per series: one getComputedStyle read per family.
+  const smaBase = getComputedColor(INDICATOR_COLOR_TOKENS.sma);
+  const emaBase = getComputedColor(INDICATOR_COLOR_TOKENS.ema);
   for (const period of ALL_INDICATOR_PERIODS) {
     options[`sma${period}`] = {
-      color: moverColor("sma", period),
+      color: moverColor(smaBase, period),
       lineWidth: moverLineWidth(period),
     };
     options[`ema${period}`] = {
-      color: moverColor("ema", period),
+      color: moverColor(emaBase, period),
       lineWidth: moverLineWidth(period),
     };
   }
-  options.bollingerMid = { color: BOLLINGER_COLORS.mid, lineWidth: 1 };
+  options.bollingerMid = {
+    color: getComputedColor(INDICATOR_COLOR_TOKENS.bollingerMid),
+    lineWidth: 1,
+  };
   options.bollingerUpper = {
-    color: BOLLINGER_COLORS.band,
+    color: getComputedColor(INDICATOR_COLOR_TOKENS.bollingerBand),
     lineWidth: 1,
     lineStyle: LineStyle.Dashed,
   };
   options.bollingerLower = {
-    color: BOLLINGER_COLORS.band,
+    color: getComputedColor(INDICATOR_COLOR_TOKENS.bollingerBand),
     lineWidth: 1,
     lineStyle: LineStyle.Dashed,
   };
@@ -138,6 +157,55 @@ function buildIndicatorOptions(): Record<
 
 function toChartTime(date: Date): UTCTimestamp {
   return Math.floor(date.getTime() / 1000) as UTCTimestamp;
+}
+
+interface ChartOptionFlags {
+  interactive: boolean;
+  showHorizAxis: boolean;
+  showVertAxis: boolean;
+  showGrid: boolean;
+  override: DeepPartial<ChartOptions> | null;
+}
+
+/**
+ * The full chart configuration, rebuilt from tokens on demand.
+ *
+ * One function serves both creation and in-place updates, so a chart can never end up
+ * configured differently from the way it was built -- `applyOptions` merge semantics for
+ * nested `layout`/`grid` objects are not something to rely on when a partial update could
+ * silently drop a key.
+ *
+ * `override` is spread last on purpose to override existing configs.
+ * */
+function buildChartOptions(flags: ChartOptionFlags): DeepPartial<ChartOptions> {
+  const grid = getComputedColor(THEME_COLOR_TOKENS.grid);
+
+  return {
+    ...(!flags.interactive ? { handleScale: false, handleScroll: false } : {}),
+    ...(!flags.showHorizAxis ? { timeScale: { visible: false } } : {}),
+    ...(!flags.showVertAxis
+      ? {
+          rightPriceScale: { visible: false },
+          leftPriceScale: { visible: false },
+        }
+      : {}),
+    layout: {
+      textColor: getComputedColor(THEME_COLOR_TOKENS.text),
+      background: {
+        type: ColorType.Solid,
+        color: getComputedColor(THEME_COLOR_TOKENS.background),
+      },
+      attributionLogo: false,
+      panes: {
+        enableResize: true,
+        separatorColor: grid,
+      },
+    },
+    grid: flags.showGrid
+      ? { vertLines: { color: grid }, horzLines: { color: grid } }
+      : { horzLines: { visible: false }, vertLines: { visible: false } },
+    ...(flags.override ?? {}),
+  };
 }
 
 export default function StockChart(props: StockChartProps) {
@@ -162,7 +230,10 @@ export default function StockChart(props: StockChartProps) {
   const chartRef = useRef<IChartApi | null>(null);
   const priceSeriesRef = useRef<ISeriesApi<"Candlestick" | "Area">>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram">>(null);
-  const indicatorSeriesRef = useRef<IndicatorSeriesRegistry>(emptyIndicatorSeries());
+  const indicatorSeriesRef = useRef<IndicatorSeriesRegistry>(
+    emptyIndicatorSeries(),
+  );
+  const colorScheme = useComputedColorScheme();
 
   const dateTickFormatter = useCallback(
     (time: UTCTimestamp | BusinessDay) => {
@@ -176,87 +247,47 @@ export default function StockChart(props: StockChartProps) {
     [frequency],
   );
 
-  interface ComputedColorsCSS {
-    backgroundPrimary?: string;
-    backgroundSecondary?: string;
-    chartGrid?: string;
-    textPrimary?: string;
-  }
-
-  const computedColors: ComputedColorsCSS = {};
-
-  const cssVarMap: Record<string, keyof ComputedColorsCSS> = {
-    "--color-background-primary": "backgroundPrimary",
-    "--color-background-secondary": "backgroundSecondary",
-    "--color-chart-grid": "chartGrid",
-    "--color-text-primary": "textPrimary",
-  };
-  const cssVars: string[] = Object.keys(cssVarMap);
-
-  for (const cssVar of cssVars) {
-    const property = cssVarMap[cssVar];
-    if (property) {
-      computedColors[property] = getComputedStyle(document.documentElement)
-        .getPropertyValue(cssVar)
-        .trim();
-    }
-  }
-  let chartOptionBuilder: DeepPartial<ChartOptions> = {
-    layout: {
-      textColor: computedColors.textPrimary,
-      background: {
-        type: ColorType.Solid,
-        color: computedColors.backgroundSecondary,
-      },
-      attributionLogo: false,
-      panes: {
-        enableResize: true,
-        separatorColor: computedColors.chartGrid,
-      },
-    },
-    grid: {
-      vertLines: {
-        color: computedColors.chartGrid,
-      },
-      horzLines: {
-        color: computedColors.chartGrid,
-      },
-    },
-    ...chartOptionOverride,
+  const optionFlags: ChartOptionFlags = {
+    interactive,
+    showHorizAxis,
+    showVertAxis,
+    showGrid,
+    override: chartOptionOverride,
   };
 
-  if (!interactive) {
-    chartOptionBuilder = {
-      handleScale: false,
-      handleScroll: false,
-      ...chartOptionBuilder,
-    };
-  }
-  if (!showHorizAxis) {
-    chartOptionBuilder = {
-      timeScale: { visible: false },
-      ...chartOptionBuilder,
-    };
-  }
-  if (!showVertAxis) {
-    chartOptionBuilder = {
-      rightPriceScale: { visible: false },
-      leftPriceScale: { visible: false },
-      ...chartOptionBuilder,
-    };
-  }
-  if (!showGrid) {
-    chartOptionBuilder = {
-      grid: { horzLines: { visible: false }, vertLines: { visible: false } },
-      ...chartOptionBuilder,
-    };
-  }
-  const chartOptions = chartOptionBuilder;
+  //====================================================================================================
+  //                                    EFFECT PIPELINE -- READ THIS FIRST
+  //====================================================================================================
+  //
+  // These effects are an ordered pipeline sharing four refs, not independent steps:
+  //
+  //   1. build        creates the chart and every series. Deps: [chartType] ONLY.
+  //   2. recolor      re-applies indicator line colors. Deps: [colorScheme].
+  //   3. applyOptions reconfigures the live chart. Deps: theme + the option flags.
+  //   4. data         pushes candles/volume and their colors. Deps: data + theme.
+  //   5. indicators   computes and pushes indicator series. Deps: data + toggles.
+  //   6. live tick    patches the newest bar. Deps: incoming tick.
+  //   7. time axis    retargets the date formatter. Deps: [dateTickFormatter].
+  //
+  // The numbering is source order, and ORDER IS LOAD-BEARING: 1 must precede 2 and 3, which
+  // must precede 4. React runs effects in declaration order, so do not reorder these.
+  //
+  // Why 1 is keyed on chartType alone: it is the only input that genuinely needs a NEW chart
+  // (candle and area are different series types). Everything else -- including every themed
+  // color -- is applied in place by 2 and 3. Keying construction on the serialized options
+  // instead tore the whole chart down on a theme toggle, which discarded pan/zoom, wiped the
+  // volume series, and left the indicator series rebuilt empty at `visible: false` with no
+  // effect left to repopulate them (5 does not depend on the theme). They only came back when
+  // a query refetch happened to hand `priceData` a new identity.
 
+  // builds the chart and all series -- teardown is a full chart.remove()
   useEffect(() => {
     try {
       if (!chartContainerRef.current) return;
-      const chart = createChart(chartContainerRef.current, chartOptions);
+      const chart = createChart(
+        chartContainerRef.current,
+        buildChartOptions(optionFlags),
+      );
       chartRef.current = chart;
 
       let priceSeries: ISeriesApi<"Candlestick" | "Area">;
@@ -273,11 +304,13 @@ export default function StockChart(props: StockChartProps) {
       }
 
       priceSeriesRef.current = priceSeries;
-      priceSeries.priceScale().applyOptions(
-        chartType === "area"
-          ? { scaleMargins: { top: 0.05, bottom: 0.05 } }
-          : { scaleMargins: { top: 0.1, bottom: 0.4 } },
-      );
+      priceSeries
+        .priceScale()
+        .applyOptions(
+          chartType === "area"
+            ? { scaleMargins: { top: 0.05, bottom: 0.05 } }
+            : { scaleMargins: { top: 0.1, bottom: 0.4 } },
+        );
 
       const volumeSeries = chart.addSeries(HistogramSeries, {
         priceFormat: {
@@ -302,7 +335,9 @@ export default function StockChart(props: StockChartProps) {
         visible: false,
       };
 
-      for (const name of Object.keys(indicatorSeriesRef.current) as IndicatorSeriesName[]) {
+      for (const name of Object.keys(
+        indicatorSeriesRef.current,
+      ) as IndicatorSeriesName[]) {
         indicatorSeriesRef.current[name] = chart.addSeries(LineSeries, {
           ...defaultLine,
           ...indicatorOptions[name],
@@ -331,7 +366,41 @@ export default function StockChart(props: StockChartProps) {
     } catch (error) {
       console.log(String(error));
     }
-  }, [chartType, JSON.stringify(chartOptions)]);
+  }, [chartType]);
+
+  // re-applies indicator line colors when the theme changes
+  useEffect(() => {
+    try {
+      const options = buildIndicatorOptions();
+      for (const name of Object.keys(
+        indicatorSeriesRef.current,
+      ) as IndicatorSeriesName[]) {
+        const series = indicatorSeriesRef.current[name];
+        if (!series) continue;
+        series.applyOptions(options[name]);
+      }
+    } catch (error) {
+      console.log(`Error applying indicator colors:\n${error}`);
+    }
+  }, [colorScheme]);
+
+  // applies option changes to the live chart, without rebuilding it
+  useEffect(() => {
+    try {
+      if (!chartRef.current) return;
+      chartRef.current.applyOptions(buildChartOptions(optionFlags));
+    } catch (error) {
+      console.log(`Error applying chart options:\n${error}`);
+    }
+  }, [
+    colorScheme,
+    chartType,
+    interactive,
+    showHorizAxis,
+    showVertAxis,
+    showGrid,
+    chartOptionOverride,
+  ]);
 
   // sets chart data and applies color formatting
   useEffect(() => {
@@ -341,11 +410,11 @@ export default function StockChart(props: StockChartProps) {
       switch (chartType) {
         case "candle":
           priceSeriesRef.current.applyOptions({
-            upColor: "#26a69a",
-            downColor: "#ef5350",
+            upColor: getComputedColor(CHART_COLOR_TOKENS.up),
+            downColor: getComputedColor(CHART_COLOR_TOKENS.down),
             borderVisible: true,
-            wickUpColor: "#26a69a",
-            wickDownColor: "#ef5350",
+            wickUpColor: getComputedColor(CHART_COLOR_TOKENS.up),
+            wickDownColor: getComputedColor(CHART_COLOR_TOKENS.down),
           });
           break;
         case "area":
@@ -354,11 +423,15 @@ export default function StockChart(props: StockChartProps) {
             ? priceData[0].value <= priceData[priceData.length - 1].value
             : true;
           const areaChartColors = {
-            lineColor: upChart ? "#26a69a" : "#ef5350",
-            topColor: upChart ? "#26a69a" : "#ef5350",
-            bottomColor: upChart
-              ? "rgba(38, 166, 154, 0.28)"
-              : "rgba(239, 83, 80, 0.28)",
+            lineColor: getComputedColor(
+              upChart ? CHART_COLOR_TOKENS.up : CHART_COLOR_TOKENS.down,
+            ),
+            topColor: getComputedColor(
+              upChart ? CHART_COLOR_TOKENS.up : CHART_COLOR_TOKENS.down,
+            ),
+            bottomColor: getComputedColor(
+              upChart ? CHART_COLOR_TOKENS.upFill : CHART_COLOR_TOKENS.downFill,
+            ),
           };
           priceSeriesRef.current.applyOptions(areaChartColors);
           break;
@@ -375,7 +448,7 @@ export default function StockChart(props: StockChartProps) {
     } catch (error) {
       console.log(String(error));
     }
-  }, [priceData, volumeData, computedColors]);
+  }, [priceData, volumeData, colorScheme]);
 
   // sets indicator series data and visibility
   useEffect(() => {
@@ -449,12 +522,7 @@ export default function StockChart(props: StockChartProps) {
   // updates the chart with live bars
   useEffect(() => {
     try {
-      if (
-        !latestTick ||
-        !priceSeriesRef.current ||
-        !frequency
-      )
-        return;
+      if (!latestTick || !priceSeriesRef.current || !frequency) return;
 
       let transformedBar: CandlestickData<Time> | LineData<Time>;
       let volumeBar: HistogramData<Time> | null = null;

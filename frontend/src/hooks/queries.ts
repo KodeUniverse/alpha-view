@@ -147,3 +147,25 @@ export function useBasicFinancials(ticker: Ticker) {
     queryFn: () => api.getFinancials(ticker),
   });
 }
+
+export function useMarketClock() {
+  return useQuery({
+    queryKey: ["marketClock"],
+    queryFn: () => api.getMarketClock(),
+    // The clock only changes at session boundaries, so there is nothing to gain from
+    // polling faster than a minute.
+    refetchInterval: 60_000,
+  });
+}
+
+export function useFeedHealth() {
+  return useQuery({
+    queryKey: ["feedHealth"],
+    queryFn: () => api.getFeedHealth(),
+    refetchInterval: 20_000,
+    // A 503 here means the backend is reporting itself degraded, which is the answer we
+    // wanted, not a transport failure worth retrying. Refetching still runs on the interval,
+    // so the indicator recovers on its own once the feed does.
+    retry: false,
+  });
+}

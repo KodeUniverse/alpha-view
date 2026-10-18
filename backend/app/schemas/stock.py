@@ -45,6 +45,19 @@ class LiveTickerFeedMessage(BaseModel):
     dailyBar: OHLCVData | None = None
     minuteBar: OHLCVData | None = None
 
+class MarketClock(BaseModel):
+    """US equity session state, from Alpaca's trading clock.
+
+    Alpaca reports *regular* hours only: `is_open` is false overnight, on weekends, on
+    holidays, and outside extended hours. So this answers "is the regular session running",
+    not "is anything trading". Consumers that need to tell "shut" apart from "broken" have
+    to check this rather than infer it from silence.
+    """
+
+    is_open: bool
+    next_open: datetime
+    next_close: datetime
+
 
 class StockBasicFinancials(BaseModel):
     # Valuation

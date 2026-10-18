@@ -10,7 +10,7 @@ from alpaca.trading.client import TradingClient
 from alpaca.trading.enums import AssetClass, AssetStatus
 from alpaca.trading.requests import GetAssetsRequest
 
-from app.schemas.stock import Frequency, OHLCVData, Ticker
+from app.schemas.stock import Frequency, OHLCVData, MarketClock, Ticker
 
 from .auth import get_credentials
 
@@ -100,3 +100,13 @@ async def get_bars_for_ticker(
 ) -> list[OHLCVData]:
     bars = await get_bars([ticker], freq, start, end)
     return bars.get(ticker.symbol, [])
+
+
+async def get_market_clock() -> MarketClock:
+    client = _trading_client()
+    clock = await asyncio.to_thread(client.get_clock)
+    return MarketClock(
+        is_open=clock.is_open,
+        next_open=clock.next_open,
+        next_close=clock.next_close,
+    )

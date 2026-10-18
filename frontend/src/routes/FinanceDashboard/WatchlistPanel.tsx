@@ -43,6 +43,7 @@ import {
   useRenameWatchList,
 } from "@/hooks/queries";
 import { useLiveTickerFeed } from "@/hooks/useLiveTickerFeed";
+import { CHART_COLOR_TOKENS } from "@/utils/colors";
 import { isSameTradingDay } from "@/utils/dates";
 import { useDisclosure } from "@mantine/hooks";
 
@@ -605,12 +606,14 @@ function WatchListItem({
       : undefined;
 
   const up = percentChange != null && percentChange >= 0;
+  // A var() reference rather than a resolved token: this only ever reaches a style prop,
+  // which the browser resolves on its own.
   const changeColor =
     percentChange == null
       ? "var(--color-text-secondary)"
       : up
-        ? "#26a69a"
-        : "#ef5350";
+        ? `var(${CHART_COLOR_TOKENS.up})`
+        : `var(${CHART_COLOR_TOKENS.down})`;
 
   return (
     <Card

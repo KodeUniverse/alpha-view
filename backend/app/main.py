@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from app.database import init_database_schema
 from app.providers.alpaca.fetches import probe_credentials
 from app.providers.alpaca.live import LiveStockDataFeed
-from app.routers import bars, financials, news, symbols, watchlist
+from app.routers import bars, clock, financials, news, symbols, watchlist
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +112,7 @@ async def live_stock_stream(websocket: WebSocket):
         feed.release_client(session)
 
 app.include_router(bars.router, prefix="/api")
+app.include_router(clock.router, prefix="/api")
 app.include_router(news.router, prefix="/api")
 app.include_router(watchlist.router, prefix="/api")
 app.include_router(symbols.router, prefix="/api")
