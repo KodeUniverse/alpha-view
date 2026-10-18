@@ -26,19 +26,33 @@ import {
   LiveTickerFeedMessage,
 } from "@/types";
 import { useCallback, useEffect, useRef } from "react";
-import { sma, ema, bollingerBands } from "@/utils/indicators";
-
-interface ChartIndicators {
-  sma?: boolean;
-  ema?: boolean;
-  bollinger?: boolean;
-}
+import {
+  ALL_INDICATOR_PERIODS,
+  BOLLINGER_COLORS,
+  BOLLINGER_MULTIPLIER,
+  BOLLINGER_PERIOD,
+  ChartIndicators,
+  DEFAULT_INDICATORS,
+  moverColor,
+  moverLineWidth,
+  sma,
+  ema,
+  bollingerBands,
+} from "@/utils/indicators";
 
 interface BaseChartProps {
   volumeData?: VolumeData[] | null;
   latestTick?: LiveTickerFeedMessage;
   frequency?: Frequency;
   indicators?: ChartIndicators;
+  /**
+   * Bars that overlap `priceData` but extend further back in time. They exist only to give
+   * the moving averages enough history to produce their first value -- a `period`-length
+   * average is null until it has `period` bars behind it, so on a short visible range there
+   * is nothing to draw without them. Nothing from this series is plotted, see the indicator
+   * effect below.
+   */
+  warmupData?: OHLCData[] | null;
   containerStyles?: React.CSSProperties;
   chartOptionOverride?: DeepPartial<ChartOptions>;
   timeScale?: boolean;
@@ -60,7 +74,67 @@ interface AreaChartProps extends BaseChartProps {
 
 type StockChartProps = CandleChartProps | AreaChartProps;
 
-type IndicatorSeriesName = "sma" | "ema" | "bollingerMid" | "bollingerUpper" | "bollingerLower";
+// One line series per (family, period) across every frequency's period set, plus the three
+// Bollinger bands. All of them are created when the chart is built and toggled with
+// `visible`, so switching frequency never has to rebuild the chart.
+type IndicatorSeriesName =
+  | `sma${number}`
+  | `ema${number}`
+  | "bollingerMid"
+  | "bollingerUpper"
+  | "bollingerLower";
+
+function indicatorSeriesNames(): IndicatorSeriesName[] {
+  return [
+    ...ALL_INDICATOR_PERIODS.map((period) => `sma${period}` as IndicatorSeriesName),
+    ...ALL_INDICATOR_PERIODS.map((period) => `ema${period}` as IndicatorSeriesName),
+    "bollingerMid",
+    "bollingerUpper",
+    "bollingerLower",
+  ];
+}
+
+type IndicatorSeriesRegistry = Record<
+  IndicatorSeriesName,
+  ISeriesApi<"Line"> | null
+>;
+
+function emptyIndicatorSeries(): IndicatorSeriesRegistry {
+  const registry = {} as IndicatorSeriesRegistry;
+  for (const name of indicatorSeriesNames()) registry[name] = null;
+  return registry;
+}
+
+// Series options are keyed by name and built once per chart: the colour ramps and the period
+// catalogue live in @/utils/indicators so the settings menu and the chart cannot drift apart.
+function buildIndicatorOptions(): Record<
+  IndicatorSeriesName,
+  DeepPartial<LineSeriesOptions>
+> {
+  const options = {} as Record<IndicatorSeriesName, DeepPartial<LineSeriesOptions>>;
+  for (const period of ALL_INDICATOR_PERIODS) {
+    options[`sma${period}`] = {
+      color: moverColor("sma", period),
+      lineWidth: moverLineWidth(period),
+    };
+    options[`ema${period}`] = {
+      color: moverColor("ema", period),
+      lineWidth: moverLineWidth(period),
+    };
+  }
+  options.bollingerMid = { color: BOLLINGER_COLORS.mid, lineWidth: 1 };
+  options.bollingerUpper = {
+    color: BOLLINGER_COLORS.band,
+    lineWidth: 1,
+    lineStyle: LineStyle.Dashed,
+  };
+  options.bollingerLower = {
+    color: BOLLINGER_COLORS.band,
+    lineWidth: 1,
+    lineStyle: LineStyle.Dashed,
+  };
+  return options;
+}
 
 function toChartTime(date: Date): UTCTimestamp {
   return Math.floor(date.getTime() / 1000) as UTCTimestamp;
@@ -72,7 +146,8 @@ export default function StockChart(props: StockChartProps) {
     chartType,
     latestTick,
     frequency,
-    indicators = {},
+    indicators = DEFAULT_INDICATORS,
+    warmupData = null,
     volumeData = null,
     containerStyles = { width: "100%", height: "100%" },
     chartOptionOverride = null,
@@ -87,13 +162,7 @@ export default function StockChart(props: StockChartProps) {
   const chartRef = useRef<IChartApi | null>(null);
   const priceSeriesRef = useRef<ISeriesApi<"Candlestick" | "Area">>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram">>(null);
-  const indicatorSeriesRef = useRef<Record<IndicatorSeriesName, ISeriesApi<"Line"> | null>>({
-    sma: null,
-    ema: null,
-    bollingerMid: null,
-    bollingerUpper: null,
-    bollingerLower: null,
-  });
+  const indicatorSeriesRef = useRef<IndicatorSeriesRegistry>(emptyIndicatorSeries());
 
   const dateTickFormatter = useCallback(
     (time: UTCTimestamp | BusinessDay) => {
@@ -224,21 +293,7 @@ export default function StockChart(props: StockChartProps) {
         },
       });
 
-      const indicatorOptions: Record<IndicatorSeriesName, DeepPartial<LineSeriesOptions>> = {
-        sma: { color: "#f0b90b", lineWidth: 2 },
-        ema: { color: "#3b82f6", lineWidth: 2 },
-        bollingerMid: { color: "rgba(225, 32, 102, 0.85)", lineWidth: 1 },
-        bollingerUpper: {
-          color: "rgba(225, 32, 102, 0.45)",
-          lineWidth: 1,
-          lineStyle: LineStyle.Dashed,
-        },
-        bollingerLower: {
-          color: "rgba(225, 32, 102, 0.45)",
-          lineWidth: 1,
-          lineStyle: LineStyle.Dashed,
-        },
-      };
+      const indicatorOptions = buildIndicatorOptions();
 
       const defaultLine = {
         priceLineVisible: false,
@@ -270,13 +325,7 @@ export default function StockChart(props: StockChartProps) {
         chartRef.current = null;
         priceSeriesRef.current = null;
         volumeSeriesRef.current = null;
-        indicatorSeriesRef.current = {
-          sma: null,
-          ema: null,
-          bollingerMid: null,
-          bollingerUpper: null,
-          bollingerLower: null,
-        };
+        indicatorSeriesRef.current = emptyIndicatorSeries();
         resizer.disconnect();
       };
     } catch (error) {
@@ -333,8 +382,20 @@ export default function StockChart(props: StockChartProps) {
     try {
       if (!priceData || priceData.length === 0) return;
 
-      const times = priceData.map((d) => toChartTime(d.time));
-      const closes = priceData.map((d) => d.close);
+      const visibleTimes = new Set<UTCTimestamp>(
+        priceData.map((d) => toChartTime(d.time)),
+      );
+      // Warm-up bars sit to the left of the visible window and are never drawn themselves --
+      // they only give the moving averages a full window to average over. Without them a
+      // `period`-length average is null for the whole visible range whenever the range is
+      // shorter than the period.
+      const source =
+        warmupData && warmupData.length > 0 ? warmupData : priceData;
+      const sourceTimes = source.map((d) => toChartTime(d.time));
+      const closes = source.map((d) => d.close);
+      // Only plot points that land on a visible candle. Pushing the warm-up points too would
+      // extend the line to the left of the first candle and show up the moment the user pans
+      // back -- there is no price action there to average.
 
       const setIndicator = (
         name: IndicatorSeriesName,
@@ -350,25 +411,40 @@ export default function StockChart(props: StockChartProps) {
         }
         const data: LineData<Time>[] = [];
         values.forEach((value, i) => {
-          if (value != null) data.push({ time: times[i], value });
+          if (value == null) return;
+          const time = sourceTimes[i];
+          if (!visibleTimes.has(time)) return;
+          data.push({ time, value });
         });
         series.setData(data);
       };
 
-      const showSma = indicators.sma === true;
-      const showEma = indicators.ema === true;
-      const showBollinger = indicators.bollinger === true;
+      for (const period of ALL_INDICATOR_PERIODS) {
+        const showSma = indicators.sma[period] === true;
+        setIndicator(
+          `sma${period}`,
+          showSma ? sma(closes, period) : null,
+          showSma,
+        );
+        const showEma = indicators.ema[period] === true;
+        setIndicator(
+          `ema${period}`,
+          showEma ? ema(closes, period) : null,
+          showEma,
+        );
+      }
 
-      setIndicator("sma", showSma ? sma(closes, 20) : null, showSma);
-      setIndicator("ema", showEma ? ema(closes, 20) : null, showEma);
-      const bands = showBollinger ? bollingerBands(closes, 20, 2) : null;
+      const showBollinger = indicators.bollinger === true;
+      const bands = showBollinger
+        ? bollingerBands(closes, BOLLINGER_PERIOD, BOLLINGER_MULTIPLIER)
+        : null;
       setIndicator("bollingerMid", bands ? bands.middle : null, showBollinger);
       setIndicator("bollingerUpper", bands ? bands.upper : null, showBollinger);
       setIndicator("bollingerLower", bands ? bands.lower : null, showBollinger);
     } catch (error) {
       console.log(`Error updating indicator series:\n${error}`);
     }
-  }, [priceData, indicators.sma, indicators.ema, indicators.bollinger]);
+  }, [priceData, warmupData, indicators]);
 
   // updates the chart with live bars
   useEffect(() => {
