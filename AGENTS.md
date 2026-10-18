@@ -101,5 +101,5 @@ relevant; do not change them silently as part of an unrelated task.
 
 ## Git
 
-Feature branches off `main`, PRs into `main`. Recent work has landed as
+Feature branches off `master`, PRs into `master`. Recent work has landed as
 `feature/<name>` branches merged by PR, so follow that pattern.
