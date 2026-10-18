@@ -23,6 +23,22 @@ export function useDeleteWatchList() {
   return useMutation({
     mutationFn: ({ listId }: { listId: number }) => api.deleteWatchList(listId),
     onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["getWatchLists"],
+      }),
+  });
+}
+export function useRenameWatchList() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      listId,
+      listName,
+    }: {
+      listId: number;
+      listName: string;
+    }) => api.renameWatchList(listId, listName),
+    onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["getWatchLists"] }),
   });
 }

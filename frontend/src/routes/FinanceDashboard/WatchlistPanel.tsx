@@ -46,6 +46,7 @@ import {
   useGetWatchListItems,
   useCreateWatchList,
   useDeleteWatchList,
+  useRenameWatchList,
 } from "@/hooks/queries";
 import { useLiveTickerFeed } from "@/hooks/useLiveTickerFeed";
 import { isSameTradingDay } from "@/utils/dates";
@@ -158,6 +159,56 @@ function DeleteWatchListModal({
   );
 }
 
+function RenameWatchListModal({
+  opened,
+  closeHandler,
+  watchlists,
+}: {
+  opened: boolean;
+  closeHandler: () => void;
+  watchlists: WatchList[];
+}) {
+  const [listName, setListName] = useState<string>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { mutate: renameList } = useRenameWatchList();
+
+  const renameListHandler = useCallback(() => {
+    const listId = watchlists.find((list) => {
+      return list.listName === listName;
+    })?.id;
+    if (listId) {
+      renameList({ listId, listName: inputRef.current.value });
+      closeHandler();
+    }
+  }, [listName]);
+
+  return (
+    <Modal
+      opened={opened}
+      onClose={closeHandler}
+      title="Rename watchlist"
+      centered
+    >
+      <Stack>
+        <Select
+          label="Watchlists"
+          data={watchlists.map((list) => {
+            return list.listName;
+          })}
+          value={listName}
+          onChange={(value) => setListName(value)}
+        />
+        <Input.Wrapper label="New name">
+          <Input placeholder={"Stocks"} ref={inputRef} />
+        </Input.Wrapper>
+        <Button ml="auto" onClick={renameListHandler}>
+          Rename
+        </Button>
+      </Stack>
+    </Modal>
+  );
+}
+
 function WatchListSelectMenu({
   watchlists,
   selectedListId,
@@ -171,12 +222,19 @@ function WatchListSelectMenu({
     useDisclosure(false);
   const [deleteListOpened, { open: deleteListOpen, close: deleteListClose }] =
     useDisclosure(false);
+  const [renameListOpened, { open: renameListOpen, close: renameListClose }] =
+    useDisclosure(false);
   return (
     <>
       {/**Modals**/}
       <CreateWatchListModal
         opened={createListOpened}
         closeHandler={createListClose}
+      />
+      <RenameWatchListModal
+        opened={renameListOpened}
+        closeHandler={renameListClose}
+        watchlists={watchlists}
       />
       <DeleteWatchListModal
         opened={deleteListOpened}
@@ -213,7 +271,10 @@ function WatchListSelectMenu({
           >
             Create new watchlist
           </Menu.Item>
-          <Menu.Item leftSection={<IconEdit size={20} />}>
+          <Menu.Item
+            leftSection={<IconEdit size={20} />}
+            onClick={renameListOpen}
+          >
             Rename watchlist
           </Menu.Item>
           <Menu.Item

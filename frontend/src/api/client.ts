@@ -350,6 +350,20 @@ const api = {
       method: "DELETE",
     });
   },
+  // The route takes list_name as a bare `str` param, so FastAPI reads it off the
+  // query string instead of a JSON body.
+  renameWatchList: async (
+    listId: Number,
+    listName: string,
+  ): Promise<void> => {
+    await apiFetch(
+      `/api/watchlists/${listId}`,
+      { list_name: listName },
+      {
+        method: "PATCH",
+      },
+    );
+  },
   subscribeTickers: (tickers: Ticker[], onTick: LiveTickListener): void => {
     liveTickerFeed.subscribe(tickers, onTick);
   },
