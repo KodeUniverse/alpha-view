@@ -27,6 +27,15 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    volumes:
+      # The SQLite file is bind-mounted instead of being left in the container's writable
+      # layer. `develop.watch` syncs host -> container only, so with no mount the app's
+      # writes never reach the host copy, and `make restart` (which runs `docker compose
+      # down`) destroys every watchlist added since the host file was written.
+      #
+      # The host file MUST exist before the first `up`. Docker creates a *directory* at a
+      # missing bind-mount source, and SQLite cannot open a directory as a database file.
+      - ./backend/alphaview.db:/app/alphaview.db
     develop:
       watch:
         - action: sync
@@ -36,6 +45,10 @@ services:
             - .venv
             - __pycache__
             - "**/*.pyc"
+            # Bind-mounted above; re-syncing it onto its own mountpoint would just be the
+            # container writing the host file through to itself.
+            - "*.db"
+            - "*.sqlite"
     ports:
       - "${HOST_API_PORT}:8080"
     healthcheck:

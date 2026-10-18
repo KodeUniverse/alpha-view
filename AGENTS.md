@@ -91,6 +91,14 @@ gate that exists.
   resolves a token name to a concrete value. See `frontend/AGENTS.md`.
 - **Secrets and artifacts are not source.** Never commit `.env`, `*.db`,
   `*.sqlite`, `dist/`, or `*.tsbuildinfo`. `.env.example` is the committed template.
+- **The watchlist DB is bind-mounted, not container state.** `develop.watch`
+  syncs host -> container *only*, so anything left in the container's writable
+  layer never reaches the host copy and is destroyed by `make restart`, which runs
+  `docker compose down`. `backend/alphaview.db` is mounted explicitly for that
+  reason, and excluded from the sync ignore list. Keep both: without the ignores
+  the sync writes the host file onto its own mountpoint. The host file must exist
+  before the first `up`, or Docker creates a *directory* at the mount source and
+  SQLite cannot open it.
 
 ## Known pre-existing issues
 
