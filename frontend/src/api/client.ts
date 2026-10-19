@@ -367,7 +367,7 @@ const api = {
     const result = WatchListArraySchema.parse(data);
     return result;
   },
-  getWatchListItems: async (listId: Number) => {
+  getWatchListItems: async (listId: number) => {
     const items = await apiFetch(`/api/watchlists/${listId}/items`);
     const result = WatchListItemsSchema.parse(items);
     return result;
@@ -383,7 +383,7 @@ const api = {
   },
   addToWatchList: async (
     ticker: Ticker,
-    listId: Number,
+    listId: number,
     // Omitted on purpose: the backend appends at the end (max SortId + 1) only when
     // this is absent. Sending 0 collides with UniqueConstraint(ListId, SortId).
     sortId?: number,
@@ -402,7 +402,7 @@ const api = {
   },
   removeFromWatchList: async (
     ticker: Ticker,
-    listId: Number,
+    listId: number,
   ): Promise<void> => {
     await apiFetch(
       `/api/watchlists/${listId}/items/${ticker.symbol}`,
@@ -412,7 +412,7 @@ const api = {
       },
     );
   },
-  deleteWatchList: async (listId: Number): Promise<void> => {
+  deleteWatchList: async (listId: number): Promise<void> => {
     await apiFetch(`/api/watchlists/${listId}`, undefined, {
       method: "DELETE",
     });
@@ -420,7 +420,7 @@ const api = {
   // The route takes list_name as a bare `str` param, so FastAPI reads it off the
   // query string instead of a JSON body.
   renameWatchList: async (
-    listId: Number,
+    listId: number,
     listName: string,
   ): Promise<void> => {
     await apiFetch(

@@ -70,12 +70,15 @@ interface BaseChartProps {
 
 interface CandleChartProps extends BaseChartProps {
   chartType: "candle";
-  priceData: OHLCData[];
+  // Nullable: the caller may not have data yet, and the component guards for it. The
+  // nullability has to be declared here, or the discriminated union stops matching and
+  // neither branch accepts a `T[] | null`.
+  priceData: OHLCData[] | null;
 }
 
 interface AreaChartProps extends BaseChartProps {
   chartType: "area";
-  priceData: PriceData[];
+  priceData: PriceData[] | null;
 }
 
 type StockChartProps = CandleChartProps | AreaChartProps;
@@ -524,7 +527,10 @@ export default function StockChart(props: StockChartProps) {
     try {
       if (!latestTick || !priceSeriesRef.current || !frequency) return;
 
-      let transformedBar: CandlestickData<Time> | LineData<Time>;
+      // Null rather than "assigned in one of the branches below": a weekly or monthly chart
+      // has no live bar to patch -- the feed's daily bar is not a weekly bar -- so there is
+      // nothing to push, and the update has to be skipped rather than sent undefined.
+      let transformedBar: CandlestickData<Time> | LineData<Time> | null = null;
       let volumeBar: HistogramData<Time> | null = null;
 
       if (frequency === "intraday") {
@@ -562,7 +568,9 @@ export default function StockChart(props: StockChartProps) {
         };
       }
 
-      priceSeriesRef.current.update(transformedBar);
+      if (transformedBar) {
+        priceSeriesRef.current.update(transformedBar);
+      }
       if (volumeData && volumeSeriesRef.current && volumeBar) {
         volumeSeriesRef.current.update(volumeBar);
       }

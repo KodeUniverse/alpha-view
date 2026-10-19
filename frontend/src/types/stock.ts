@@ -49,8 +49,11 @@ export const VolumeDataSchema = z.object({
 
 export const TickerSchema = z.object({
   symbol: z.string(),
-  name: z.string().optional(),
-  exchange: z.string().optional(),
+  // Nullable, not just optional: the backend's Ticker model declares `name: str | None`,
+  // and watchlist items carry a null name when the symbol was added without one. Accepting
+  // only `undefined` here would reject a response the backend legitimately sends.
+  name: z.string().nullable().optional(),
+  exchange: z.string().nullable().optional(),
 });
 
 // The backend persists watchlist columns in PascalCase (see

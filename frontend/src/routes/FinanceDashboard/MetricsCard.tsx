@@ -118,7 +118,9 @@ function MetricsCard({ ticker, columns = 6, styles = {} }: MetricsCardProps) {
           } as MetricRow;
         })
     : null;
-  let colsToRender: MetricRow[][];
+  // Null rather than left unassigned: when there are no financials there are no columns, and
+  // the render below already guards on it.
+  let colsToRender: MetricRow[][] | null = null;
   if (financials) {
     const rows = [...financials, ...(quantRows ?? [])];
     const colSize = Math.ceil(rows.length / columns);

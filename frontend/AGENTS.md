@@ -158,9 +158,15 @@ Mantine v9, dark by default with a Navbar toggle.
 and no `lint` script, even though `eslint.config.js` exists — run `npx eslint src` if
 you need lint output.
 
-`tsconfig.json` has `strict: false`, `noUnusedLocals: false`, and
-`noUnusedParameters: false`, so `tsc` will not catch nullability or unused-symbol
-mistakes. Be correspondingly careful rather than relying on the compiler.
+`tsconfig.json` has `strict: false`, but `strictNullChecks` is turned on explicitly, so
+`tsc` **does** catch nullability mistakes — a nullable field dereferenced, a value that may
+be assigned on one path but not another. It still will not catch unused symbols:
+`noUnusedLocals` and `noUnusedParameters` are both off.
+
+The nullability flag is deliberate. A `?.` chain that guards a nullable *parent* but not a
+nullable *child* (`liveMessage?.minuteBar.time`) reads as safe and is not; it shipped as a
+runtime crash in the watchlist panel. `strictNullChecks` is what catches that class, so keep
+it on and fix what it reports rather than switching it off to get a green build.
 
 ## Assets
 

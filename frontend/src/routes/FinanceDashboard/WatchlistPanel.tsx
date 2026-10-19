@@ -49,6 +49,10 @@ import { useDisclosure } from "@mantine/hooks";
 
 interface WatchListCardProps {
   cardStyles?: React.CSSProperties;
+  /** Called with the ticker whose card was clicked. */
+  onTickerSelect?: (ticker: Ticker) => void;
+  /** Symbol of the ticker currently shown in the main chart, so its card can be marked. */
+  selectedSymbol?: string;
 }
 
 function WatchListSelectButton(props) {
@@ -84,7 +88,7 @@ function CreateWatchListModal({
   const { mutate: createList } = useCreateWatchList();
 
   const createListHandler = () => {
-    createList({ listName: inputRef.current.value });
+    createList({ listName: inputRef.current?.value ?? "" });
     closeHandler();
   };
   return (
@@ -117,7 +121,7 @@ function DeleteWatchListModal({
   closeHandler: () => void;
   watchlists: WatchList[];
 }) {
-  const [listName, setListName] = useState<string>(null);
+  const [listName, setListName] = useState<string | null>(null);
   const { mutate: deleteList } = useDeleteWatchList();
 
   const deleteListHandler = useCallback(() => {
@@ -163,7 +167,7 @@ function RenameWatchListModal({
   closeHandler: () => void;
   watchlists: WatchList[];
 }) {
-  const [listName, setListName] = useState<string>(null);
+  const [listName, setListName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { mutate: renameList } = useRenameWatchList();
 
@@ -172,7 +176,7 @@ function RenameWatchListModal({
       return list.listName === listName;
     })?.id;
     if (listId) {
-      renameList({ listId, listName: inputRef.current.value });
+      renameList({ listId, listName: inputRef.current?.value ?? "" });
       closeHandler();
     }
   }, [listName]);
@@ -358,7 +362,7 @@ function AddTickerMenu({
   );
 }
 
-function WatchListCard({ cardStyles }: WatchListCardProps) {
+function WatchListCard({ cardStyles, onTickerSelect, selectedSymbol }: WatchListCardProps) {
   const {
     data: watchlists,
     isLoading,
@@ -509,6 +513,8 @@ function WatchListCard({ cardStyles }: WatchListCardProps) {
               liveMessage={liveMessages[item.ticker]}
               intradayBars={intradayBars?.[item.ticker] ?? []}
               prevClose={computePrevClose(dailyBars?.[item.ticker])}
+              onSelect={onTickerSelect}
+              isSelected={selectedSymbol === item.ticker}
             />
           ))}
         </Stack>
@@ -541,6 +547,8 @@ interface WatchListItemProps {
   intradayBars: OHLCVData[];
   prevClose: number | undefined;
   listId: number;
+  onSelect?: (ticker: Ticker) => void;
+  isSelected?: boolean;
 }
 
 function WatchListItem({
@@ -549,8 +557,22 @@ function WatchListItem({
   intradayBars,
   prevClose,
   listId,
+  onSelect,
+  isSelected = false,
 }: WatchListItemProps) {
   const { mutate: removeTicker } = useRemoveFromWatchList();
+
+  // The card is a div with role="button" rather than a real <button>, because it contains
+  // the remove control -- nesting one button inside another is invalid HTML, and a
+  // role="button" div can legally contain a button. The keydown handler checks that the
+  // event originated on the card itself, so pressing Enter inside the remove control does
+  // not also select the ticker.
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onSelect?.(ticker);
+  };
 
   // The mini chart shows ONE trading session -- never a mix of two on one axis,
   // and never a stray out-of-window tick stretching the range (StockChart.update()
@@ -567,9 +589,12 @@ function WatchListItem({
         newest === null || bar.time > newest ? bar.time : newest,
       null,
     );
-    const candidates = [newestBar, liveMessage?.minuteBar.time ?? null].filter(
-      (d): d is Date => d !== null,
-    );
+    // `minuteBar` is null until a bar with frequency "intraday" arrives -- a daily bar can land
+// first and leave it null -- so the chain has to guard the bar, not just the message.
+const candidates = [
+      newestBar,
+      liveMessage?.minuteBar?.time ?? null,
+    ].filter((d): d is Date => d !== null);
     return candidates.reduce<Date>(
       (newest, d) => (d > newest ? d : newest),
       new Date(0),
@@ -617,10 +642,21 @@ function WatchListItem({
 
   return (
     <Card
+      role="button"
+      tabIndex={0}
+      aria-label={`Show ${ticker.symbol} in the main chart`}
+      aria-current={isSelected ? "true" : undefined}
+      onClick={() => onSelect?.(ticker)}
+      onKeyDown={handleCardKeyDown}
       style={{
         padding: 8,
-        border: "1px solid var(--color-background-tertiary)",
+        border: isSelected
+          ? "1px solid var(--color-highlighted)"
+          : "1px solid var(--color-background-tertiary)",
+        borderRadius: 10,
         flexShrink: 0,
+        cursor: "pointer",
+        transition: "border-color 0.2s ease",
       }}
     >
       <Group justify="space-between" align="start" wrap="nowrap" mb={2}>
@@ -637,7 +673,11 @@ function WatchListItem({
           variant="subtle"
           color="gray"
           aria-label={`Remove ${ticker.symbol} from watchlist`}
-          onClick={() => removeTicker({ ticker, listId })}
+          // Without this the remove click would bubble up and select the ticker too.
+          onClick={(event) => {
+            event.stopPropagation();
+            removeTicker({ ticker, listId });
+          }}
         >
           <IconX size={12} />
         </ActionIcon>
@@ -647,11 +687,14 @@ function WatchListItem({
         chartType="area"
         latestTick={todayLiveMessage}
         frequency="intraday"
-        containerStyles={{ width: "100%", height: 40 }}
+        containerStyles={{ width: "100%", height: 40, pointerEvents: "none" }}
         showHorizAxis={false}
         showVertAxis={false}
         interactive={false}
         showGrid={false}
+        // Decorative: the card is the click target, so the chart must not swallow the
+        // pointer. Without this, a click on the sparkline would never reach the card.
+        // ChartArea's own chart does NOT set this -- there it is the target.
       />
       <Group justify="space-between" align="center" wrap="nowrap">
         <Text size="sm" fw={700} style={{ fontVariantNumeric: "tabular-nums" }}>

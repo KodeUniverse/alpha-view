@@ -44,7 +44,11 @@ function FinanceDashboard() {
             styles={{ overflow: "visible" }}
           />
         </Stack>
-        <WatchlistCard cardStyles={{ width: "15%", height: "100%" }} />
+        <WatchlistCard
+          cardStyles={{ width: "15%", height: "100%" }}
+          onTickerSelect={handleTickerInput}
+          selectedSymbol={ticker.symbol}
+        />
       </Group>
     </Stack>
   );
