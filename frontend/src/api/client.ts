@@ -114,6 +114,20 @@ class LiveTickerFeed {
   private readonly listeners = new Map<string, Set<LiveTickListener>>();
   private readonly stateListeners = new Set<(state: FeedSocketState) => void>();
 
+  // When the feed last delivered a bar, for ANY subscribed symbol.
+  //
+  // This is deliberately feed-level rather than per-symbol. The feed is shared, so "is
+  // data still arriving" is a property of the feed, not of one ticker: a symbol can sit
+  // quiet for minutes while the feed is delivering perfectly for everything else, and
+  // reporting that as a fault would be wrong. Stamping receipt time here rather than
+  // reading Alpaca's exchange-local bar timestamps keeps the viewer's timezone out of the
+  // measurement.
+  private lastReceivedAt: number | null = null;
+
+  getLastReceivedAt(): number | null {
+    return this.lastReceivedAt;
+  }
+
   getState(): FeedSocketState {
     if (this.socket) return toFeedSocketState(this.socket);
     // No socket on a fresh page load means "not started yet", not "disconnected" -- without
@@ -269,10 +283,9 @@ class LiveTickerFeed {
       symbol: bar.symbol,
       frequency: envelope.type === "minute_bar" ? "intraday" : "daily",
     };
-    // Arrival time, not Alpaca's stamp: the feed-status indicator measures whether data is
-    // still coming in, and doing that against exchange-local timestamps would drag the
-    // viewer's timezone and clock skew into the result.
-    transformed.receivedAt = Date.now();
+    // Stamped on receipt, not read back from Alpaca's exchange-local bar timestamp, so the
+    // viewer's timezone and clock skew stay out of the measurement.
+    this.lastReceivedAt = Date.now();
     const listeners = this.listeners.get(bar.symbol);
     if (!listeners) return;
     for (const listener of listeners) listener(transformed);
@@ -440,6 +453,7 @@ const api = {
   getFeedState: (): FeedSocketState => liveTickerFeed.getState(),
   subscribeFeedState: (listener: (state: FeedSocketState) => void): (() => void) =>
     liveTickerFeed.subscribeState(listener),
+  getLastReceivedAt: (): number | null => liveTickerFeed.getLastReceivedAt(),
 };
 
 export default api;

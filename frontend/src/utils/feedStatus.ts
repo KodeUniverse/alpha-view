@@ -35,6 +35,10 @@ function formatNextOpen(nextOpen: Date): string {
  * Ordering is the point: every fault check runs before the closed check, so a stream that
  * died over a holiday still reports FEED DOWN instead of hiding behind MARKET CLOSED. The
  * reverse would tell the user everything is fine right before they miss the open.
+ *
+ * `lastBarAt` is the feed's last receipt across all subscribed symbols, not one ticker's
+ * last print. The feed is shared, so a symbol going quiet while the feed keeps delivering
+ * is not a fault.
  */
 export function deriveFeedStatus(input: {
   socketState: FeedSocketState;

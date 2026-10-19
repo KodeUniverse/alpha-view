@@ -20,12 +20,6 @@ export const OHLCVDataSchema = z.object({
   volume: z.number(),
   symbol: z.string().optional(),
   frequency: FrequencySchema.optional(),
-  // Stamped by the socket handler on arrival, never sent by the backend -- which is why it
-  // is optional and why the REST responses still parse. Alpaca's `time` carries an
-  // exchange-local offset, so measuring how long ago a bar arrived against it would fold the
-  // viewer's timezone and clock skew into the result. Receipt time answers "is data still
-  // coming in" directly.
-  receivedAt: z.number().optional(),
 });
 
 export const OHLCDataSchema = z.object({

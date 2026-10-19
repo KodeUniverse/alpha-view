@@ -41,6 +41,7 @@ import {
 } from "@/utils/colors";
 import { deriveFeedStatus, FeedStatus } from "@/utils/feedStatus";
 import { useNow } from "@/hooks/useNow";
+import api from "@/api/client";
 
 type ChartRange = "1d" | "5d" | "3m" | "6m" | "1y" | "3y" | "Max";
 
@@ -493,12 +494,11 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
   }, [ticker.exchange, ticker.symbol, symbols]);
   const displayName = ticker.name ?? ticker.symbol;
 
-  // Receipt time of the bar this chart is actually tracking, not of whichever bar arrived
-  // last -- the two differ on a daily chart, where the minute bar keeps ticking all session.
-  const trackedBar =
-    frequency === "intraday" ? tick?.minuteBar : tick?.dailyBar;
-  const lastBarAt = trackedBar?.receivedAt ?? null;
-
+  // The feed's last receipt, not the charted ticker's. The feed is shared, so "is data
+  // still arriving" is a property of the feed: a symbol can sit quiet for minutes while
+  // the feed delivers perfectly for everything else, and calling that a fault would be
+  // wrong. It also sidesteps the gap problem -- while this tab was not listening to a
+  // symbol, the feed timestamp reflects the feed, not the silence.
   const socketState = useFeedSocketState();
   const { data: clock, isError: clockError } = useMarketClock();
   const { data: health, isError: healthError } = useFeedHealth();
@@ -512,10 +512,13 @@ export default function ChartArea({ ticker, cardStyles = {} }: ChartAreaProps) {
         health,
         clockError,
         clock,
-        lastBarAt,
+        // Read inside the memo rather than during render: the singleton updates on every
+        // bar, and this memo re-runs on the useNow tick, so the value is never more than a
+        // few seconds stale.
+        lastBarAt: api.getLastReceivedAt(),
         now,
       }),
-    [socketState, healthError, health, clockError, clock, lastBarAt, now],
+    [socketState, healthError, health, clockError, clock, now],
   );
 
   const handleFreqChange = (newFreq: Frequency) => {
